@@ -266,7 +266,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
           {sheets.map((sheet) => {
             const deus = deuses.find((d) => d.id === sheet.deus_id);
             const godColor = deus?.cor_hex || '#3b82f6';
-            const godIcon = (deus?.icone_css || deus?.simbolo || (deus as any)?.game_icon || (deus as any)?.icone || '').trim();
+            const godIcon = (deus?.icone_url || deus?.icone_css || deus?.simbolo || (deus as any)?.game_icon || (deus as any)?.icone || '').trim();
             const isActive = sheet.id === activeSheetId;
             const isConfirmingDelete = deletingSheetId === sheet.id;
             const attrs = normalizeAttributes(sheet.atributos);

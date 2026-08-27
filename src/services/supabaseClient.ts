@@ -135,6 +135,7 @@ export function setLocalData<T>(key: string, data: T[]): void {
 // Helper to resolve icon from any possible column name in the database
 function resolveGodIcon(d: any): string {
   const possibleFields = [
+    d?.icone_url,
     d?.icone_css,
     d?.simbolo,
     d?.game_icon,
@@ -143,7 +144,6 @@ function resolveGodIcon(d: any): string {
     d?.icon,
     d?.icon_code,
     d?.simbolo_css,
-    d?.icone_url,
     d?.icon_css
   ];
 
@@ -171,6 +171,7 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
 
           const mappedDeus: Deus = {
             ...d,
+            icone_url: d.icone_url || icon,
             icone_css: icon,
             simbolo: icon,
             cor_hex: cor,
@@ -194,6 +195,7 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
     const icon = resolveGodIcon(d);
     return {
       ...d,
+      icone_url: d.icone_url || icon,
       icone_css: icon,
       simbolo: icon,
       cor_hex: d.cor_hex || '#38bdf8'

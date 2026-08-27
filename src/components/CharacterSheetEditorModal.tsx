@@ -126,7 +126,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   };
 
   const godColor = selectedDeus.cor_hex || '#3b82f6';
-  const godIcon = (selectedDeus?.icone_css || selectedDeus?.simbolo || (selectedDeus as any)?.game_icon || (selectedDeus as any)?.icone || '').trim();
+  const godIcon = (selectedDeus?.icone_url || selectedDeus?.icone_css || selectedDeus?.simbolo || (selectedDeus as any)?.game_icon || (selectedDeus as any)?.icone || '').trim();
   const godRamos = ramos.filter((r) => r.deus_id === selectedDeus.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));

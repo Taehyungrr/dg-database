@@ -41,6 +41,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
   };
 
   const godIcon = (
+    selectedDeus?.icone_url ||
     selectedDeus?.icone_css || 
     selectedDeus?.simbolo || 
     (selectedDeus as any)?.game_icon || 

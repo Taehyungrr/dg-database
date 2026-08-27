@@ -5,6 +5,7 @@ export interface Deus {
   nome_grego_romano: string;
   cor_hex: string;
   imagem_url?: string;
+  icone_url?: string;
   simbolo?: string;
   icone_css?: string;
   atributos_principais?: string;
