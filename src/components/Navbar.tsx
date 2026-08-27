@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Supabase Status Indicator (Green if connected, Red if not) */}
             <div className="flex items-center gap-1.5">
               <div
-                title={isSupabaseConnected ? "Conectado ao Supabase" : "Desconectado do Supabase (Usando dados locais)"}
+                title={isSupabaseConnected ? "Conectado ao Supabase" : "Desconectado do Supabase"}
                 className={`flex items-center gap-1 px-2 py-1 rounded-xl text-xs border transition-all ${
                   isSupabaseConnected 
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 

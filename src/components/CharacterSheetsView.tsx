@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
+import { INITIAL_DEUSES } from '../data/defaultData';
 import { createNewSheet, saveSheet, deleteSheet } from '../services/characterSheets';
 import { normalizeAttributes, calculateCombatStatus, calculateSheetPoints } from '../utils/calculator';
 import { CharacterSheetEditorModal } from './CharacterSheetEditorModal';
+import { GameIcon } from './GameIcon';
 import { 
   FileText, 
   Plus, 
@@ -264,6 +266,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
           {sheets.map((sheet) => {
             const deus = deuses.find((d) => d.id === sheet.deus_id);
             const godColor = deus?.cor_hex || '#3b82f6';
+            const godIcon = (deus?.icone_css || deus?.simbolo || (deus as any)?.game_icon || (deus as any)?.icone || '').trim();
             const isActive = sheet.id === activeSheetId;
             const isConfirmingDelete = deletingSheetId === sheet.id;
             const attrs = normalizeAttributes(sheet.atributos);
@@ -310,8 +313,11 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-[11px] text-[var(--ctexto2)] truncate font-mono ml-4.5">
-                    {deus?.nome_grego_romano || 'Olimpiano'}
+                  <div className="text-[11px] text-[var(--ctexto2)] truncate font-mono ml-4.5 flex items-center gap-1.5">
+                    {godIcon && (
+                      <GameIcon icon={godIcon} className="text-xs shrink-0" style={{ color: godColor }} />
+                    )}
+                    <span>{deus?.nome_grego_romano || 'Olimpiano'}</span>
                   </div>
 
                   {/* Combat Status Quick Bar (Vida, Mana, Vigor) */}

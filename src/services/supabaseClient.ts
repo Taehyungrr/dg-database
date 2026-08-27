@@ -62,6 +62,45 @@ export function getSupabaseClient(): SupabaseClient | null {
   return supabaseInstance;
 }
 
+/**
+ * Saves Supabase config to local storage and re-initializes client
+ */
+export function saveSupabaseConfig(url: string, anonKey: string): SupabaseConfig {
+  const config: SupabaseConfig = {
+    url: url.trim(),
+    anonKey: anonKey.trim(),
+    isConnected: Boolean(url.trim() && anonKey.trim()),
+    lastTested: new Date().toISOString()
+  };
+  try {
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.error('Erro ao salvar config no localStorage:', e);
+  }
+  supabaseInstance = null;
+  if (config.url && config.anonKey) {
+    try {
+      supabaseInstance = createClient(config.url, config.anonKey);
+    } catch (e) {
+      console.error('Falha ao instanciar Supabase:', e);
+    }
+  }
+  return config;
+}
+
+/**
+ * Clears local cache of deuses, ramos, and poderes to force fresh fetch
+ */
+export function clearLocalCache(): void {
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_DEUSES);
+    localStorage.removeItem(LOCAL_STORAGE_RAMOS);
+    localStorage.removeItem(LOCAL_STORAGE_PODERES);
+  } catch (e) {
+    console.error('Erro ao limpar cache local:', e);
+  }
+}
+
 // ==========================================
 // LOCAL STORAGE CACHE HELPERS
 // ==========================================
@@ -93,6 +132,30 @@ export function setLocalData<T>(key: string, data: T[]): void {
 // UNIFIED DATA ACCESS LAYER (SUPABASE + LOCAL)
 // ==========================================
 
+// Helper to resolve icon from any possible column name in the database
+function resolveGodIcon(d: any): string {
+  const possibleFields = [
+    d?.icone_css,
+    d?.simbolo,
+    d?.game_icon,
+    d?.game_icons,
+    d?.icone,
+    d?.icon,
+    d?.icon_code,
+    d?.simbolo_css,
+    d?.icone_url,
+    d?.icon_css
+  ];
+
+  for (const field of possibleFields) {
+    if (typeof field === 'string' && field.trim().length > 0) {
+      return field.trim();
+    }
+  }
+
+  return '';
+}
+
 /**
  * Fetches all Deuses from Supabase with fallback to local cache / defaultData
  */
@@ -103,23 +166,17 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
       const { data, error } = await client.from('deuses').select('*');
       if (!error && data && data.length > 0) {
         const deusesMapeados = data.map((d: any) => {
-          const defaultD = INITIAL_DEUSES.find(initD => initD.id === d.id) ||
-            INITIAL_DEUSES.find(initD => d.nome_grego_romano && String(d.nome_grego_romano).toLowerCase().includes(initD.id));
-          
-          let icon = String(d.icone_css || d.simbolo || '').trim().replace(/^\./, '').replace(/^game-icon-/, '');
-          if (!icon && defaultD) {
-            icon = (defaultD.icone_css || defaultD.simbolo || '').trim().replace(/^\./, '').replace(/^game-icon-/, '');
-          }
-          
-          const cor = d.cor_hex || defaultD?.cor_hex || '#38bdf8';
+          const icon = resolveGodIcon(d);
+          const cor = d.cor_hex || '#38bdf8';
+
           const mappedDeus: Deus = {
             ...d,
             icone_css: icon,
-            simbolo: icon || d.simbolo || '',
+            simbolo: icon,
             cor_hex: cor,
-            atributos_principais: d.atributos_principais || defaultD?.atributos_principais || '',
-            descricao: d.descricao || defaultD?.descricao || '',
-            titulo_mitologico: d.titulo_mitologico || defaultD?.titulo_mitologico || ''
+            atributos_principais: d.atributos_principais || '',
+            descricao: d.descricao || '',
+            titulo_mitologico: d.titulo_mitologico || ''
           };
           return mappedDeus;
         });
@@ -134,15 +191,12 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
   
   const localList = getLocalData<Deus>(LOCAL_STORAGE_DEUSES, INITIAL_DEUSES);
   return localList.map((d: any) => {
-    const defaultD = INITIAL_DEUSES.find(initD => initD.id === d.id) ||
-      INITIAL_DEUSES.find(initD => d.nome_grego_romano && String(d.nome_grego_romano).toLowerCase().includes(initD.id));
-    const rawIcon = d.icone_css || d.simbolo || defaultD?.icone_css || defaultD?.simbolo || '';
-    const icon = String(rawIcon).trim().replace(/^\./, '').replace(/^game-icon-/, '');
+    const icon = resolveGodIcon(d);
     return {
       ...d,
       icone_css: icon,
-      simbolo: icon || d.simbolo || '',
-      cor_hex: d.cor_hex || defaultD?.cor_hex || '#38bdf8'
+      simbolo: icon,
+      cor_hex: d.cor_hex || '#38bdf8'
     };
   });
 }
@@ -177,7 +231,7 @@ export async function fetchAllPoderes(): Promise<Poder[]> {
       if (!error && data && data.length > 0) {
         const mapped = data.map((p: any) => ({
           ...p,
-          icone_url: p.icone_url || 'zap'
+          icone_url: p.icone_url || p.icone || p.icon || p.icone_css || 'zap'
         }));
         setLocalData(LOCAL_STORAGE_PODERES, mapped);
         return mapped as Poder[];
@@ -189,6 +243,6 @@ export async function fetchAllPoderes(): Promise<Poder[]> {
   const localList = getLocalData<Poder>(LOCAL_STORAGE_PODERES, INITIAL_PODERES);
   return localList.map((p: any) => ({
     ...p,
-    icone_url: p.icone_url || 'zap'
+    icone_url: p.icone_url || p.icone || p.icon || p.icone_css || 'zap'
   }));
 }

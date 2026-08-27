@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Deus, Ramo, Poder, FichaPersonagem, AtributosPersonagem } from '../types';
+import { INITIAL_DEUSES } from '../data/defaultData';
 import { 
   calculateSheetPoints, 
   getAttributePointsBudget, 
@@ -125,7 +126,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   };
 
   const godColor = selectedDeus.cor_hex || '#3b82f6';
-  const godIcon = selectedDeus.icone || '';
+  const godIcon = (selectedDeus?.icone_css || selectedDeus?.simbolo || (selectedDeus as any)?.game_icon || (selectedDeus as any)?.icone || '').trim();
   const godRamos = ramos.filter((r) => r.deus_id === selectedDeus.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
@@ -1631,8 +1632,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                               </div>
 
                               {/* Base Description */}
-                              <div className="mt-3 text-xs text-[var(--ctexto2)] leading-relaxed bg-[var(--fundo1)] p-3 rounded-xl border border-[var(--bordadg)]">
-                                <span className="font-bold text-[var(--ctexto1)] uppercase text-[10px] tracking-wider block mb-1">
+                              <div className="mt-3 text-[15px] sm:text-[14px] text-[var(--ctexto2)] leading-relaxed bg-[var(--fundo1)] p-3 rounded-xl border border-[var(--bordadg)]">
+                                <span className="font-bold text-[var(--ctexto1)] uppercase text-xs tracking-wider block mb-1">
                                   Descrição Geral:
                                 </span>
                                 <p className="text-justify whitespace-pre-line break-words">{cleanDesc || 'Sem descrição cadastrada.'}</p>
@@ -1654,7 +1655,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                 >
                                   <div className="flex items-center justify-between gap-2 mb-1">
                                     <span 
-                                      className="text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
+                                      className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
                                       style={{
                                         color: effLevel >= 1 ? godColor : 'var(--ctexto1)'
                                       }}
@@ -1668,7 +1669,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 1
                                     </span>
                                   </div>
-                                  <p className="text-xs leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
                                     {cleanLvl1 || 'Efeito inicial da habilidade.'}
                                   </p>
                                 </div>
@@ -1687,7 +1688,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                 >
                                   <div className="flex items-center justify-between gap-2 mb-1">
                                     <span 
-                                      className="text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
+                                      className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
                                       style={{
                                         color: effLevel >= 2 ? godColor : 'var(--ctexto1)'
                                       }}
@@ -1701,7 +1702,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 2
                                     </span>
                                   </div>
-                                  <p className="text-xs leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
                                     {cleanLvl2 || 'Aprimoramento intermediário da habilidade.'}
                                   </p>
                                 </div>
@@ -1720,7 +1721,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                 >
                                   <div className="flex items-center justify-between gap-2 mb-1">
                                     <span 
-                                      className="text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
+                                      className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5"
                                       style={{
                                         color: effLevel >= 3 ? godColor : 'var(--ctexto1)'
                                       }}
@@ -1734,7 +1735,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 3
                                     </span>
                                   </div>
-                                  <p className="text-xs leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
                                     {cleanLvl3 || 'Potência máxima e maestria da habilidade.'}
                                   </p>
                                 </div>

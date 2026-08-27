@@ -6,8 +6,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Poseidon / Netuno',
     cor_hex: '#0ea5e9', // Azul Oceano
     imagem_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'trident-shield',
-    icone_css: 'trident-shield',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Natureza / Força',
     descricao: 'Senhor dos Mares, Terremotos, Cavalos e Tempestades Oceânicas. Seus filhos possuem maestria com a água, vigor aprimorado quando molhados e controle geológico.',
     titulo_mitologico: 'O Abalador da Terra, Rei dos Oceanos'
@@ -17,8 +17,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Zeus / Júpiter',
     cor_hex: '#38bdf8', // Azul Elétrico / Céu
     imagem_url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'bolt-shield',
-    icone_css: 'bolt-shield',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Natureza / Poder Mágico',
     descricao: 'Rei dos Deuses, Senhor dos Céus e das Tempestades Elétricas. Seus semideuses dominam a aerocinese, relâmpagos e possuem liderança inata.',
     titulo_mitologico: 'Rei do Olimpo, Soberano dos Céus'
@@ -28,8 +28,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Hades / Plutão',
     cor_hex: '#a855f7', // Roxo Sombrio / Obsidiana
     imagem_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'skull-shield',
-    icone_css: 'skull-shield',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Poder Mágico / Vitalidade',
     descricao: 'Senhor do Submundo, dos Mortos e de todas as Riquezas Minerais da Terra. Seus filhos comandam sombras, ossos e manipulam metais subterrâneos.',
     titulo_mitologico: 'O Invisível, Senhor do Érebo'
@@ -39,8 +39,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Atena / Minerva',
     cor_hex: '#f59e0b', // Dourado Coruja / Âmbar
     imagem_url: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'roman-shield',
-    icone_css: 'roman-shield',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Intelecto / Agilidade',
     descricao: 'Deusa da Sabedoria, Estratégia de Batalha, Artesanato e Justiça. Seus filhos são gênios táticos, mestres no combate analítico e arquitetura.',
     titulo_mitologico: 'A de Olhos Cinzentos, Deusa da Estratégia'
@@ -50,8 +50,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Ares / Marte',
     cor_hex: '#ef4444', // Vermelho Sangue
     imagem_url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'battle-axe',
-    icone_css: 'battle-axe',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Força / Vitalidade',
     descricao: 'Deus da Guerra Selvagem, Força Bruta e Frenesi de Batalha. Seus guerreiros possuem vigor descomunal, fúria e domínio perfeito de qualquer arma.',
     titulo_mitologico: 'O Destruidor de Cidades, Senhor da Guerra'
@@ -61,8 +61,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Apolo / Febo',
     cor_hex: '#eab308', // Amarelo Solar
     imagem_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'barbed-sun',
-    icone_css: 'barbed-sun',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Agilidade / Poder Mágico',
     descricao: 'Deus da Luz Solar, Música, Poesia, Profecia, Arquearia e Medicina. Seus semideuses são arqueiros infalíveis, curandeiros e canalizam o brilho solar.',
     titulo_mitologico: 'O Arqueiro Brilhante, Deus da Verdade e Cura'
@@ -72,8 +72,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Hefesto / Vulcano',
     cor_hex: '#f97316', // Laranja Forja / Magma
     imagem_url: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32b?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'anvil',
-    icone_css: 'anvil',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Força / Intelecto',
     descricao: 'Senhor do Fogo, Vulcões, Metalurgia e Forjas Divinas. Seus filhos possuem imunidade a altas temperaturas, telecinese mecânica e perícia em forja.',
     titulo_mitologico: 'O Grande Artífice do Olimpo'
@@ -83,8 +83,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Afrodite / Vênus',
     cor_hex: '#ec4899', // Rosa Charme
     imagem_url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'heart-shield',
-    icone_css: 'heart-shield',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Carisma / Poder Mágico',
     descricao: 'Deusa do Amor, Beleza, Paixão e Desejo. Seus filhos dominam a persuasão sobrenatural (Charmspeak), ilusões de beleza e aura atordoante.',
     titulo_mitologico: 'A Nascida da Espuma, Senhora do Desejo'
@@ -94,8 +94,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Hermes / Mercúrio',
     cor_hex: '#14b8a6', // Verde Turquesa / Vento
     imagem_url: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'angel-wings',
-    icone_css: 'angel-wings',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Agilidade / Destreza',
     descricao: 'Mensageiro dos Deuses, Patrono dos Viajantes, Ladrões, Comércio e Eloquência. Seus filhos são velozes, destrancam qualquer fechadura e são astutos.',
     titulo_mitologico: 'O Guia das Almas, Senhor da Agilidade'
@@ -105,8 +105,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Hécate / Trívia',
     cor_hex: '#6366f1', // Índigo Mágico / Névoa
     imagem_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'magic-portal',
-    icone_css: 'magic-portal',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Poder Mágico / Intelecto',
     descricao: 'Deusa da Magia, Bruxaria, Encruzilhadas e da Névoa (Mist). Seus descendentes manipulam feitiços arcanos, poções e controlam a realidade mortal.',
     titulo_mitologico: 'Senhora das Encruzilhadas e da Névoa'
@@ -116,8 +116,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Deméter / Ceres',
     cor_hex: '#84cc16', // Verde Natureza / Espiga
     imagem_url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'berries-bowl',
-    icone_css: 'berries-bowl',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Natureza / Vitalidade',
     descricao: 'Deusa da Agricultura, Colheitas, Fertilidade e Estações. Seus filhos controlam plantas, raízes esmagadoras e regeneração natural.',
     titulo_mitologico: 'A Provedora de Frutos, Senhora da Colheita'
@@ -127,8 +127,8 @@ export const INITIAL_DEUSES: Deus[] = [
     nome_grego_romano: 'Dionísio / Baco',
     cor_hex: '#8b5cf6', // Violeta Vinha / Púrpura
     imagem_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&auto=format&fit=crop&q=60',
-    simbolo: 'grapes',
-    icone_css: 'grapes',
+    simbolo: '',
+    icone_css: '',
     atributos_principais: 'Carisma / Poder Mágico',
     descricao: 'Deus do Vinho, Festas, Loucura e Teatro. Seus filhos induzem euforia, confusão mental desorientadora e manipulam videiras monstruosas.',
     titulo_mitologico: 'O Libertador, Senhor do Delírio'

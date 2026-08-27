@@ -32,7 +32,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
   const [searchPowerQuery, setSearchPowerQuery] = useState<string>('');
   const [activeBranchTab, setActiveBranchTab] = useState<string>('all');
 
-  const selectedDeus = deuses.find((d) => d.id === selectedDeusId) || deuses[0] || INITIAL_DEUSES[0] || {
+  const selectedDeus = deuses.find((d) => d.id === selectedDeusId) || deuses[0] || {
     id: 'poseidon',
     nome_grego_romano: 'Poseidon / Netuno',
     cor_hex: '#0ea5e9',
@@ -40,10 +40,16 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
     descricao: 'Senhor dos Mares'
   };
 
-  const defaultGod = INITIAL_DEUSES.find((initD) => initD.id === selectedDeus?.id) || 
-    INITIAL_DEUSES.find((initD) => selectedDeus?.nome_grego_romano && String(selectedDeus.nome_grego_romano).toLowerCase().includes(initD.id));
-  const godIcon = (selectedDeus?.icone_css || selectedDeus?.simbolo || defaultGod?.icone_css || defaultGod?.simbolo || '').trim();
-  const godColor = selectedDeus?.cor_hex || defaultGod?.cor_hex || '#3b82f6';
+  const godIcon = (
+    selectedDeus?.icone_css || 
+    selectedDeus?.simbolo || 
+    (selectedDeus as any)?.game_icon || 
+    (selectedDeus as any)?.icone || 
+    (selectedDeus as any)?.icon || 
+    (selectedDeus as any)?.icon_code || 
+    ''
+  ).trim();
+  const godColor = selectedDeus?.cor_hex || '#3b82f6';
   const godRamos = ramos.filter((r) => r.deus_id === selectedDeus?.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
@@ -336,7 +342,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                   />
                   <div>
                     <h3 className="font-cinzel text-sm sm:text-base font-bold text-[var(--ctexto1)]">
-                      {isTronco ? 'Tronco Principal' : ramo.nome}
+                      {isTronco ? 'Tronco' : ramo.nome}
                     </h3>
                   </div>
                 </div>
@@ -357,7 +363,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                     return (
                       <div
                         key={poder.id}
-                        className="flex flex-col justify-between h-full bg-[var(--fundo2)] border border-[var(--bordadg)] hover:border-[var(--god-color)] rounded-2xl p-5 space-y-4 transition-all shadow-sm"
+                        className="flex flex-col justify-start h-full bg-[var(--fundo2)] border border-[var(--bordadg)] hover:border-[var(--god-color)] rounded-2xl p-5 space-y-4 transition-all shadow-sm"
                       >
                         {/* Top: 75x75 Showcase & Power Header Details */}
                         <div className="flex items-center gap-3.5">
@@ -413,8 +419,8 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
 
                         {/* Description */}
                         {poder.descricao_base && (
-                          <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto2)] leading-relaxed text-justify whitespace-pre-line break-words">
-                            <strong className="text-[var(--ctexto1)] block mb-1 text-[10px] uppercase tracking-wider font-mono">
+                          <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] text-[var(--ctexto2)] leading-relaxed text-justify whitespace-pre-line break-words">
+                            <strong className="text-[var(--ctexto1)] block mb-1 text-xs uppercase tracking-wider font-mono">
                               Descrição:
                             </strong>
                             {poder.descricao_base}
@@ -426,8 +432,8 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                           
                           {/* Nível 1 */}
                           {poder.nivel_1_desc && (
-                            <div className="p-2.5 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs leading-relaxed">
-                              <span className="text-[10px] font-mono font-bold text-blue-500 uppercase tracking-wider block mb-0.5">
+                            <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] leading-relaxed">
+                              <span className="text-xs font-mono font-bold text-blue-500 uppercase tracking-wider block mb-1">
                                 Nível 1
                               </span>
                               <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_1_desc}</p>
@@ -436,8 +442,8 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
 
                           {/* Nível 2 */}
                           {poder.nivel_2_desc && (
-                            <div className="p-2.5 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs leading-relaxed">
-                              <span className="text-[10px] font-mono font-bold text-purple-500 uppercase tracking-wider block mb-0.5">
+                            <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] leading-relaxed">
+                              <span className="text-xs font-mono font-bold text-purple-500 uppercase tracking-wider block mb-1">
                                 Nível 2
                               </span>
                               <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_2_desc}</p>
@@ -446,8 +452,8 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
 
                           {/* Nível 3 */}
                           {poder.nivel_3_desc && (
-                            <div className="p-2.5 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs leading-relaxed">
-                              <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-wider block mb-0.5">
+                            <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] leading-relaxed">
+                              <span className="text-xs font-mono font-bold text-amber-500 uppercase tracking-wider block mb-1">
                                 Nível 3
                               </span>
                               <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_3_desc}</p>
