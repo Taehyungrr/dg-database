@@ -152,7 +152,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-20 md:pb-12 animate-fadeIn">
+    <div className="flex-1 flex flex-col space-y-6 pb-20 md:pb-12 animate-fadeIn w-full">
       
       {/* Toast */}
       {feedbackMsg && (
@@ -260,7 +260,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 items-stretch min-h-[400px]">
           {sheets.map((sheet) => {
             const deus = deuses.find((d) => d.id === sheet.deus_id);
             const godColor = deus?.cor_hex || '#3b82f6';

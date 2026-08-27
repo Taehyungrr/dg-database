@@ -77,7 +77,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
     : sortedGodRamos.filter((r) => r.tipo === activeBranchTab || r.id === activeBranchTab);
 
   return (
-    <div className="space-y-6 pb-20 md:pb-12">
+    <div className="flex-1 flex flex-col space-y-6 pb-12 w-full">
       
       {/* ========================================================================= */}
       {/* DEITY SELECTOR CAROUSEL / GRID                                           */}
@@ -301,7 +301,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
       {/* ========================================================================= */}
       {/* POWER CARDS BY BRANCH                                                    */}
       {/* ========================================================================= */}
-      <div className="space-y-8">
+      <div className="flex-1 flex flex-col space-y-8 w-full min-h-[500px]">
         {displayedRamos.map((ramo) => {
           let branchPowers = godPoderes
             .filter((p) => p.ramo_id === ramo.id)
@@ -325,7 +325,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
           const isTronco = ramo.tipo === 'tronco';
 
           return (
-            <div key={ramo.id} className="space-y-4">
+            <div key={ramo.id} className="flex-1 flex flex-col space-y-4">
               
               {/* Branch Header */}
               <div className="flex items-center justify-between pb-2 border-b border-[var(--bordadg)]">
@@ -352,12 +352,12 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                   Nenhum poder encontrado com o filtro atual.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1 items-stretch">
                   {branchPowers.map((poder) => {
                     return (
                       <div
                         key={poder.id}
-                        className="bg-[var(--fundo2)] border border-[var(--bordadg)] hover:border-[var(--god-color)] rounded-2xl p-5 space-y-4 transition-all shadow-sm"
+                        className="flex flex-col justify-between h-full bg-[var(--fundo2)] border border-[var(--bordadg)] hover:border-[var(--god-color)] rounded-2xl p-5 space-y-4 transition-all shadow-sm"
                       >
                         {/* Top: 75x75 Showcase & Power Header Details */}
                         <div className="flex items-center gap-3.5">

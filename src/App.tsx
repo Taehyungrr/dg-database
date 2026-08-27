@@ -102,8 +102,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--fundo1)] text-[var(--ctexto1)] font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col justify-between transition-colors duration-200">
-      <div>
+    <div className="min-h-screen w-full bg-[var(--fundo1)] text-[var(--ctexto1)] font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col transition-colors duration-200">
+      <div className="flex-1 flex flex-col w-full">
         {/* Navigation Bar */}
         <Navbar
           activeTab={activeTab}
@@ -117,10 +117,10 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-6 sm:pb-8">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-6 sm:pb-8 flex flex-col min-h-[calc(100vh-80px)]">
           
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
               <div className="w-10 h-10 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
               <p className="font-cinzel text-xs uppercase tracking-widest text-[var(--ctexto2)]">
                 Carregando poderes do Divine Ground...
