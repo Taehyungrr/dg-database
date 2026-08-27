@@ -1,0 +1,8 @@
+{
+  "name": "Divine Ground Dashboard",
+  "description": "Calculador de Árvore de Poderes e Gerador de Fichas BBCode para RPG de Percy Jackson com leitura em tempo real da base de dados Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

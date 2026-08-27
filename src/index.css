@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+:root {
+  /* Cores base modo claro */
+  --fundo1: #f8fafc;
+  --fundo2: #ffffff;
+  --fundo3: #f1f5f9;
+  --fundo4: #e2e8f0;
+  --bordadg: #e2e8f0;
+  --ctexto1: #0f172a;
+  --ctexto2: #475569;
+  --ctexto3: #94a3b8;
+  --black: #000;
+  --dark: #333;
+  --light-dark: #5b5b5b;
+  --red: #d31141;
+  --light: #fff;
+  --lighter: #fafafa;
+  --grey: #f4f4f4;
+  --greyer: #e5e5e5;
+  --border: 1px solid #e2e8f0;
+  --bgglass: rgba(255, 255, 255, 0.7);
+  --bgglassbold: rgba(255, 255, 255, 0.9);
+  --borderglass: 1px solid rgba(226, 232, 240, 0.8);
+  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
+
+  /* Variável dinâmica para a cor do deus */
+  --god-color: #0ea5e9;
+}
+
+[data-theme="dark"], .dark {
+  /* Cores base modo escuro */
+  --fundo1: #09090b;
+  --fundo2: #121215;
+  --fundo3: #1c1c21;
+  --fundo4: #27272e;
+  --bordadg: #27272e;
+  --ctexto1: #f8fafc;
+  --ctexto2: #94a3b8;
+  --ctexto3: #64748b;
+
+  --border: 1px solid #27272e;
+  --bgglass: rgba(18, 18, 21, 0.7);
+  --bgglassbold: rgba(18, 18, 21, 0.9);
+  --borderglass: 1px solid rgba(39, 39, 46, 0.8);
+  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background-color: var(--fundo1);
+    color: var(--ctexto1);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  
+  h1, h2, h3, h4, .font-cinzel {
+    font-family: 'Cinzel', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+
+  button {
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+::selection {
+  background-color: var(--god-color, #3b82f6);
+  color: #ffffff;
+}
+
+/* Dynamic scrollbars with god color */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fundo2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--god-color, #3b82f6);
+  opacity: 0.8;
+  border-radius: 9999px;
+  border: 1px solid var(--bordadg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--god-color, #3b82f6);
+  filter: brightness(1.2);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--fundo2);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--god-color, #3b82f6);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--god-color, #3b82f6);
+  filter: brightness(1.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
