@@ -1110,38 +1110,17 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       </span>
                     </div>
 
-                    {/* 3 Status Cards (Vida, Vigor, Mana) */}
+                    {/* 3 Status Cards (Vida, Mana, Vigor) */}
                     <div className="space-y-2.5">
                       
                       {/* VIDA */}
                       <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-emerald-900/40 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Heart className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <div>
-                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] block leading-none">Vida (HP)</span>
-                            <span className="text-[9px] text-[var(--ctexto2)] font-mono mt-0.5 block">
-                              Base ({baseStatus}) + Const (+{Math.max(0, currentAttributes.constituicao - 1) * 25})
-                            </span>
-                          </div>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vida</span>
                         </div>
                         <span className="text-xl font-mono font-black text-emerald-500 tracking-tight">
                           {statusValues.vida}
-                        </span>
-                      </div>
-
-                      {/* VIGOR */}
-                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-rose-900/40 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Flame className="w-4 h-4 text-rose-400 shrink-0" />
-                          <div>
-                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] block leading-none">Vigor (Stamina)</span>
-                            <span className="text-[9px] text-[var(--ctexto2)] font-mono mt-0.5 block">
-                              Base ({baseStatus}) + Força (+{Math.max(0, currentAttributes.forca - 1) * 25})
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xl font-mono font-black text-rose-500 tracking-tight">
-                          {statusValues.vigor}
                         </span>
                       </div>
 
@@ -1149,15 +1128,21 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-purple-900/40 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                          <div>
-                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] block leading-none">Mana (MP)</span>
-                            <span className="text-[9px] text-[var(--ctexto2)] font-mono mt-0.5 block">
-                              Base ({baseStatus}) + Mag/Esp (+{(Math.max(0, currentAttributes.magia - 1) + Math.max(0, currentAttributes.espiritualidade - 1)) * 25})
-                            </span>
-                          </div>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Mana</span>
                         </div>
                         <span className="text-xl font-mono font-black text-purple-500 tracking-tight">
                           {statusValues.mana}
+                        </span>
+                      </div>
+
+                      {/* VIGOR */}
+                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-rose-900/40 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Flame className="w-4 h-4 text-rose-400 shrink-0" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vigor</span>
+                        </div>
+                        <span className="text-xl font-mono font-black text-rose-500 tracking-tight">
+                          {statusValues.vigor}
                         </span>
                       </div>
 
@@ -1309,14 +1294,6 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                     </button>
                                   );
                                 })}
-                              </div>
-
-                              <div className="flex items-center justify-between w-full px-1 text-[8px] font-mono text-[var(--ctexto2)]">
-                                <span>Base: 1</span>
-                                <span className="text-[var(--ctexto1)] font-medium">
-                                  {currentVal > 1 ? `+${currentVal - 1} gasto` : 'Sem bônus'}
-                                </span>
-                                <span>Máx: 5</span>
                               </div>
                             </div>
 

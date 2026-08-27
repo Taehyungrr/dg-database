@@ -314,19 +314,19 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                     {deus?.nome_grego_romano || 'Olimpiano'}
                   </div>
 
-                  {/* Combat Status Quick Bar (Vida, Vigor, Mana) */}
+                  {/* Combat Status Quick Bar (Vida, Mana, Vigor) */}
                   <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
                     <div className="p-1.5 bg-[var(--fundo1)] rounded-lg border border-[var(--bordadg)]">
                       <span className="text-[8px] text-emerald-500 font-bold block font-mono">VIDA</span>
                       <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-300">{statusValues.vida}</span>
                     </div>
                     <div className="p-1.5 bg-[var(--fundo1)] rounded-lg border border-[var(--bordadg)]">
-                      <span className="text-[8px] text-rose-500 font-bold block font-mono">VIGOR</span>
-                      <span className="text-xs font-mono font-black text-rose-600 dark:text-rose-300">{statusValues.vigor}</span>
-                    </div>
-                    <div className="p-1.5 bg-[var(--fundo1)] rounded-lg border border-[var(--bordadg)]">
                       <span className="text-[8px] text-purple-500 font-bold block font-mono">MANA</span>
                       <span className="text-xs font-mono font-black text-purple-600 dark:text-purple-300">{statusValues.mana}</span>
+                    </div>
+                    <div className="p-1.5 bg-[var(--fundo1)] rounded-lg border border-[var(--bordadg)]">
+                      <span className="text-[8px] text-rose-500 font-bold block font-mono">VIGOR</span>
+                      <span className="text-xs font-mono font-black text-rose-600 dark:text-rose-300">{statusValues.vigor}</span>
                     </div>
                   </div>
 
