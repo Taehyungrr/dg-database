@@ -199,28 +199,17 @@ export const GameIcon: React.FC<GameIconProps> = ({
   const slug = cleanGameIconCode(raw);
   if (!slug) return null;
 
-  // 4. Construct CSS class combinations so Game-Icons (Dropbox), RPG-Awesome, and Game-Icons.net all match
-  const iconClasses = [
-    `game-icon`,
-    `game-icon-${slug}`,
-    `gi`,
-    `gi-${slug}`,
-    `ra`,
-    `ra-${slug}`,
-    className
-  ].join(' ');
-
-  // 5. Render the Font Icon. In case the font is still loading or unavailable, provide Lucide fallback as companion
-  const lucideFallback = getLucideFallback(slug, size, className, combinedStyle);
+  // 4. Construct CSS class strictly for Game-Icons font (avoiding conflicting font-family overrides like ra or gi)
+  const isExplicitRA = raw.startsWith('ra ') || raw.startsWith('ra-');
+  const iconClass = isExplicitRA ? `ra ra-${slug}` : `game-icon game-icon-${slug}`;
 
   return (
     <span className="relative inline-flex items-center justify-center" style={{ display: 'inline-flex' }}>
       <i 
-        className={`${iconClasses} inline-block leading-none not-italic select-none`}
+        className={`${iconClass} ${className} inline-block leading-none not-italic select-none`.trim()}
         style={combinedStyle}
         aria-hidden="true"
       />
-      {/* If icon font glyph is empty / not loaded, some browsers don't show anything. If fallback exists and raw matches, lucide can be used if font glyph fails */}
     </span>
   );
 };
