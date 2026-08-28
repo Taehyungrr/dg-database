@@ -227,6 +227,12 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                 )}
               </div>
 
+              {selectedDeus.descricao && (
+                <div className="text-xs sm:text-sm text-[var(--ctexto2)] leading-relaxed max-w-4xl text-justify">
+                  <BBCodeRenderer text={selectedDeus.descricao} />
+                </div>
+              )}
+
               <div className="flex items-center flex-wrap gap-4 pt-0.5 text-xs text-[var(--ctexto2)]">
                 {selectedDeus.atributos_principais && (
                   <div className="flex items-center gap-1.5 font-medium">

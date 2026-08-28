@@ -165,9 +165,11 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
     try {
       const { data, error } = await client.from('deuses').select('*');
       if (!error && data && data.length > 0) {
+        const initialDeusMap = new Map(INITIAL_DEUSES.map((id) => [id.id, id]));
         const deusesMapeados = data.map((d: any) => {
           const icon = resolveGodIcon(d);
           const cor = d.cor_hex || '#38bdf8';
+          const defaultGod = initialDeusMap.get(d.id);
 
           const mappedDeus: Deus = {
             ...d,
@@ -175,9 +177,9 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
             icone_css: icon,
             simbolo: icon,
             cor_hex: cor,
-            atributos_principais: d.atributos_principais || '',
-            descricao: d.descricao || '',
-            titulo_mitologico: d.titulo_mitologico || ''
+            atributos_principais: d.atributos_principais || defaultGod?.atributos_principais || '',
+            descricao: d.descricao || d.description || d.desc || d.historia || d.bio || defaultGod?.descricao || '',
+            titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || ''
           };
           return mappedDeus;
         });
@@ -197,15 +199,20 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
     }
   }
   
+  const initialDeusMap = new Map(INITIAL_DEUSES.map((id) => [id.id, id]));
   const localList = getLocalData<Deus>(LOCAL_STORAGE_DEUSES, INITIAL_DEUSES);
   const mappedLocal = localList.map((d: any) => {
     const icon = resolveGodIcon(d);
+    const defaultGod = initialDeusMap.get(d.id);
     return {
       ...d,
       icone_url: d.icone_url || icon,
       icone_css: icon,
       simbolo: icon,
-      cor_hex: d.cor_hex || '#38bdf8'
+      cor_hex: d.cor_hex || '#38bdf8',
+      descricao: d.descricao || d.description || d.desc || d.historia || d.bio || defaultGod?.descricao || '',
+      atributos_principais: d.atributos_principais || defaultGod?.atributos_principais || '',
+      titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || ''
     };
   });
 
@@ -249,6 +256,7 @@ export async function fetchAllPoderes(): Promise<Poder[]> {
       if (!error && data && data.length > 0) {
         const mapped = data.map((p: any) => ({
           ...p,
+          tipo_poder: p.tipo_poder || p.tipo_habilidade || p.tipo || p.type || p.tipoPoder,
           icone_url: p.icone_url || p.icone || p.icon || p.icone_css || 'zap'
         }));
         setLocalData(LOCAL_STORAGE_PODERES, mapped);
@@ -261,6 +269,7 @@ export async function fetchAllPoderes(): Promise<Poder[]> {
   const localList = getLocalData<Poder>(LOCAL_STORAGE_PODERES, INITIAL_PODERES);
   return localList.map((p: any) => ({
     ...p,
+    tipo_poder: p.tipo_poder || p.tipo_habilidade || p.tipo || p.type || p.tipoPoder,
     icone_url: p.icone_url || p.icone || p.icon || p.icone_css || 'zap'
   }));
 }

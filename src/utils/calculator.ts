@@ -262,10 +262,15 @@ export function calculateCombatStatus(
  * Even numbers (#2, #4, #6, ...) = 'passivo'
  */
 export function getEffectivePowerType(power: Poder): 'ativo' | 'passivo' {
-  if (power.tipo_poder === 'ativo' || power.tipo_poder === 'passivo') {
-    return power.tipo_poder;
+  if (power) {
+    const rawType = power.tipo_poder || (power as any).tipo_habilidade || (power as any).tipo || (power as any).type || (power as any).tipoPoder;
+    if (rawType) {
+      const tp = String(rawType).toLowerCase().trim();
+      if (tp === 'ativo' || tp.includes('ativ') || tp === 'a') return 'ativo';
+      if (tp === 'passivo' || tp.includes('passiv') || tp === 'p') return 'passivo';
+    }
   }
-  const num = Number(power.numero) || 1;
+  const num = Number(power?.numero) || 1;
   return num % 2 !== 0 ? 'ativo' : 'passivo';
 }
 

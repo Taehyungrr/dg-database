@@ -238,6 +238,13 @@ function parseHtmlTreeInternal(rawHtml: string): ParsedForumData {
       .replace(/[^a-z0-9]/g, '_')
       .trim() || 'deus_' + Date.now();
 
+    let godDesc = '';
+    const descEl = doc.querySelector('.topo .desc, .topo .descricao, .topo p, .topo .subtitulo, .dg-deus-desc');
+    if (descEl && descEl.textContent?.trim()) {
+      godDesc = extractHtmlTextWithLineBreaks(descEl);
+      logs.push(`Descrição do Deus extraída: "${godDesc.substring(0, 40)}..."`);
+    }
+
     const parsedDeus: Partial<Deus> = {
       id: godId,
       nome_grego_romano: godName,
@@ -245,7 +252,7 @@ function parseHtmlTreeInternal(rawHtml: string): ParsedForumData {
       imagem_url: godImage,
       simbolo: '',
       atributos_principais: '',
-      descricao: '',
+      descricao: godDesc,
       titulo_mitologico: ''
     };
 
@@ -397,11 +404,21 @@ function parseHtmlTreeInternal(rawHtml: string): ParsedForumData {
           if (!lvl2) lvl2 = 'Efeito de nível 2.';
           if (!lvl3) lvl3 = 'Efeito de nível 3.';
 
+          let tipoPoder: 'ativo' | 'passivo' | undefined = undefined;
+          const cardHtml = (pCard.outerHTML || '').toLowerCase();
+          const cardText = (pCleanName + ' ' + baseDesc).toLowerCase();
+          if (cardHtml.includes('class="ativo"') || cardHtml.includes('data-tipo="ativo"') || cardText.includes('(ativo)') || cardText.includes('[ativo]') || cardText.includes('tipo: ativo')) {
+            tipoPoder = 'ativo';
+          } else if (cardHtml.includes('class="passivo"') || cardHtml.includes('data-tipo="passivo"') || cardText.includes('(passivo)') || cardText.includes('[passivo]') || cardText.includes('tipo: passivo')) {
+            tipoPoder = 'passivo';
+          }
+
           poderes.push({
             id: `${branchId}_p${pNum}`,
             ramo_id: branchId,
             numero: pNum,
             nome: pCleanName,
+            tipo_poder: tipoPoder,
             descricao_base: baseDesc || 'Habilidade concedida aos semideuses.',
             icone_url: iconUrl,
             nivel_1_desc: lvl1,
@@ -563,11 +580,20 @@ function parseForumBbcodeTree(rawText: string): ParsedForumData {
       const pNum = parseInt(powerTitleMatch[1], 10);
       const pName = powerTitleMatch[2].replace(/\[\/b\]/gi, '').trim();
 
+      let tipoPoder: 'ativo' | 'passivo' | undefined = undefined;
+      const lowerPName = pName.toLowerCase();
+      if (lowerPName.includes('(ativo)') || lowerPName.includes('[ativo]') || lowerPName.includes('tipo: ativo')) {
+        tipoPoder = 'ativo';
+      } else if (lowerPName.includes('(passivo)') || lowerPName.includes('[passivo]') || lowerPName.includes('tipo: passivo')) {
+        tipoPoder = 'passivo';
+      }
+
       currentPower = {
         id: `${currentBranchId}_p${pNum}`,
         ramo_id: currentBranchId,
         numero: pNum,
         nome: pName,
+        tipo_poder: tipoPoder,
         icone_url: 'zap'
       };
       currentSection = 'desc';
@@ -605,6 +631,15 @@ function parseForumBbcodeTree(rawText: string): ParsedForumData {
 
     // Append line to current active section buffer (preserving empty lines or paragraphs)
     if (currentPower && currentSection) {
+      const lowerLine = trimmed.toLowerCase();
+      if (!currentPower.tipo_poder) {
+        if (lowerLine.includes('tipo: ativo') || lowerLine.includes('(ativo)') || lowerLine.includes('[ativo]')) {
+          currentPower.tipo_poder = 'ativo';
+        } else if (lowerLine.includes('tipo: passivo') || lowerLine.includes('(passivo)') || lowerLine.includes('[passivo]')) {
+          currentPower.tipo_poder = 'passivo';
+        }
+      }
+
       if (currentSection === 'desc') descBuffer.push(rawLine);
       else if (currentSection === 'lvl1') lvl1Buffer.push(rawLine);
       else if (currentSection === 'lvl2') lvl2Buffer.push(rawLine);
