@@ -11,6 +11,7 @@ export interface Deus {
   atributos_principais?: string;
   descricao?: string;
   titulo_mitologico?: string;
+  ordem?: number;
 }
 
 export interface Ramo {

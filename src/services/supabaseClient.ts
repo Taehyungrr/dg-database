@@ -182,6 +182,13 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
           return mappedDeus;
         });
 
+        deusesMapeados.sort((a, b) => {
+          if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
+            return a.ordem - b.ordem;
+          }
+          return (a.nome_grego_romano || '').localeCompare(b.nome_grego_romano || '', 'pt-BR');
+        });
+
         setLocalData(LOCAL_STORAGE_DEUSES, deusesMapeados);
         return deusesMapeados as Deus[];
       }
@@ -191,7 +198,7 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
   }
   
   const localList = getLocalData<Deus>(LOCAL_STORAGE_DEUSES, INITIAL_DEUSES);
-  return localList.map((d: any) => {
+  const mappedLocal = localList.map((d: any) => {
     const icon = resolveGodIcon(d);
     return {
       ...d,
@@ -201,6 +208,15 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
       cor_hex: d.cor_hex || '#38bdf8'
     };
   });
+
+  mappedLocal.sort((a, b) => {
+    if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
+      return a.ordem - b.ordem;
+    }
+    return (a.nome_grego_romano || '').localeCompare(b.nome_grego_romano || '', 'pt-BR');
+  });
+
+  return mappedLocal;
 }
 
 /**

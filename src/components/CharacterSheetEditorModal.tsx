@@ -13,6 +13,7 @@ import { generateForumBBCode } from '../utils/bbcode';
 import { matchesAnySearchQuery } from '../utils/textUtils';
 import { PowerIcon } from './PowerIcon';
 import { GameIcon } from './GameIcon';
+import { BBCodeRenderer } from './BBCodeRenderer';
 import { 
   X, 
   Save, 
@@ -37,7 +38,8 @@ import {
   Target,
   AlertTriangle,
   CheckCircle2,
-  User
+  User,
+  BicepsFlexed
 } from 'lucide-react';
 
 interface CharacterSheetEditorModalProps {
@@ -64,6 +66,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   const [formData, setFormData] = useState<FichaPersonagem>(sheet);
   const [editorMode, setEditorMode] = useState<'evolucao' | 'planejamento'>('evolucao');
   const [activeSubTab, setActiveSubTab] = useState<'atributos' | 'poderes' | 'bbcode'>('atributos');
+  const [bbcodeMode, setBbcodeMode] = useState<'delta' | 'full'>(isNew ? 'full' : 'delta');
   const [activeBranchFilter, setActiveBranchFilter] = useState<string>('all');
   const [searchPowerQuery, setSearchPowerQuery] = useState<string>('');
   const [copiedBBCode, setCopiedBBCode] = useState<boolean>(false);
@@ -104,11 +107,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         }
       });
       setEditorMode('evolucao'); // Modo evolução é sempre o default
+      setBbcodeMode(isNew ? 'full' : 'delta');
       setCopiedBBCode(false);
       setSuggestPlanningModal(null);
       setPlanConflictModal(null);
     }
-  }, [isOpen, sheet]);
+  }, [isOpen, sheet, isNew]);
 
   if (!isOpen) return null;
 
@@ -173,6 +177,10 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   const statusLevel = isPlanningMode ? 40 : formData.nivel;
   const statusValues = calculateCombatStatus(statusLevel, currentAttributes);
   const baseStatus = 100 + (10 * Math.max(1, Math.min(70, statusLevel)));
+  const constBonus = Math.max(0, (currentAttributes.constituicao || 1) - 1) * 25;
+  const forcaBonus = Math.max(0, (currentAttributes.forca || 1) - 1) * 25;
+  const magiaBonus = Math.max(0, (currentAttributes.magia || 1) - 1) * 25;
+  const espirBonus = Math.max(0, (currentAttributes.espiritualidade || 1) - 1) * 25;
 
   // Check if a real planning has been configured (meaning it has higher points or custom distribution than current evolution)
   const hasActiveAttributePlanning = useMemo(() => {
@@ -189,41 +197,50 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   }, [planningPowers, evolutionPowers]);
 
   // --- Attribute Handlers ---
-  const applyAttributeChange = (stat: keyof AtributosPersonagem, targetLevel: number) => {
-    if (isPlanningMode) {
-      // In planning mode, edit formData.planejamento.atributos_planejados
-      const updatedPlanAttrs = {
-        ...planningAttributes,
-        [stat]: targetLevel
-      };
-      setFormData((prev) => ({
-        ...prev,
-        planejamento: {
-          ...prev.planejamento,
-          atributos_planejados: updatedPlanAttrs,
-          poderes_planejados: prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }
-        }
-      }));
+  const applyAttributeChange = (stat: keyof AtributosPersonagem, targetLevel: number, forcePlanningMode?: boolean) => {
+    const isPlan = forcePlanningMode !== undefined ? forcePlanningMode : isPlanningMode;
+
+    if (isPlan) {
+      // In planning mode, ONLY edit formData.planejamento.atributos_planejados
+      setFormData((prev) => {
+        const currentPlanAttrs = normalizeAttributes(prev.planejamento?.atributos_planejados || prev.atributos);
+        const updatedPlanAttrs = {
+          ...currentPlanAttrs,
+          [stat]: targetLevel
+        };
+        return {
+          ...prev,
+          planejamento: {
+            ...prev.planejamento,
+            atributos_planejados: updatedPlanAttrs,
+            poderes_planejados: prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }
+          }
+        };
+      });
     } else {
       // In evolution mode, edit formData.atributos and automatically ensure planning is at least this level
-      const updatedEvolAttrs = {
-        ...evolutionAttributes,
-        [stat]: targetLevel
-      };
-      const updatedPlanAttrs = {
-        ...planningAttributes,
-        [stat]: Math.max(planningAttributes[stat] || 1, targetLevel)
-      };
+      setFormData((prev) => {
+        const currentEvolAttrs = normalizeAttributes(prev.atributos);
+        const currentPlanAttrs = normalizeAttributes(prev.planejamento?.atributos_planejados || prev.atributos);
+        const updatedEvolAttrs = {
+          ...currentEvolAttrs,
+          [stat]: targetLevel
+        };
+        const updatedPlanAttrs = {
+          ...currentPlanAttrs,
+          [stat]: Math.max(currentPlanAttrs[stat] || 1, targetLevel)
+        };
 
-      setFormData((prev) => ({
-        ...prev,
-        atributos: updatedEvolAttrs,
-        planejamento: {
-          ...prev.planejamento,
-          atributos_planejados: updatedPlanAttrs,
-          poderes_planejados: prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }
-        }
-      }));
+        return {
+          ...prev,
+          atributos: updatedEvolAttrs,
+          planejamento: {
+            ...prev.planejamento,
+            atributos_planejados: updatedPlanAttrs,
+            poderes_planejados: prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }
+          }
+        };
+      });
     }
   };
 
@@ -253,7 +270,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
               setEditorMode('planejamento');
               const planRemaining = 20 - getSpentAttributePoints(planningAttributes);
               if (planRemaining >= pointsNeeded) {
-                applyAttributeChange(stat, intendedLevel);
+                applyAttributeChange(stat, intendedLevel, true);
                 showToast(`Entrou no Modo Planejamento e definiu ${stat.toUpperCase()} para Nível ${intendedLevel}!`);
               } else {
                 showToast('Entrou no Modo Planejamento.');
@@ -340,45 +357,51 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   };
 
   // --- Power Handlers ---
-  const applyPowerChange = (poderId: string, targetLevel: number) => {
-    if (isPlanningMode) {
-      const updatedPlanPowers = { ...(formData.planejamento?.poderes_planejados || { ...evolutionPowers }) };
-      if (targetLevel <= 0) {
-        delete updatedPlanPowers[poderId];
-      } else {
-        updatedPlanPowers[poderId] = targetLevel;
-      }
+  const applyPowerChange = (poderId: string, targetLevel: number, forcePlanningMode?: boolean) => {
+    const isPlan = forcePlanningMode !== undefined ? forcePlanningMode : isPlanningMode;
 
-      setFormData((prev) => ({
-        ...prev,
-        planejamento: {
-          ...prev.planejamento,
-          poderes_planejados: updatedPlanPowers,
-          atributos_planejados: prev.planejamento?.atributos_planejados || { ...evolutionAttributes }
+    if (isPlan) {
+      setFormData((prev) => {
+        const updatedPlanPowers = { ...(prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }) };
+        if (targetLevel <= 0) {
+          delete updatedPlanPowers[poderId];
+        } else {
+          updatedPlanPowers[poderId] = targetLevel;
         }
-      }));
+
+        return {
+          ...prev,
+          planejamento: {
+            ...prev.planejamento,
+            poderes_planejados: updatedPlanPowers,
+            atributos_planejados: prev.planejamento?.atributos_planejados || { ...normalizeAttributes(prev.atributos) }
+          }
+        };
+      });
     } else {
-      const updatedEvolPowers = { ...(formData.poderes_comprados || {}) };
-      if (targetLevel <= 0) {
-        delete updatedEvolPowers[poderId];
-      } else {
-        updatedEvolPowers[poderId] = targetLevel;
-      }
-
-      const updatedPlanPowers = { ...(formData.planejamento?.poderes_planejados || { ...evolutionPowers }) };
-      if (targetLevel > (updatedPlanPowers[poderId] || 0)) {
-        updatedPlanPowers[poderId] = targetLevel;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        poderes_comprados: updatedEvolPowers,
-        planejamento: {
-          ...prev.planejamento,
-          poderes_planejados: updatedPlanPowers,
-          atributos_planejados: prev.planejamento?.atributos_planejados || { ...evolutionAttributes }
+      setFormData((prev) => {
+        const updatedEvolPowers = { ...(prev.poderes_comprados || {}) };
+        if (targetLevel <= 0) {
+          delete updatedEvolPowers[poderId];
+        } else {
+          updatedEvolPowers[poderId] = targetLevel;
         }
-      }));
+
+        const updatedPlanPowers = { ...(prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }) };
+        if (targetLevel > (updatedPlanPowers[poderId] || 0)) {
+          updatedPlanPowers[poderId] = targetLevel;
+        }
+
+        return {
+          ...prev,
+          poderes_comprados: updatedEvolPowers,
+          planejamento: {
+            ...prev.planejamento,
+            poderes_planejados: updatedPlanPowers,
+            atributos_planejados: prev.planejamento?.atributos_planejados || { ...normalizeAttributes(prev.atributos) }
+          }
+        };
+      });
     }
   };
 
@@ -415,7 +438,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
             const testPlan = { ...planningPowers, [poderId]: targetLevel };
             const testPlanResult = calculateSheetPoints(40, testPlan, godPoderes, godRamos);
             if (testPlanResult.pointsRemaining >= 0) {
-              applyPowerChange(poderId, targetLevel);
+              applyPowerChange(poderId, targetLevel, true);
               showToast(`Entrou no Modo Planejamento e adicionou Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}"!`);
             } else {
               showToast('Entrou no Modo Planejamento.');
@@ -529,13 +552,17 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     onClose();
   };
 
-  const bbcodeContent = generateForumBBCode(
-    formData,
-    selectedDeus,
-    godRamos,
-    godPoderes,
-    evolutionPowersCalc
-  );
+  const bbcodeContent = useMemo(() => {
+    return generateForumBBCode(
+      formData,
+      selectedDeus,
+      godRamos,
+      godPoderes,
+      evolutionPowersCalc,
+      isNew ? null : sheet,
+      { onlyDelta: bbcodeMode === 'delta' }
+    );
+  }, [formData, selectedDeus, godRamos, godPoderes, evolutionPowersCalc, isNew, sheet, bbcodeMode]);
 
   const handleCopyBBCode = () => {
     navigator.clipboard.writeText(bbcodeContent);
@@ -576,7 +603,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       borderActive: 'border-rose-500/40',
       dotFilledClass: 'bg-rose-500 text-black border-rose-400 shadow-rose-500/40 shadow-sm font-black',
       dotGlowClass: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]',
-      icon: Flame
+      icon: BicepsFlexed
     },
     {
       key: 'destreza',
@@ -609,7 +636,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       borderActive: 'border-emerald-500/40',
       dotFilledClass: 'bg-emerald-500 text-black border-emerald-400 shadow-emerald-500/40 shadow-sm font-black',
       dotGlowClass: 'shadow-[0_0_10px_rgba(16,185,129,0.5)]',
-      icon: Heart
+      icon: Shield
     },
     {
       key: 'inteligencia',
@@ -631,7 +658,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       borderActive: 'border-pink-500/40',
       dotFilledClass: 'bg-pink-500 text-black border-pink-400 shadow-pink-500/40 shadow-sm font-black',
       dotGlowClass: 'shadow-[0_0_10px_rgba(236,72,153,0.5)]',
-      icon: Award
+      icon: Heart
     },
     {
       key: 'natureza',
@@ -664,7 +691,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       borderActive: 'border-cyan-500/40',
       dotFilledClass: 'bg-cyan-500 text-black border-cyan-400 shadow-cyan-500/40 shadow-sm font-black',
       dotGlowClass: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]',
-      icon: Shield
+      icon: Flame
     }
   ];
 
@@ -1003,7 +1030,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       >
                         {sortedDeuses.map((d) => (
                           <option key={d.id} value={d.id} className="bg-[var(--fundo2)] text-[var(--ctexto1)]">
-                            {d.nome_grego_romano} {d.atributos_principais ? `(${d.atributos_principais})` : ''}
+                            {d.nome_grego_romano}
                           </option>
                         ))}
                       </select>
@@ -1087,14 +1114,10 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
                     {selectedDeus.atributos_principais && (
                       <div className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[var(--fundo2)]/90 border border-[var(--bordadg)] text-[var(--ctexto1)] flex items-center justify-between">
-                        <span className="text-[var(--ctexto2)] uppercase text-[9px] font-bold">Foco Divino:</span>
+                        <span className="text-[var(--ctexto2)] uppercase text-[9px] font-bold">Atributos Principais:</span>
                         <strong className="text-[var(--ctexto1)] font-mono">{selectedDeus.atributos_principais}</strong>
                       </div>
                     )}
-
-                    <p className="text-[11px] text-[var(--ctexto2)] leading-relaxed line-clamp-2">
-                      {selectedDeus.descricao || 'Progenitor divino com linhagem e poderes no RPG Divine Ground.'}
-                    </p>
                   </div>
 
                   {/* Card 3: Status Calculados de Combate */}
@@ -1115,34 +1138,49 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                     <div className="space-y-2.5">
                       
                       {/* VIDA */}
-                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-emerald-900/40 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vida</span>
+                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-emerald-900/40 flex items-center justify-between gap-3">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Heart className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vida</span>
+                          </div>
+                          <div className="text-[10px] text-[var(--ctexto2)] font-mono pl-6">
+                            {baseStatus} (nível) + {constBonus} (con)
+                          </div>
                         </div>
-                        <span className="text-xl font-mono font-black text-emerald-500 tracking-tight">
+                        <span className="text-xl font-mono font-black text-emerald-500 tracking-tight shrink-0">
                           {statusValues.vida}
                         </span>
                       </div>
 
                       {/* MANA */}
-                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-purple-900/40 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Mana</span>
+                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-purple-900/40 flex items-center justify-between gap-3">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Mana</span>
+                          </div>
+                          <div className="text-[10px] text-[var(--ctexto2)] font-mono pl-6">
+                            {baseStatus} (nível) + {magiaBonus} (mag) + {espirBonus} (esp)
+                          </div>
                         </div>
-                        <span className="text-xl font-mono font-black text-purple-500 tracking-tight">
+                        <span className="text-xl font-mono font-black text-purple-500 tracking-tight shrink-0">
                           {statusValues.mana}
                         </span>
                       </div>
 
                       {/* VIGOR */}
-                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-rose-900/40 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Flame className="w-4 h-4 text-rose-400 shrink-0" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vigor</span>
+                      <div className="p-2.5 rounded-xl bg-[var(--fundo1)] border border-rose-900/40 flex items-center justify-between gap-3">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Flame className="w-4 h-4 text-rose-400 shrink-0" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ctexto1)] leading-none">Vigor</span>
+                          </div>
+                          <div className="text-[10px] text-[var(--ctexto2)] font-mono pl-6">
+                            {baseStatus} (nível) + {forcaBonus} (for)
+                          </div>
                         </div>
-                        <span className="text-xl font-mono font-black text-rose-500 tracking-tight">
+                        <span className="text-xl font-mono font-black text-rose-500 tracking-tight shrink-0">
                           {statusValues.vigor}
                         </span>
                       </div>
@@ -1636,7 +1674,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                 <span className="font-bold text-[var(--ctexto1)] uppercase text-xs tracking-wider block mb-1">
                                   Descrição Geral:
                                 </span>
-                                <p className="text-justify whitespace-pre-line break-words">{cleanDesc || 'Sem descrição cadastrada.'}</p>
+                                <div className="text-justify whitespace-pre-line break-words">
+                                  {cleanDesc ? <BBCodeRenderer text={cleanDesc} /> : 'Sem descrição cadastrada.'}
+                                </div>
                               </div>
 
                               {/* FULL LEVEL DESCRIPTIONS (NÍVEL 1, 2, 3) */}
@@ -1669,9 +1709,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 1
                                     </span>
                                   </div>
-                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
-                                    {cleanLvl1 || 'Efeito inicial da habilidade.'}
-                                  </p>
+                                  <div className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                    {cleanLvl1 ? <BBCodeRenderer text={cleanLvl1} /> : 'Efeito inicial da habilidade.'}
+                                  </div>
                                 </div>
 
                                 {/* Level 2 */}
@@ -1702,9 +1742,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 2
                                     </span>
                                   </div>
-                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
-                                    {cleanLvl2 || 'Aprimoramento intermediário da habilidade.'}
-                                  </p>
+                                  <div className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                    {cleanLvl2 ? <BBCodeRenderer text={cleanLvl2} /> : 'Aprimoramento intermediário da habilidade.'}
+                                  </div>
                                 </div>
 
                                 {/* Level 3 */}
@@ -1735,9 +1775,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       Nível 3
                                     </span>
                                   </div>
-                                  <p className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
-                                    {cleanLvl3 || 'Potência máxima e maestria da habilidade.'}
-                                  </p>
+                                  <div className="text-[15px] sm:text-[14px] leading-relaxed text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                    {cleanLvl3 ? <BBCodeRenderer text={cleanLvl3} /> : 'Potência máxima e maestria da habilidade.'}
+                                  </div>
                                 </div>
                               </div>
 
@@ -1758,7 +1798,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
           {/* ========================================================================= */}
           {activeSubTab === 'bbcode' && (
             <div className="space-y-4 animate-fadeIn">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
                     <FileCode className="w-4 h-4 text-emerald-400" />
@@ -1769,14 +1809,43 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyBBCode}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-900/30 transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
-                >
-                  {copiedBBCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedBBCode ? 'BBCode Copiado!' : 'Copiar BBCode'}</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {!isNew && (
+                    <div className="flex items-center bg-[var(--fundo1)] p-1 rounded-xl border border-[var(--bordadg)] gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setBbcodeMode('delta')}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                          bbcodeMode === 'delta'
+                            ? 'bg-emerald-600 text-white shadow'
+                            : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
+                        }`}
+                      >
+                        Apenas Alterações (Delta)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBbcodeMode('full')}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                          bbcodeMode === 'full'
+                            ? 'bg-emerald-600 text-white shadow'
+                            : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
+                        }`}
+                      >
+                        Ficha Completa
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleCopyBBCode}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-900/30 transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+                  >
+                    {copiedBBCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedBBCode ? 'BBCode Copiado!' : 'Copiar BBCode'}</span>
+                  </button>
+                </div>
               </div>
 
               <textarea

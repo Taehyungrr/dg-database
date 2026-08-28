@@ -5,6 +5,7 @@ import { matchesAnySearchQuery } from '../utils/textUtils';
 import { getEffectivePowerType } from '../utils/calculator';
 import { PowerIcon } from './PowerIcon';
 import { GameIcon } from './GameIcon';
+import { BBCodeRenderer } from './BBCodeRenderer';
 import { 
   Shield, 
   Search,
@@ -26,13 +27,32 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
   poderes,
   onOpenCreateSheetWithDeus
 }) => {
-  // Selected God ID for viewing
-  const [selectedDeusId, setSelectedDeusId] = useState<string>(() => deuses[0]?.id || 'poseidon');
+  // Sort deuses in the exact sequence shown in the selector
+  const sortedDeuses = React.useMemo(() => {
+    return [...deuses].sort((a, b) => {
+      if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
+        return a.ordem - b.ordem;
+      }
+      return (a.nome_grego_romano || '').localeCompare(b.nome_grego_romano || '', 'pt-BR');
+    });
+  }, [deuses]);
+
+  // Selected God ID for viewing - defaults to the very first god in the rendered sequence
+  const [selectedDeusId, setSelectedDeusId] = useState<string>(() => sortedDeuses[0]?.id || '');
   const [searchDeusQuery, setSearchDeusQuery] = useState<string>('');
   const [searchPowerQuery, setSearchPowerQuery] = useState<string>('');
   const [activeBranchTab, setActiveBranchTab] = useState<string>('all');
 
-  const selectedDeus = deuses.find((d) => d.id === selectedDeusId) || deuses[0] || {
+  // Keep selection synchronized with the first item in the sequence when deuses load/change
+  useEffect(() => {
+    if (sortedDeuses.length > 0) {
+      if (!selectedDeusId || !deuses.some((d) => d.id === selectedDeusId)) {
+        setSelectedDeusId(sortedDeuses[0].id);
+      }
+    }
+  }, [sortedDeuses, selectedDeusId, deuses]);
+
+  const selectedDeus = deuses.find((d) => d.id === selectedDeusId) || sortedDeuses[0] || {
     id: 'poseidon',
     nome_grego_romano: 'Poseidon / Netuno',
     cor_hex: '#0ea5e9',
@@ -70,14 +90,12 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
     return oA - oB;
   });
 
-  const filteredDeuses = [...deuses]
-    .filter((d) => {
-      return matchesAnySearchQuery(
-        [d.nome_grego_romano, d.atributos_principais],
-        searchDeusQuery
-      );
-    })
-    .sort((a, b) => a.nome_grego_romano.localeCompare(b.nome_grego_romano, 'pt-BR'));
+  const filteredDeuses = sortedDeuses.filter((d) => {
+    return matchesAnySearchQuery(
+      [d.nome_grego_romano, d.atributos_principais],
+      searchDeusQuery
+    );
+  });
 
   const displayedRamos = activeBranchTab === 'all'
     ? sortedGodRamos
@@ -209,11 +227,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                 )}
               </div>
 
-              <p className="text-xs sm:text-sm text-[var(--ctexto2)] leading-relaxed text-justify whitespace-pre-line break-words">
-                {selectedDeus.descricao || 'Árvore de poderes e aptidões mitológicas exclusivas dos semideuses desta linhagem.'}
-              </p>
-
-              <div className="flex items-center flex-wrap gap-4 pt-1 text-xs text-[var(--ctexto2)]">
+              <div className="flex items-center flex-wrap gap-4 pt-0.5 text-xs text-[var(--ctexto2)]">
                 {selectedDeus.atributos_principais && (
                   <div className="flex items-center gap-1.5 font-medium">
                     <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: godColor }} />
@@ -424,7 +438,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                             <strong className="text-[var(--ctexto1)] block mb-1 text-xs uppercase tracking-wider font-mono">
                               Descrição:
                             </strong>
-                            {poder.descricao_base}
+                            <BBCodeRenderer text={poder.descricao_base} />
                           </div>
                         )}
 
@@ -437,7 +451,9 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                               <span className="text-xs font-mono font-bold text-blue-500 uppercase tracking-wider block mb-1">
                                 Nível 1
                               </span>
-                              <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_1_desc}</p>
+                              <div className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                <BBCodeRenderer text={poder.nivel_1_desc} />
+                              </div>
                             </div>
                           )}
 
@@ -447,7 +463,9 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                               <span className="text-xs font-mono font-bold text-purple-500 uppercase tracking-wider block mb-1">
                                 Nível 2
                               </span>
-                              <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_2_desc}</p>
+                              <div className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                <BBCodeRenderer text={poder.nivel_2_desc} />
+                              </div>
                             </div>
                           )}
 
@@ -457,7 +475,9 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                               <span className="text-xs font-mono font-bold text-amber-500 uppercase tracking-wider block mb-1">
                                 Nível 3
                               </span>
-                              <p className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">{poder.nivel_3_desc}</p>
+                              <div className="text-[var(--ctexto1)] text-justify whitespace-pre-line break-words">
+                                <BBCodeRenderer text={poder.nivel_3_desc} />
+                              </div>
                             </div>
                           )}
 

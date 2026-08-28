@@ -1,5 +1,9 @@
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
-import { SheetCalculationResult } from './calculator';
+import { calculateSheetPoints, SheetCalculationResult } from './calculator';
+
+export interface BBCodeOptions {
+  onlyDelta?: boolean;
+}
 
 /**
  * Generates the official Percy Jackson RPG forum BBCode update format
@@ -13,6 +17,7 @@ import { SheetCalculationResult } from './calculator';
  * ...
  * 
  * Poderes no template:
+ * [code]
  * [h2]Tronco[/h2]
  * [b]1. Consequência[/b]
  * [b]Descrição:[/b] ...
@@ -21,13 +26,16 @@ import { SheetCalculationResult } from './calculator';
  * 
  * [h2]RAMO 1:  ARAUTO DA DESTRUIÇÃO[/h2]
  * ...
+ * [/code]
  */
 export function generateForumBBCode(
   ficha: FichaPersonagem,
   _deus: Deus | undefined,
   ramos: Ramo[],
   poderes: Poder[],
-  calcResult: SheetCalculationResult
+  calcResult: SheetCalculationResult,
+  baseFicha?: FichaPersonagem | null,
+  options?: BBCodeOptions
 ): string {
   // Sort ramos in standard order: tronco, ramo1, ramo2, ramo3
   const branchOrder: Record<string, number> = {
@@ -43,7 +51,18 @@ export function generateForumBBCode(
     return ordA - ordB;
   });
 
-  // 1. GATHER MANUAL POINT INVESTMENTS
+  const isDeltaMode = options?.onlyDelta !== false && !!baseFicha;
+  let baseCalcResult: SheetCalculationResult | null = null;
+  if (isDeltaMode && baseFicha) {
+    baseCalcResult = calculateSheetPoints(
+      baseFicha.nivel || 1,
+      baseFicha.poderes_comprados || {},
+      poderes,
+      ramos
+    );
+  }
+
+  // 1. GATHER MANUAL POINT INVESTMENTS (Delta if editing saved state, or Full if new/requested)
   const investmentLines: string[] = [];
 
   sortedRamos.forEach((ramo) => {
@@ -52,12 +71,11 @@ export function generateForumBBCode(
       .sort((a, b) => a.numero - b.numero);
 
     ramoPowers.forEach((poder) => {
-      const costInfo = calcResult.powerDetails[poder.id];
-      if (!costInfo || costInfo.pointsSpentOnThisPower <= 0) return;
+      const currentCostInfo = calcResult.powerDetails[poder.id];
+      if (!currentCostInfo) return;
 
-      const spent = costInfo.pointsSpentOnThisPower;
-      const effLevel = costInfo.effectiveLevel;
-      const isFreeLvl1 = costInfo.isFreeLvl1;
+      const currEff = currentCostInfo.effectiveLevel;
+      const isFreeLvl1 = currentCostInfo.isFreeLvl1;
 
       // Determine Ramo display label
       let ramoLabel = 'Tronco';
@@ -66,31 +84,72 @@ export function generateForumBBCode(
       else if (ramo.tipo === 'ramo3') ramoLabel = 'Ramo 3';
       else if (ramo.tipo !== 'tronco') ramoLabel = ramo.nome;
 
-      let levelText = '';
-      if (isFreeLvl1) {
-        if (effLevel === 2) {
-          levelText = `o nível 2`;
-        } else if (effLevel === 3) {
-          levelText = `os níveis 2 e 3`;
+      if (isDeltaMode && baseCalcResult) {
+        const baseCostInfo = baseCalcResult.powerDetails[poder.id];
+        const baseEff = baseCostInfo ? baseCostInfo.effectiveLevel : 0;
+
+        if (currEff > baseEff) {
+          const baseSpent = baseCostInfo ? baseCostInfo.pointsSpentOnThisPower : 0;
+          const currentSpent = currentCostInfo.pointsSpentOnThisPower;
+          const deltaSpent = Math.max(0, currentSpent - baseSpent);
+
+          if (deltaSpent > 0) {
+            let levelText = '';
+            if (baseEff === 0) {
+              if (currEff === 1) {
+                levelText = 'o nível 1';
+              } else if (currEff === 2) {
+                levelText = isFreeLvl1 ? 'o nível 2' : 'os níveis 1 e 2';
+              } else if (currEff === 3) {
+                levelText = isFreeLvl1 ? 'os níveis 2 e 3' : 'os níveis 1, 2 e 3';
+              }
+            } else if (baseEff === 1) {
+              if (currEff === 2) {
+                levelText = 'o nível 2';
+              } else if (currEff === 3) {
+                levelText = 'os níveis 2 e 3';
+              }
+            } else if (baseEff === 2) {
+              if (currEff === 3) {
+                levelText = 'o nível 3';
+              }
+            }
+
+            const pontoWord = deltaSpent === 1 ? '1 ponto' : `${deltaSpent} pontos`;
+            investmentLines.push(`${pontoWord} para ${levelText} do poder ${poder.nome} (${ramoLabel})`);
+          }
         }
       } else {
-        if (effLevel === 1) {
-          levelText = `o nível 1`;
-        } else if (effLevel === 2) {
-          levelText = `os níveis 1 e 2`;
-        } else if (effLevel === 3) {
-          levelText = `os níveis 1, 2 e 3`;
-        }
-      }
+        // Full investment list mode
+        if (currentCostInfo.pointsSpentOnThisPower <= 0) return;
 
-      const pontoWord = spent === 1 ? '1 ponto' : `${spent} pontos`;
-      investmentLines.push(`${pontoWord} para ${levelText} do poder ${poder.nome} (${ramoLabel})`);
+        const spent = currentCostInfo.pointsSpentOnThisPower;
+        let levelText = '';
+        if (isFreeLvl1) {
+          if (currEff === 2) {
+            levelText = `o nível 2`;
+          } else if (currEff === 3) {
+            levelText = `os níveis 2 e 3`;
+          }
+        } else {
+          if (currEff === 1) {
+            levelText = `o nível 1`;
+          } else if (currEff === 2) {
+            levelText = `os níveis 1 e 2`;
+          } else if (currEff === 3) {
+            levelText = `os níveis 1, 2 e 3`;
+          }
+        }
+
+        const pontoWord = spent === 1 ? '1 ponto' : `${spent} pontos`;
+        investmentLines.push(`${pontoWord} para ${levelText} do poder ${poder.nome} (${ramoLabel})`);
+      }
     });
   });
 
   const investimentoSection = investmentLines.length > 0
     ? investmentLines.join('\n')
-    : 'Nenhum ponto de poder investido manualmente.';
+    : (isDeltaMode ? 'Nenhum novo ponto de poder investido nesta atualização.' : 'Nenhum ponto de poder investido manualmente.');
 
   // 2. GATHER POWERS IN FORUM TEMPLATE FORMAT (Grouped by Branch)
   const templateBranches: string[] = [];
@@ -125,7 +184,7 @@ export function generateForumBBCode(
       const effLevel = costInfo ? costInfo.effectiveLevel : 1;
 
       // Clean base description formatting
-      let cleanBaseDesc = poder.descricao_base
+      let cleanBaseDesc = (poder.descricao_base || '')
         .replace(/^\[b\]\[b\]Descrição:\[\/b\]\[\/b\]\s*/i, '')
         .replace(/^\[b\]Descrição:\[\/b\]\s*/i, '')
         .replace(/^Descrição:\s*/i, '')
@@ -133,21 +192,21 @@ export function generateForumBBCode(
 
       let levelsSection = '';
       if (effLevel >= 1) {
-        let cleanLvl1 = poder.nivel_1_desc
+        let cleanLvl1 = (poder.nivel_1_desc || '')
           .replace(/^\[b\]Nível 1\[\/b\]\s*/i, '')
           .replace(/^Nível 1:\s*/i, '')
           .trim();
         levelsSection += `\n[b]Nível 1:[/b] ${cleanLvl1}`;
       }
       if (effLevel >= 2) {
-        let cleanLvl2 = poder.nivel_2_desc
+        let cleanLvl2 = (poder.nivel_2_desc || '')
           .replace(/^\[b\]Nível 2\[\/b\]\s*/i, '')
           .replace(/^Nível 2:\s*/i, '')
           .trim();
         levelsSection += `\n[b]Nível 2:[/b] ${cleanLvl2}`;
       }
       if (effLevel >= 3) {
-        let cleanLvl3 = poder.nivel_3_desc
+        let cleanLvl3 = (poder.nivel_3_desc || '')
           .replace(/^\[b\]Nível 3\[\/b\]\s*/i, '')
           .replace(/^Nível 3:\s*/i, '')
           .trim();
@@ -165,12 +224,13 @@ export function generateForumBBCode(
     : '[i]Nenhum poder ativo selecionado.[/i]';
 
   const output = `Nome do personagem: ${ficha.nome || 'Håkon Varg'}
-
 Investimento dos pontos:
 ${investimentoSection}
 
 Poderes no template:
-${poderesTemplateSection}`;
+[code]${poderesTemplateSection}
+[/code]`;
 
   return output;
 }
+

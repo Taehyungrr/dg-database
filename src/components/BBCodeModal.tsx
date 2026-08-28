@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
 import { calculateSheetPoints } from '../utils/calculator';
 import { generateForumBBCode } from '../utils/bbcode';
+import { BBCodeRenderer } from './BBCodeRenderer';
 import { X, Copy, Check, Download, FileCode, Eye } from 'lucide-react';
 
 interface BBCodeModalProps {
@@ -210,21 +211,21 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
                                 {p.numero}. {p.nome}
                               </div>
                               <div className="text-[11px] text-[var(--ctexto2)]">
-                                <strong className="text-[var(--ctexto1)]">Descrição:</strong> {p.descricao_base}
+                                <strong className="text-[var(--ctexto1)]">Descrição:</strong> <BBCodeRenderer text={p.descricao_base || ''} />
                               </div>
                               {eff >= 1 && (
                                 <div className="text-[11px] text-[var(--ctexto1)]">
-                                  <strong className="text-blue-500">Nível 1:</strong> {p.nivel_1_desc}
+                                  <strong className="text-blue-500">Nível 1:</strong> <BBCodeRenderer text={p.nivel_1_desc || ''} />
                                 </div>
                               )}
                               {eff >= 2 && (
                                 <div className="text-[11px] text-[var(--ctexto1)]">
-                                  <strong className="text-blue-500">Nível 2:</strong> {p.nivel_2_desc}
+                                  <strong className="text-blue-500">Nível 2:</strong> <BBCodeRenderer text={p.nivel_2_desc || ''} />
                                 </div>
                               )}
                               {eff >= 3 && (
                                 <div className="text-[11px] text-[var(--ctexto1)]">
-                                  <strong className="text-blue-500">Nível 3:</strong> {p.nivel_3_desc}
+                                  <strong className="text-blue-500">Nível 3:</strong> <BBCodeRenderer text={p.nivel_3_desc || ''} />
                                 </div>
                               )}
                             </div>
