@@ -12,6 +12,7 @@ export interface Deus {
   descricao?: string;
   titulo_mitologico?: string;
   ordem?: number;
+  dificuldade?: number | string;
 }
 
 export interface Ramo {

@@ -179,7 +179,8 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
             cor_hex: cor,
             atributos_principais: d.atributos_principais || defaultGod?.atributos_principais || '',
             descricao: d.descricao || d.description || d.desc || d.historia || d.bio || defaultGod?.descricao || '',
-            titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || ''
+            titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || '',
+            dificuldade: d.dificuldade ?? d.difficulty ?? defaultGod?.dificuldade ?? 1
           };
           return mappedDeus;
         });
@@ -212,7 +213,8 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
       cor_hex: d.cor_hex || '#38bdf8',
       descricao: d.descricao || d.description || d.desc || d.historia || d.bio || defaultGod?.descricao || '',
       atributos_principais: d.atributos_principais || defaultGod?.atributos_principais || '',
-      titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || ''
+      titulo_mitologico: d.titulo_mitologico || defaultGod?.titulo_mitologico || '',
+      dificuldade: d.dificuldade ?? d.difficulty ?? defaultGod?.dificuldade ?? 1
     };
   });
 

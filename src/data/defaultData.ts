@@ -10,7 +10,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'trident-shield',
     atributos_principais: 'Natureza / Força',
     descricao: 'Senhor dos Mares, Terremotos, Cavalos e Tempestades Oceânicas. Seus filhos possuem maestria com a água, vigor aprimorado quando molhados e controle geológico.',
-    titulo_mitologico: 'O Abalador da Terra, Rei dos Oceanos'
+    titulo_mitologico: 'O Abalador da Terra, Rei dos Oceanos',
+    dificuldade: 2
   },
   {
     id: 'zeus',
@@ -21,7 +22,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'bolt-shield',
     atributos_principais: 'Natureza / Poder Mágico',
     descricao: 'Rei dos Deuses, Senhor dos Céus e das Tempestades Elétricas. Seus semideuses dominam a aerocinese, relâmpagos e possuem liderança inata.',
-    titulo_mitologico: 'Rei do Olimpo, Soberano dos Céus'
+    titulo_mitologico: 'Rei do Olimpo, Soberano dos Céus',
+    dificuldade: 2
   },
   {
     id: 'hades',
@@ -32,7 +34,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'skull-shield',
     atributos_principais: 'Poder Mágico / Vitalidade',
     descricao: 'Senhor do Submundo, dos Mortos e de todas as Riquezas Minerais da Terra. Seus filhos comandam sombras, ossos e manipulam metais subterrâneos.',
-    titulo_mitologico: 'O Invisível, Senhor do Érebo'
+    titulo_mitologico: 'O Invisível, Senhor do Érebo',
+    dificuldade: 3
   },
   {
     id: 'atena',
@@ -43,7 +46,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'roman-shield',
     atributos_principais: 'Intelecto / Agilidade',
     descricao: 'Deusa da Sabedoria, Estratégia de Batalha, Artesanato e Justiça. Seus filhos são gênios táticos, mestres no combate analítico e arquitetura.',
-    titulo_mitologico: 'A de Olhos Cinzentos, Deusa da Estratégia'
+    titulo_mitologico: 'A de Olhos Cinzentos, Deusa da Estratégia',
+    dificuldade: 3
   },
   {
     id: 'ares',
@@ -54,7 +58,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'battle-axe',
     atributos_principais: 'Força / Vitalidade',
     descricao: 'Deus da Guerra Selvagem, Força Bruta e Frenesi de Batalha. Seus guerreiros possuem vigor descomunal, fúria e domínio perfeito de qualquer arma.',
-    titulo_mitologico: 'O Destruidor de Cidades, Senhor da Guerra'
+    titulo_mitologico: 'O Destruidor de Cidades, Senhor da Guerra',
+    dificuldade: 1
   },
   {
     id: 'apolo',
@@ -65,7 +70,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'barbed-sun',
     atributos_principais: 'Agilidade / Poder Mágico',
     descricao: 'Deus da Luz Solar, Música, Poesia, Profecia, Arquearia e Medicina. Seus semideuses são arqueiros infalíveis, curandeiros e canalizam o brilho solar.',
-    titulo_mitologico: 'O Arqueiro Brilhante, Deus da Verdade e Cura'
+    titulo_mitologico: 'O Arqueiro Brilhante, Deus da Verdade e Cura',
+    dificuldade: 1
   },
   {
     id: 'hefesto',
@@ -76,7 +82,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'anvil',
     atributos_principais: 'Força / Intelecto',
     descricao: 'Senhor do Fogo, Vulcões, Metalurgia e Forjas Divinas. Seus filhos possuem imunidade a altas temperaturas, telecinese mecânica e perícia em forja.',
-    titulo_mitologico: 'O Grande Artífice do Olimpo'
+    titulo_mitologico: 'O Grande Artífice do Olimpo',
+    dificuldade: 2
   },
   {
     id: 'afrodite',
@@ -87,7 +94,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'heart-necklace',
     atributos_principais: 'Carisma / Poder Mágico',
     descricao: 'Deusa do Amor, Beleza, Paixão e Desejo. Seus filhos dominam a persuasão sobrenatural (Charmspeak), ilusões de beleza e aura atordoante.',
-    titulo_mitologico: 'A Nascida da Espuma, Senhora do Desejo'
+    titulo_mitologico: 'A Nascida da Espuma, Senhora do Desejo',
+    dificuldade: 1
   },
   {
     id: 'hermes',
@@ -98,7 +106,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'winged-shield',
     atributos_principais: 'Agilidade / Destreza',
     descricao: 'Mensageiro dos Deuses, Patrono dos Viajantes, Ladrões, Comércio e Eloquência. Seus filhos são velozes, destrancam qualquer fechadura e são astutos.',
-    titulo_mitologico: 'O Guia das Almas, Senhor da Agilidade'
+    titulo_mitologico: 'O Guia das Almas, Senhor da Agilidade',
+    dificuldade: 1
   },
   {
     id: 'hecate',
@@ -109,7 +118,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'magic-portal',
     atributos_principais: 'Poder Mágico / Intelecto',
     descricao: 'Deusa da Magia, Bruxaria, Encruzilhadas e da Névoa (Mist). Seus descendentes manipulam feitiços arcanos, poções e controlam a realidade mortal.',
-    titulo_mitologico: 'Senhora das Encruzilhadas e da Névoa'
+    titulo_mitologico: 'Senhora das Encruzilhadas e da Névoa',
+    dificuldade: 3
   },
   {
     id: 'demeter',
@@ -120,7 +130,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'wheat',
     atributos_principais: 'Natureza / Vitalidade',
     descricao: 'Deusa da Agricultura, Colheitas, Fertilidade e Estações. Seus filhos controlam plantas, raízes esmagadoras e regeneração natural.',
-    titulo_mitologico: 'A Provedora de Frutos, Senhora da Colheita'
+    titulo_mitologico: 'A Provedora de Frutos, Senhora da Colheita',
+    dificuldade: 1
   },
   {
     id: 'dionisio',
@@ -131,7 +142,8 @@ export const INITIAL_DEUSES: Deus[] = [
     icone_css: 'grapes',
     atributos_principais: 'Carisma / Poder Mágico',
     descricao: 'Deus do Vinho, Festas, Loucura e Teatro. Seus filhos induzem euforia, confusão mental desorientadora e manipulam videiras monstruosas.',
-    titulo_mitologico: 'O Libertador, Senhor do Delírio'
+    titulo_mitologico: 'O Libertador, Senhor do Delírio',
+    dificuldade: 2
   }
 ];
 

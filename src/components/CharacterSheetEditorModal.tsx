@@ -14,6 +14,7 @@ import { matchesAnySearchQuery } from '../utils/textUtils';
 import { PowerIcon } from './PowerIcon';
 import { GameIcon } from './GameIcon';
 import { BBCodeRenderer } from './BBCodeRenderer';
+import { DifficultyIndicator } from './DifficultyIndicator';
 import { 
   X, 
   Save, 
@@ -1101,9 +1102,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <span className="font-cinzel text-xs sm:text-sm font-bold block truncate" style={{ color: godColor }}>
-                          {selectedDeus.nome_grego_romano}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-cinzel text-xs sm:text-sm font-bold truncate" style={{ color: godColor }}>
+                            {selectedDeus.nome_grego_romano}
+                          </span>
+                          <DifficultyIndicator level={selectedDeus.dificuldade} size="sm" showLabel />
+                        </div>
                         {selectedDeus.titulo_mitologico && (
                           <span className="text-[11px] text-[var(--ctexto2)] italic block truncate">
                             {selectedDeus.titulo_mitologico}

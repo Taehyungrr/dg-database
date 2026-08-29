@@ -6,6 +6,7 @@ import { getEffectivePowerType } from '../utils/calculator';
 import { PowerIcon } from './PowerIcon';
 import { GameIcon } from './GameIcon';
 import { BBCodeRenderer } from './BBCodeRenderer';
+import { DifficultyIndicator } from './DifficultyIndicator';
 import { 
   Shield, 
   Search,
@@ -225,6 +226,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                     {selectedDeus.titulo_mitologico}
                   </span>
                 )}
+                <DifficultyIndicator level={selectedDeus.dificuldade} size="md" showLabel fullLabel />
               </div>
 
               {selectedDeus.descricao && (
