@@ -14,7 +14,38 @@ import { BBCodeModal } from './components/BBCodeModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('arvore');
+  const [isControlledByParent, setIsControlledByParent] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    // Check initial parent or top window data-theme attribute
+    try {
+      if (typeof window !== 'undefined') {
+        if (window.parent && window.parent !== window) {
+          try {
+            const parentHtml = window.parent.document.documentElement;
+            if (parentHtml && parentHtml.hasAttribute('data-theme')) {
+              const val = parentHtml.getAttribute('data-theme')?.toLowerCase();
+              return val === 'dark' || (val !== 'light' && val?.includes('dark'));
+            }
+          } catch {
+            // Cross-origin
+          }
+        }
+        if (window.top && window.top !== window && window.top !== window.parent) {
+          try {
+            const topHtml = window.top.document.documentElement;
+            if (topHtml && topHtml.hasAttribute('data-theme')) {
+              const val = topHtml.getAttribute('data-theme')?.toLowerCase();
+              return val === 'dark' || (val !== 'light' && val?.includes('dark'));
+            }
+          } catch {
+            // Cross-origin
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     try {
       const stored = localStorage.getItem('pj_theme');
       return stored ? stored === 'dark' : true;
@@ -75,12 +106,143 @@ export default function App() {
     }
   }, []);
 
+  // Check and sync with parent window's <html> data-theme attribute in real-time
+  useEffect(() => {
+    let parentObserver: MutationObserver | null = null;
+    let topObserver: MutationObserver | null = null;
+
+    const evaluateThemeFromElement = (element: HTMLElement): boolean | null => {
+      if (!element || !element.hasAttribute('data-theme')) return null;
+      const val = element.getAttribute('data-theme')?.toLowerCase()?.trim();
+      if (!val) return null;
+      return val === 'dark' || (val !== 'light' && val.includes('dark'));
+    };
+
+    const inspectAndObserveParentTheme = () => {
+      let isHandled = false;
+
+      // 1. Check parent window (e.g. if embedded in iframe)
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        try {
+          const parentHtml = window.parent.document.documentElement;
+          if (parentHtml) {
+            const parentTheme = evaluateThemeFromElement(parentHtml);
+            if (parentTheme !== null) {
+              setIsControlledByParent(true);
+              setIsDarkMode(parentTheme);
+              isHandled = true;
+            }
+
+            // Observe parent <html> for runtime changes to data-theme
+            parentObserver = new MutationObserver(() => {
+              try {
+                const currentTheme = evaluateThemeFromElement(parentHtml);
+                if (currentTheme !== null) {
+                  setIsControlledByParent(true);
+                  setIsDarkMode(currentTheme);
+                } else {
+                  setIsControlledByParent(false);
+                }
+              } catch (err) {
+                console.warn('Erro ao observar mudanças de tema no pai:', err);
+              }
+            });
+
+            parentObserver.observe(parentHtml, {
+              attributes: true,
+              attributeFilter: ['data-theme']
+            });
+          }
+        } catch {
+          // Cross-origin iframe parent
+        }
+      }
+
+      // 2. Check top window if not already handled
+      if (!isHandled && typeof window !== 'undefined' && window.top && window.top !== window && window.top !== window.parent) {
+        try {
+          const topHtml = window.top.document.documentElement;
+          if (topHtml) {
+            const topTheme = evaluateThemeFromElement(topHtml);
+            if (topTheme !== null) {
+              setIsControlledByParent(true);
+              setIsDarkMode(topTheme);
+              isHandled = true;
+            }
+
+            // Observe top <html> for runtime changes
+            topObserver = new MutationObserver(() => {
+              try {
+                const currentTheme = evaluateThemeFromElement(topHtml);
+                if (currentTheme !== null) {
+                  setIsControlledByParent(true);
+                  setIsDarkMode(currentTheme);
+                } else {
+                  setIsControlledByParent(false);
+                }
+              } catch (err) {
+                console.warn('Erro ao observar mudanças de tema no top:', err);
+              }
+            });
+
+            topObserver.observe(topHtml, {
+              attributes: true,
+              attributeFilter: ['data-theme']
+            });
+          }
+        } catch {
+          // Cross-origin top
+        }
+      }
+
+      if (!isHandled) {
+        setIsControlledByParent(false);
+      }
+    };
+
+    inspectAndObserveParentTheme();
+
+    // 3. Fallback / PostMessage listener for cross-origin iframes
+    const handlePostMessage = (event: MessageEvent) => {
+      try {
+        if (!event.data) return;
+        if (typeof event.data === 'object') {
+          const raw = event.data['data-theme'] || event.data.dataTheme || event.data.theme;
+          if (raw === 'dark' || raw === 'light') {
+            setIsControlledByParent(true);
+            setIsDarkMode(raw === 'dark');
+          }
+        } else if (typeof event.data === 'string') {
+          if (event.data.includes('data-theme=dark') || event.data === 'theme:dark' || event.data === 'dark') {
+            setIsControlledByParent(true);
+            setIsDarkMode(true);
+          } else if (event.data.includes('data-theme=light') || event.data === 'theme:light' || event.data === 'light') {
+            setIsControlledByParent(true);
+            setIsDarkMode(false);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('message', handlePostMessage);
+
+    return () => {
+      if (parentObserver) parentObserver.disconnect();
+      if (topObserver) topObserver.disconnect();
+      window.removeEventListener('message', handlePostMessage);
+    };
+  }, []);
+
   // Sync theme with HTML element & local storage
   useEffect(() => {
-    try {
-      localStorage.setItem('pj_theme', isDarkMode ? 'dark' : 'light');
-    } catch (e) {
-      console.warn('Não foi possível salvar tema no localStorage:', e);
+    if (!isControlledByParent) {
+      try {
+        localStorage.setItem('pj_theme', isDarkMode ? 'dark' : 'light');
+      } catch (e) {
+        console.warn('Não foi possível salvar tema no localStorage:', e);
+      }
     }
 
     if (isDarkMode) {
@@ -90,7 +252,7 @@ export default function App() {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, isControlledByParent]);
 
   const handleCreateSheetWithDeus = (deusId: string) => {
     setInitialNewSheetDeusId(deusId);
@@ -110,6 +272,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
+          hideThemeToggle={isControlledByParent}
           isSupabaseConnected={supabaseConfig.isConnected}
           onRefreshData={() => loadData(true)}
           isRefreshing={isRefreshing}

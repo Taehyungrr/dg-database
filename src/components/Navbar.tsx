@@ -18,6 +18,7 @@ interface NavbarProps {
   savedSheetsCount: number;
   isDarkMode: boolean;
   setIsDarkMode: (dark: boolean) => void;
+  hideThemeToggle?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,7 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   isRefreshing = false,
   savedSheetsCount,
   isDarkMode,
-  setIsDarkMode
+  setIsDarkMode,
+  hideThemeToggle = false
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[var(--fundo2)]/95 backdrop-blur-md border-b border-[var(--bordadg)] transition-colors duration-200 py-1.5 sm:py-2">
@@ -101,16 +103,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* Dark / Light Mode Toggle */}
-            <button
-              type="button"
-              id="btn-dark-mode"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-1.5 rounded-xl text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent hover:border-[var(--bordadg)] transition-all cursor-pointer"
-              title={isDarkMode ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
-            >
-              {isDarkMode ? <Moon className="w-3.5 h-3.5 text-blue-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
-            </button>
+            {/* Dark / Light Mode Toggle (Hidden when controlled externally by parent page data-theme) */}
+            {!hideThemeToggle && (
+              <button
+                type="button"
+                id="btn-dark-mode"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-1.5 rounded-xl text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent hover:border-[var(--bordadg)] transition-all cursor-pointer"
+                title={isDarkMode ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
+              >
+                {isDarkMode ? <Moon className="w-3.5 h-3.5 text-blue-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
+              </button>
+            )}
 
           </div>
 
