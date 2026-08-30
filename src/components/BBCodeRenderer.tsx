@@ -43,6 +43,11 @@ export const BBCodeRenderer: React.FC<BBCodeRendererProps> = ({ text, className 
         const tagName = tagParts[0].trim();
         const tagAttr = tagParts.length > 1 ? token.slice(1 + tagName.length + 1, -1).trim() : undefined;
 
+        if (tagName === 'br') {
+          elements.push(<br key={`br-${idx}`} />);
+          return;
+        }
+
         if (isClosing) {
           // Pop from stack when closing matching tag
           if (styleStack.length > 1) {
@@ -147,7 +152,7 @@ export const BBCodeRenderer: React.FC<BBCodeRendererProps> = ({ text, className 
   };
 
   return (
-    <span className={`inline ${className}`}>
+    <span className={`inline whitespace-pre-wrap ${className}`}>
       {renderParsedBBCode(text)}
     </span>
   );

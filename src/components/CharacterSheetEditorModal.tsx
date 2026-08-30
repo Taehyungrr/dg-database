@@ -15,6 +15,7 @@ import { PowerIcon } from './PowerIcon';
 import { GameIcon } from './GameIcon';
 import { BBCodeRenderer } from './BBCodeRenderer';
 import { DifficultyIndicator } from './DifficultyIndicator';
+import { InventoryManager } from './InventoryManager';
 import { 
   X, 
   Save, 
@@ -40,7 +41,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   User,
-  BicepsFlexed
+  BicepsFlexed,
+  Package
 } from 'lucide-react';
 
 interface CharacterSheetEditorModalProps {
@@ -66,7 +68,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 }) => {
   const [formData, setFormData] = useState<FichaPersonagem>(sheet);
   const [editorMode, setEditorMode] = useState<'evolucao' | 'planejamento'>('evolucao');
-  const [activeSubTab, setActiveSubTab] = useState<'atributos' | 'poderes' | 'bbcode'>('atributos');
+  const [activeSubTab, setActiveSubTab] = useState<'atributos' | 'poderes' | 'inventario' | 'bbcode'>('atributos');
   const [bbcodeMode, setBbcodeMode] = useState<'delta' | 'full'>(isNew ? 'full' : 'delta');
   const [activeBranchFilter, setActiveBranchFilter] = useState<string>('all');
   const [searchPowerQuery, setSearchPowerQuery] = useState<string>('');
@@ -911,6 +913,19 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
               <button
                 type="button"
+                onClick={() => setActiveSubTab('inventario')}
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
+                  activeSubTab === 'inventario'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
+                }`}
+              >
+                <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <span>3. Inventário</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveSubTab('bbcode')}
                 className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
                   activeSubTab === 'bbcode'
@@ -919,7 +934,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                 }`}
               >
                 <FileCode className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                <span>3. BBCode</span>
+                <span>4. BBCode</span>
               </button>
             </div>
           </div>
@@ -1075,6 +1090,50 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Experiência (EXP) & Barra de Progresso Integrada */}
+                    <div className="pt-3 border-t border-[var(--bordadg)] space-y-2">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-[var(--ctexto2)] uppercase tracking-wider flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 shrink-0" style={{ color: godColor }} />
+                          <span style={{ color: godColor }}>Nível {formData.nivel} • Progresso EXP ({Math.min(100, Math.round(((formData.exp || 0) / (formData.nivel * 100)) * 100))}%)</span>
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[var(--ctexto1)]">
+                          {formData.exp || 0} / {formData.nivel * 100}
+                        </span>
+                      </div>
+
+                      {/* Barra Visual de Progresso */}
+                      <div className="w-full bg-[var(--fundo1)] h-3 rounded-full overflow-hidden border border-[var(--bordadg)] p-0.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, Math.round(((formData.exp || 0) / (formData.nivel * 100)) * 100))}%`,
+                            backgroundColor: godColor
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 text-[10px] font-mono">
+                        <span className="text-[var(--ctexto2)]">
+                          <strong className="font-bold text-[var(--ctexto1)]">{formData.exp || 0}</strong> / <strong className="font-bold text-[var(--ctexto2)]">{formData.nivel * 100}</strong> EXP (para Nível {formData.nivel + 1})
+                        </span>
+
+                        <div className="flex items-center gap-1">
+                          <span className="text-[var(--ctexto2)] font-bold">Ajustar EXP:</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={formData.exp || 0}
+                            onChange={(e) => {
+                              const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                              setFormData({ ...formData, exp: val });
+                            }}
+                            className="w-16 h-6 px-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded text-center text-xs font-mono font-bold text-[var(--ctexto1)] focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1798,7 +1857,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 3: BBCODE FÓRUM PREVIEW & COPY                                       */}
+          {/* TAB 3: INVENTÁRIO & BÔNUS DE COMBATE                                     */}
+          {/* ========================================================================= */}
+          {activeSubTab === 'inventario' && (
+            <InventoryManager formData={formData} setFormData={setFormData} />
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: BBCODE FÓRUM PREVIEW & COPY                                       */}
           {/* ========================================================================= */}
           {activeSubTab === 'bbcode' && (
             <div className="space-y-4 animate-fadeIn">

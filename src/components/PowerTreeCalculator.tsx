@@ -442,7 +442,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
 
                         {/* Description */}
                         {poder.descricao_base && (
-                          <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] text-[var(--ctexto2)] leading-relaxed text-justify whitespace-pre-line break-words">
+                          <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-[15px] sm:text-[14px] text-[var(--ctexto2)] leading-relaxed text-justify whitespace-pre-wrap break-words">
                             <strong className="text-[var(--ctexto1)] block mb-1 text-xs uppercase tracking-wider font-mono">
                               Descrição:
                             </strong>

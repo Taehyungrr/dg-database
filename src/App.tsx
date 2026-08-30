@@ -6,10 +6,12 @@ import {
   fetchAllPoderes, 
   getSavedSupabaseConfig
 } from './services/supabaseClient';
-import { getSavedSheets, createNewSheet } from './services/characterSheets';
+import { getSavedSheets, createNewSheet, saveSheet, hasUnexportedChanges } from './services/characterSheets';
 import { Navbar } from './components/Navbar';
 import { PowerTreeCalculator } from './components/PowerTreeCalculator';
 import { CharacterSheetsView } from './components/CharacterSheetsView';
+import { CombatCalculatorView } from './components/CombatCalculatorView';
+import { EvolutionView } from './components/EvolutionView';
 import { BBCodeModal } from './components/BBCodeModal';
 
 export default function App() {
@@ -105,6 +107,21 @@ export default function App() {
       setActiveSheet(storedSheets[0]);
     }
   }, []);
+
+  // Browser reload / leave warning if there are unexported changes in character sheets
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnexportedChanges(savedSheets)) {
+        e.preventDefault();
+        const msg = 'Você possui edições em fichas que ainda não foram exportadas em backup. Deseja realmente sair ou recarregar?';
+        e.returnValue = msg;
+        return msg;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [savedSheets]);
 
   // Check and sync with parent window's <html> data-theme attribute in real-time
   useEffect(() => {
@@ -313,6 +330,22 @@ export default function App() {
                   activeSheetId={activeSheet.id}
                   initialNewSheetDeusId={initialNewSheetDeusId}
                   onClearInitialDeusId={() => setInitialNewSheetDeusId(null)}
+                />
+              )}
+
+              {/* TAB 3: COMBATE (CALCULADORA DE DANO E ACERTO) */}
+              {activeTab === 'combate' && (
+                <CombatCalculatorView sheets={savedSheets} />
+              )}
+
+              {/* TAB 4: EVOLUÇÃO (CALCULADORA DE EXP E BARRA DE PROGRESSO) */}
+              {activeTab === 'evolucao' && (
+                <EvolutionView
+                  sheets={savedSheets}
+                  onUpdateSheet={(updatedSheet) => {
+                    const newSheets = saveSheet(updatedSheet);
+                    setSavedSheets(newSheets);
+                  }}
                 />
               )}
             </>

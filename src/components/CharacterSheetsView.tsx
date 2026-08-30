@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
-import { createNewSheet, saveSheet, deleteSheet } from '../services/characterSheets';
+import { createNewSheet, saveSheet, deleteSheet, markExportDone, hasUnexportedChanges, getLastExportTime } from '../services/characterSheets';
 import { normalizeAttributes, calculateCombatStatus, calculateSheetPoints } from '../utils/calculator';
 import { CharacterSheetEditorModal } from './CharacterSheetEditorModal';
 import { GameIcon } from './GameIcon';
@@ -118,10 +118,12 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(sheets, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `Fichas_Acampamento_${new Date().toISOString().slice(0, 10)}.json`);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute('download', `fichas_divinegroundrpg_${dateStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    markExportDone();
     showFeedback('Arquivo de backup exportado!');
   };
 
@@ -191,10 +193,22 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
             type="button"
             onClick={handleExportJson}
             disabled={sheets.length === 0}
-            className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[var(--fundo3)] hover:bg-[var(--fundo4)] disabled:opacity-40 text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] transition-colors cursor-pointer"
+            className={`flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              hasUnexportedChanges(sheets)
+                ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border-amber-500/40 shadow-sm'
+                : 'bg-[var(--fundo3)] hover:bg-[var(--fundo4)] disabled:opacity-40 text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border-[var(--bordadg)]'
+            }`}
+            title={
+              hasUnexportedChanges(sheets)
+                ? 'Você possui alterações não exportadas! Clique para baixar o backup.'
+                : 'Baixar backup em arquivo JSON'
+            }
           >
             <Download className="w-3.5 h-3.5" />
             <span>Backup</span>
+            {hasUnexportedChanges(sheets) && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+            )}
           </button>
 
           <button
@@ -284,6 +298,10 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
               deityRamos
             );
 
+            const sheetExp = sheet.exp || 0;
+            const reqExp = sheet.nivel * 100;
+            const pctExp = Math.min(100, Math.round((sheetExp / reqExp) * 100));
+
             return (
               <div
                 key={sheet.id}
@@ -295,7 +313,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                 }`}
               >
                 <div>
-                  {/* Top bar with Character Name & Level */}
+                  {/* Top bar with Character Name */}
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <div
@@ -306,11 +324,6 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                         {sheet.nome || 'Sem Nome'}
                       </span>
                     </div>
-
-                    <div className="flex items-center space-x-1 text-xs font-mono font-bold text-blue-500 bg-[var(--fundo1)] px-2 py-0.5 rounded border border-[var(--bordadg)] shrink-0">
-                      <Award className="w-3 h-3" />
-                      <span>Lvl {sheet.nivel}</span>
-                    </div>
                   </div>
 
                   <div className="text-[11px] text-[var(--ctexto2)] truncate font-mono ml-4.5 flex items-center gap-1.5">
@@ -318,6 +331,25 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                       <GameIcon icon={godIcon} className="text-xs shrink-0" style={{ color: godColor }} />
                     )}
                     <span>{deus?.nome_grego_romano || 'Olimpiano'}</span>
+                  </div>
+
+                  {/* EXP Progress Bar Integrada com Nível */}
+                  <div className="mt-2.5 p-2 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] space-y-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-bold">
+                      <span className="flex items-center gap-1" style={{ color: godColor }}>
+                        <Award className="w-3 h-3 shrink-0" style={{ color: godColor }} />
+                        <span>Nível {sheet.nivel} • EXP ({pctExp}%)</span>
+                      </span>
+                      <span className="text-[var(--ctexto2)]">
+                        <strong className="font-bold text-[var(--ctexto1)]">{sheetExp}</strong> / <strong className="font-bold text-[var(--ctexto2)]">{reqExp}</strong>
+                      </span>
+                    </div>
+                    <div className="w-full bg-[var(--fundo2)] h-2 rounded-full overflow-hidden border border-[var(--bordadg)] p-0.5">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{ width: `${pctExp}%`, backgroundColor: godColor }}
+                      />
+                    </div>
                   </div>
 
                   {/* Combat Status Quick Bar (Vida, Mana, Vigor) */}
