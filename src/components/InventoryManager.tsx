@@ -10,7 +10,10 @@ import {
   Crosshair, 
   Info,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Target,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface InventoryManagerProps {
@@ -23,6 +26,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   setFormData
 }) => {
   const [showBonusSection, setShowBonusSection] = useState<boolean>(true);
+  const [copiedHitChances, setCopiedHitChances] = useState<boolean>(false);
 
   // Get current inventory & combat bonuses
   const inventory = formData.inventario || [];
@@ -338,6 +342,67 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             ))}
           </div>
         )}
+      </div>
+
+      {/* SECTION 3: CHANCES DE ACERTO */}
+      <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-blue-400 shrink-0" />
+            <div>
+              <h3 className="font-cinzel text-xs sm:text-sm font-bold text-[var(--ctexto1)]">
+                Chances de Acerto
+              </h3>
+              <p className="text-[11px] text-[var(--ctexto2)]">
+                Resultado das faixas de acerto calculado e salvo da aba Combate.
+              </p>
+            </div>
+          </div>
+          {formData.chances_acerto && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (formData.chances_acerto) {
+                    navigator.clipboard.writeText(formData.chances_acerto);
+                    setCopiedHitChances(true);
+                    setTimeout(() => setCopiedHitChances(false), 2000);
+                  }
+                }}
+                className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--fundo3)] hover:bg-[var(--fundo4)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] transition-all flex items-center gap-1 cursor-pointer"
+                title="Copiar resultado"
+              >
+                {copiedHitChances ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400">Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    <span>Copiar</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, chances_acerto: '' }))}
+                className="text-[11px] text-[var(--ctexto2)] hover:text-rose-400 transition-colors cursor-pointer px-1 py-0.5"
+                title="Limpar resultado salvo"
+              >
+                Limpar
+              </button>
+            </div>
+          )}
+        </div>
+
+        <textarea
+          value={formData.chances_acerto || ''}
+          onChange={(e) => setFormData((prev) => ({ ...prev, chances_acerto: e.target.value }))}
+          placeholder="Nenhum resultado de chances de acerto salvo. Calcule na aba Combate > Calculadora de Acerto e clique em 'Salvar na Ficha' ou digite/cole aqui..."
+          rows={formData.chances_acerto ? Math.min(12, Math.max(4, formData.chances_acerto.split('\n').length + 1)) : 3}
+          className="w-full bg-[var(--fundo1)] p-3 rounded-xl font-mono text-xs text-emerald-400 border border-[var(--bordadg)] focus:outline-none focus:border-blue-500/50 resize-y leading-relaxed"
+        />
       </div>
 
     </div>

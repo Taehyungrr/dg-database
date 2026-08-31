@@ -122,6 +122,7 @@ export interface FichaPersonagem {
   aparencia?: string;
   inventario?: ItemInventario[];
   bonus_combate?: BonusCombateFicha;
+  chances_acerto?: string;
   criado_em: string;
   atualizado_em: string;
 }

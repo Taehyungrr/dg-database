@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FichaPersonagem, AtributosPersonagem } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
+import { saveSheet } from '../services/characterSheets';
 import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
 import { montarFaixas, ATTR_NOME_EXIBICAO, erroCritico, bonusCriticoFisico, aplicarTeto, progressaoEnergetica, clamp } from '../utils/combatUtils';
 import { calculateDamage, DamageCalculationParams, DamageCalculationResult, WeaponMaterialInput, ChannelingMetalInput } from '../utils/damageCalculator';
@@ -33,7 +34,10 @@ import {
   Droplet,
   Percent,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  Save,
+  Copy,
+  BookmarkCheck
 } from 'lucide-react';
 
 export const ATTR_CONFIG: Record<keyof AtributosPersonagem, {
@@ -84,14 +88,17 @@ const AttrBadge: React.FC<{ attrKey: keyof AtributosPersonagem | ''; showName?: 
 
 interface CombatCalculatorViewProps {
   sheets: FichaPersonagem[];
+  onUpdateSheet?: (sheet: FichaPersonagem) => void;
 }
 
-export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets }) => {
+export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets, onUpdateSheet }) => {
   const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto'>('dano');
 
   // Selected Character Sheets (Default: Preenchimento Manual)
   const [selectedSheetId, setSelectedSheetId] = useState<string>('');
   const [selectedDefenderSheetId, setSelectedDefenderSheetId] = useState<string>('');
+  const [saveFeedbackMsg, setSaveFeedbackMsg] = useState<string | null>(null);
+  const [copiedHitResults, setCopiedHitResults] = useState<boolean>(false);
 
   // Active God Color from loaded attacker sheet
   const activeAttackerSheet = sheets.find(s => s.id === selectedSheetId);
@@ -287,6 +294,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         if (w1.bonusForja) setForgeBonus(w1.bonusForja);
       }
     }
+
+    // Load saved hit chances if available
+    if (sheet.chances_acerto) {
+      setHitResultsText(sheet.chances_acerto);
+    }
   }, [selectedSheetId, sheets]);
 
   // Sync when selecting a specific weapon from sheet
@@ -469,6 +481,48 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   };
 
   const selectedSheet = sheets.find((s) => s.id === selectedSheetId);
+
+  const handleSaveHitResultsToSheet = () => {
+    if (!selectedSheet) return;
+    
+    // Ensure we have a calculated text, if not calculate on the fly
+    let textToSave = hitResultsText;
+    if (!textToSave) {
+      handleCalculateHit();
+      // Since setState is async, we can construct the text or wait, but user usually clicks calculate first.
+      return;
+    }
+
+    const updatedSheet: FichaPersonagem = {
+      ...selectedSheet,
+      chances_acerto: textToSave,
+      bonus_combate: {
+        ...selectedSheet.bonus_combate,
+        bonusAcerto: {
+          ...selectedSheet.bonus_combate?.bonusAcerto,
+          desarmado: hitActionOptions.desarmado?.bonus || 0,
+          contra: hitActionOptions.contra?.bonus || 0,
+          bloqueio: hitActionOptions.bloqueio?.bonus || 0,
+          esquiva: hitActionOptions.esquiva?.bonus || 0,
+          mental: hitActionOptions.mental?.bonus || 0,
+          magico: hitActionOptions.magico?.bonus || 0,
+          elemental: hitActionOptions.elemental?.bonus || 0,
+          espiritual: hitActionOptions.espiritual?.bonus || 0,
+          convencimento: hitActionOptions.convencimento?.bonus || 0,
+          resistencia: hitActionOptions.resistencia?.bonus || 0,
+          voz: hitActionOptions.voz?.bonus || 0
+        }
+      }
+    };
+
+    saveSheet(updatedSheet);
+    if (onUpdateSheet) {
+      onUpdateSheet(updatedSheet);
+    }
+
+    setSaveFeedbackMsg(`Chances de acerto salvas na ficha de "${selectedSheet.nome}" com sucesso!`);
+    setTimeout(() => setSaveFeedbackMsg(null), 3500);
+  };
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
@@ -1693,25 +1747,96 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             </div>
           </div>
 
-          {/* CALCULATE HIT BUTTON */}
-          <button
-            type="button"
-            onClick={handleCalculateHit}
-            style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
-            className={`w-full py-3.5 ${
-              activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
-            } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
-          >
-            <Crosshair className="w-5 h-5" />
-            <span>Calcular Acertos</span>
-          </button>
+          {/* TOAST / FEEDBACK NOTIFICATION */}
+          {saveFeedbackMsg && (
+            <div className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between shadow-lg animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{saveFeedbackMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaveFeedbackMsg(null)}
+                className="text-emerald-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* CALCULATE & SAVE ACTIONS */}
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <button
+              type="button"
+              onClick={handleCalculateHit}
+              style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
+              className={`flex-1 py-3.5 ${
+                activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
+              } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
+            >
+              <Crosshair className="w-5 h-5" />
+              <span>Calcular Acertos</span>
+            </button>
+
+            {selectedSheet && hitResultsText && (
+              <button
+                type="button"
+                onClick={handleSaveHitResultsToSheet}
+                className="px-5 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-cinzel text-sm font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                title={`Salvar resultado na ficha de ${selectedSheet.nome}`}
+              >
+                <BookmarkCheck className="w-5 h-5" />
+                <span>Salvar na Ficha ({selectedSheet.nome})</span>
+              </button>
+            )}
+          </div>
 
           {/* HIT RESULTS DISPLAY */}
           {hitResultsText && (
             <div className="bg-[var(--fundo2)] rounded-2xl p-5 border border-blue-500/30 shadow-xl space-y-3 animate-fadeIn">
-              <h3 className="font-cinzel text-base font-bold text-blue-400 border-b border-[var(--bordadg)] pb-2">
-                Resultado das Faixas de Acerto
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--bordadg)] pb-2">
+                <h3 className="font-cinzel text-base font-bold text-blue-400 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  <span>Resultado das Faixas de Acerto</span>
+                </h3>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSheet && (
+                    <button
+                      type="button"
+                      onClick={handleSaveHitResultsToSheet}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Salvar na Ficha ({selectedSheet.nome})</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hitResultsText) {
+                        navigator.clipboard.writeText(hitResultsText);
+                        setCopiedHitResults(true);
+                        setTimeout(() => setCopiedHitResults(false), 2000);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-[var(--fundo3)] hover:bg-[var(--fundo4)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    {copiedHitResults ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
 
               <div className="bg-[#111827] p-4 rounded-xl border border-gray-800 font-mono text-xs text-emerald-400 leading-relaxed whitespace-pre-wrap select-all">
                 {hitResultsText}

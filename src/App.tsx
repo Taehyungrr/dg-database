@@ -335,7 +335,13 @@ export default function App() {
 
               {/* TAB 3: COMBATE (CALCULADORA DE DANO E ACERTO) */}
               {activeTab === 'combate' && (
-                <CombatCalculatorView sheets={savedSheets} />
+                <CombatCalculatorView
+                  sheets={savedSheets}
+                  onUpdateSheet={(updatedSheet) => {
+                    const newSheets = saveSheet(updatedSheet);
+                    setSavedSheets(newSheets);
+                  }}
+                />
               )}
 
               {/* TAB 4: EVOLUÇÃO (CALCULADORA DE EXP E BARRA DE PROGRESSO) */}
