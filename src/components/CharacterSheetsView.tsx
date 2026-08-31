@@ -48,10 +48,9 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
   initialNewSheetDeusId,
   onClearInitialDeusId
 }) => {
-  const [importJsonText, setImportJsonText] = useState<string>('');
-  const [showImportBox, setShowImportBox] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [deletingSheetId, setDeletingSheetId] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Sheet Editor Modal State
   const [editingSheet, setEditingSheet] = useState<FichaPersonagem | null>(() => {
@@ -127,37 +126,71 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
     showFeedback('Arquivo de backup exportado!');
   };
 
-  const handleImportJson = () => {
-    try {
-      if (!importJsonText.trim()) return;
-      const parsed = JSON.parse(importJsonText);
-      const itemsToImport: FichaPersonagem[] = Array.isArray(parsed) ? parsed : [parsed];
-      
-      const current = [...sheets];
-      itemsToImport.forEach((item) => {
-        if (item.id && item.nome) {
-          const idx = current.findIndex(s => s.id === item.id);
-          if (idx >= 0) {
-            current[idx] = item;
-          } else {
-            current.unshift(item);
-          }
-          saveSheet(item);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        if (!content) return;
+        const parsed = JSON.parse(content);
+        const itemsToImport: FichaPersonagem[] = Array.isArray(parsed) ? parsed : [parsed];
+        
+        if (itemsToImport.length === 0 || !itemsToImport[0].id) {
+          showFeedback('Erro: O arquivo não contém fichas válidas.');
+          return;
         }
-      });
-      
-      setSheets(current);
-      setImportJsonText('');
-      setShowImportBox(false);
-      showFeedback(`${itemsToImport.length} ficha(s) importada(s) com sucesso!`);
-    } catch {
-      showFeedback('Erro: Formato JSON inválido.');
-    }
+
+        const current = [...sheets];
+        let importedCount = 0;
+        itemsToImport.forEach((item) => {
+          if (item.id && item.nome) {
+            const idx = current.findIndex(s => s.id === item.id);
+            if (idx >= 0) {
+              current[idx] = item;
+            } else {
+              current.unshift(item);
+            }
+            saveSheet(item);
+            importedCount++;
+          }
+        });
+        
+        setSheets(current);
+        showFeedback(`${importedCount} ficha(s) importada(s) do arquivo com sucesso!`);
+      } catch {
+        showFeedback('Erro: Arquivo JSON inválido ou corrompido.');
+      } finally {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      showFeedback('Erro ao ler o arquivo selecionado.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    reader.readAsText(file);
   };
 
   return (
     <div className="flex-1 flex flex-col space-y-6 pb-20 md:pb-12 animate-fadeIn w-full">
       
+      {/* Hidden File Input for Native JSON Import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".json,application/json"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+
       {/* Toast */}
       {feedbackMsg && (
         <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--fundo2)] text-blue-500 rounded-xl shadow-2xl border border-blue-500/40 text-xs font-semibold animate-fadeIn flex items-center gap-2">
@@ -213,45 +246,15 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
 
           <button
             type="button"
-            onClick={() => setShowImportBox(!showImportBox)}
+            onClick={() => fileInputRef.current?.click()}
             className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[var(--fundo3)] hover:bg-[var(--fundo4)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] transition-colors cursor-pointer"
+            title="Procurar e carregar arquivo .json do computador"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Importar</span>
           </button>
         </div>
       </div>
-
-      {/* Import Box */}
-      {showImportBox && (
-        <div className="bg-[var(--fundo2)] border border-blue-500/40 rounded-2xl p-5 space-y-3 animate-fadeIn">
-          <h4 className="font-cinzel text-xs font-bold text-blue-500">
-            Importar Fichas via JSON
-          </h4>
-          <textarea
-            value={importJsonText}
-            onChange={(e) => setImportJsonText(e.target.value)}
-            placeholder="Cole aqui o conteúdo JSON exportado anteriormente..."
-            className="w-full h-32 p-3 bg-[var(--fundo1)] font-mono text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] rounded-xl focus:outline-none focus:border-blue-500"
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setShowImportBox(false)}
-              className="px-3 py-1.5 text-xs text-[var(--ctexto2)] hover:text-[var(--ctexto1)] cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleImportJson}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white uppercase tracking-wider cursor-pointer"
-            >
-              Confirmar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Sheets Grid */}
       {sheets.length === 0 ? (

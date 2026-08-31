@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FichaPersonagem, AtributosPersonagem } from '../types';
+import { INITIAL_DEUSES } from '../data/defaultData';
 import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
 import { montarFaixas, ATTR_NOME_EXIBICAO, erroCritico, bonusCriticoFisico, aplicarTeto, progressaoEnergetica, clamp } from '../utils/combatUtils';
 import { calculateDamage, DamageCalculationParams, DamageCalculationResult, WeaponMaterialInput, ChannelingMetalInput } from '../utils/damageCalculator';
@@ -88,9 +89,14 @@ interface CombatCalculatorViewProps {
 export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets }) => {
   const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto'>('dano');
 
-  // Selected Character Sheets
+  // Selected Character Sheets (Default: Preenchimento Manual)
   const [selectedSheetId, setSelectedSheetId] = useState<string>('');
   const [selectedDefenderSheetId, setSelectedDefenderSheetId] = useState<string>('');
+
+  // Active God Color from loaded attacker sheet
+  const activeAttackerSheet = sheets.find(s => s.id === selectedSheetId);
+  const activeAttackerDeus = activeAttackerSheet ? INITIAL_DEUSES.find(d => d.id === activeAttackerSheet.deus_id) : null;
+  const activeGodColor = activeAttackerDeus?.cor_hex;
 
   // =========================================================================
   // DAMAGE CALCULATOR STATE
@@ -387,40 +393,65 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   // Hit Calculation Trigger
   const handleCalculateHit = () => {
     let output = '';
-    const erroBase = erroCritico(attackerAttrs.destreza);
-    const bonusCritFisico = bonusCriticoFisico(attackerAttrs.destreza);
 
-    // 1. Actions
-    Object.entries(NOMES_ACOES_ACERTO).forEach(([tipoKey, meta]) => {
-      const opt = hitActionOptions[tipoKey];
+    const forca = attackerAttrs.forca || 1;
+    const agilidade = attackerAttrs.agilidade || 1;
+    const destreza = attackerAttrs.destreza || 1;
+    const constituicao = attackerAttrs.constituicao || 1;
+    const carisma = attackerAttrs.carisma || 1;
+    const inteligencia = attackerAttrs.inteligencia || 1;
+    const magiaAttr = attackerAttrs.magia || 1;
+    const naturezaAttr = attackerAttrs.natureza || 1;
+    const espiritualidadeAttr = attackerAttrs.espiritualidade || 1;
+
+    const erroBase = erroCritico(destreza);
+    const bonusCritFisico = bonusCriticoFisico(destreza);
+
+    const montar = (nomeKey: string, base: number, teto: number, attrErro: number, extraCrit: number = 0) => {
+      const opt = hitActionOptions[nomeKey];
       if (opt && opt.ignorar) return;
-
-      const attrVal = attackerAttrs[meta.attrDefault as keyof AtributosPersonagem] || 1;
-      let baseVal = 50;
-      if (tipoKey === 'desarmado') baseVal = 50 + (attackerAttrs.forca - 1) * 10;
-      else if (tipoKey === 'esquiva') baseVal = [25, 30, 35, 45, 50][Math.min(4, Math.max(0, attackerAttrs.agilidade - 1))];
-      else if (['mental', 'magico', 'elemental', 'espiritual'].includes(tipoKey)) baseVal = progressaoEnergetica(attrVal);
-      else baseVal = 30 + (attrVal - 1) * 10;
 
       const bonus = opt ? opt.bonus : 0;
       const quebra = opt ? opt.quebra : false;
 
-      let total = aplicarTeto(baseVal + bonus, meta.baseCap, quebra);
+      let total = aplicarTeto(base + bonus, teto, quebra);
       total = clamp(total);
 
-      const extraCrit = (tipoKey === 'desarmado' || tipoKey === 'voz') ? bonusCritFisico : 0;
-      const f = montarFaixas(meta.nome, total, erroCritico(attrVal), extraCrit);
+      const meta = NOMES_ACOES_ACERTO[nomeKey];
+      const nomeExibicao = meta ? meta.nome : nomeKey;
+
+      const f = montarFaixas(nomeExibicao, total, erroCritico(attrErro), extraCrit);
       output += f.textoFormatado + '\n';
+    };
+
+    // 1. DESARMADO
+    montar('desarmado', 50 + (forca - 1) * 10, 90, destreza, bonusCritFisico);
+
+    // 2. ARMAS (APTIDÃO FINAL DIRETA)
+    hitWeapons.forEach((w) => {
+      const nome = w.nome.trim();
+      const numero = w.aptidao || 0;
+      const bonusCrit = w.bonusCritico || 0;
+
+      if (nome && numero > 0) {
+        const f = montarFaixas(`Chance de Acerto com ${nome}`, clamp(numero), erroBase, bonusCrit + bonusCritFisico);
+        output += f.textoFormatado + '\n';
+      }
     });
 
-    // 2. Weapons
-    hitWeapons.forEach((w) => {
-      if (!w.nome.trim() || w.aptidao <= 0) return;
-      const total = clamp(w.aptidao);
-      const totalCritBonus = (w.bonusCritico || 0) + bonusCritFisico;
-      const f = montarFaixas(`Chance de Acerto com ${w.nome}`, total, erroBase, totalCritBonus);
-      output += f.textoFormatado + '\n';
-    });
+    // 3. DEMAIS AÇÕES
+    montar('contra', 30 + (destreza - 1) * 10, 85, destreza, 0);
+    montar('bloqueio', 30 + (constituicao - 1) * 10, 85, constituicao, 0);
+    montar('esquiva', [25, 30, 35, 45, 50][Math.min(4, Math.max(0, agilidade - 1))], 80, agilidade, 0);
+
+    montar('mental', progressaoEnergetica(inteligencia), 85, inteligencia, 0);
+    montar('magico', progressaoEnergetica(magiaAttr), 85, magiaAttr, 0);
+    montar('elemental', progressaoEnergetica(naturezaAttr), 85, naturezaAttr, 0);
+    montar('espiritual', progressaoEnergetica(espiritualidadeAttr), 85, espiritualidadeAttr, 0);
+
+    montar('convencimento', 30 + (carisma - 1) * 10, 85, carisma, 0);
+    montar('resistencia', 30 + (carisma - 1) * 10, 85, carisma, 0);
+    montar('voz', 30 + (carisma - 1) * 10, 85, carisma, bonusCritFisico);
 
     setHitResultsText(output.trim());
   };
@@ -518,11 +549,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       {activeSubTab === 'dano' && (
         <div className="space-y-6">
           
-          {/* ATRIBUTOS DO ATACANTE */}
+          {/* ATRIBUTOS */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
             <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-400" />
-              <span>Atributos do Atacante (1 a 8+)</span>
+              <span>Atributos</span>
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
               {(Object.keys(attackerAttrs) as Array<keyof AtributosPersonagem>).map((attrKey) => {
@@ -667,70 +698,72 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               </div>
             )}
 
-            {/* SUBSTITUIR ATRIBUTOS? */}
-            <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-              <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
-                <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
-                <span>Substituir Atributos de Ataque?</span>
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Primeiro Atributo (Principal):</label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={firstAttrSub}
-                      onChange={(e) => setFirstAttrSub(e.target.value as any)}
-                      className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    >
-                      <option value="">Não substituir</option>
-                      {Object.keys(attackerAttrs).map((k) => (
-                        <option key={k} value={k}>
-                          {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                        </option>
-                      ))}
-                    </select>
-                    {firstAttrSub && <AttrBadge attrKey={firstAttrSub} showName={false} />}
+            {/* SUBSTITUIR ATRIBUTOS? (APENAS DANO ARMADO) */}
+            {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
+              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
+                <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Substituir Atributos de Ataque?</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Primeiro Atributo (Principal):</label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={firstAttrSub}
+                        onChange={(e) => setFirstAttrSub(e.target.value as any)}
+                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                      >
+                        <option value="">Não substituir</option>
+                        {Object.keys(attackerAttrs).map((k) => (
+                          <option key={k} value={k}>
+                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                          </option>
+                        ))}
+                      </select>
+                      {firstAttrSub && <AttrBadge attrKey={firstAttrSub} showName={false} />}
+                    </div>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={applyBonusToFirst}
+                        onChange={(e) => setApplyBonusToFirst(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span>Aplicar bônus percentual?</span>
+                    </label>
                   </div>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={applyBonusToFirst}
-                      onChange={(e) => setApplyBonusToFirst(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Aplicar bônus percentual?</span>
-                  </label>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Segundo Atributo (Secundário/2):</label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={secondAttrSub}
-                      onChange={(e) => setSecondAttrSub(e.target.value as any)}
-                      className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    >
-                      <option value="">Não substituir</option>
-                      {Object.keys(attackerAttrs).map((k) => (
-                        <option key={k} value={k}>
-                          {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                        </option>
-                      ))}
-                    </select>
-                    {secondAttrSub && <AttrBadge attrKey={secondAttrSub} showName={false} />}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Segundo Atributo (Secundário/2):</label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={secondAttrSub}
+                        onChange={(e) => setSecondAttrSub(e.target.value as any)}
+                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                      >
+                        <option value="">Não substituir</option>
+                        {Object.keys(attackerAttrs).map((k) => (
+                          <option key={k} value={k}>
+                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                          </option>
+                        ))}
+                      </select>
+                      {secondAttrSub && <AttrBadge attrKey={secondAttrSub} showName={false} />}
+                    </div>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={applyBonusToSecond}
+                        onChange={(e) => setApplyBonusToSecond(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span>Aplicar bônus percentual?</span>
+                    </label>
                   </div>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={applyBonusToSecond}
-                      onChange={(e) => setApplyBonusToSecond(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Aplicar bônus percentual?</span>
-                  </label>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* MATERIAIS DA ARMA (MÁX 2) */}
             {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
@@ -920,29 +953,35 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               </div>
             </div>
 
-            {/* BÔNUS DE FORJA & DANO BASE DO PODER */}
+            {/* BÔNUS DE FORJA (APENAS DANO ARMADO) & DANO BASE DO PODER (APENAS DANO NÃO ARMADO) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
-                <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Bônus de Forja (FB):</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={forgeBonus}
-                  onChange={(e) => setForgeBonus(Number(e.target.value))}
-                  className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                />
-              </div>
+              {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
+                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
+                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Bônus de Forja (FB):</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={forgeBonus}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setForgeBonus(Number(e.target.value))}
+                    className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  />
+                </div>
+              )}
 
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
-                <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder (`abilityDB`):</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={abilityDB}
-                  onChange={(e) => setAbilityDB(Number(e.target.value))}
-                  className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                />
-              </div>
+              {damageType !== 'melee' && damageType !== 'ranged' && damageType !== 'crossbow' && (
+                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
+                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={abilityDB}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setAbilityDB(Number(e.target.value))}
+                    className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  />
+                </div>
+              )}
             </div>
 
             {/* VARIÁVEL PERSONALIZADA */}
@@ -1001,11 +1040,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               </div>
             </div>
 
-            {/* BÔNUS DE ATRIBUTO (%) */}
+            {/* BÔNUS DE DANO DOS ATRIBUTOS (%) */}
             <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
               <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
                 <Percent className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Bônus de Atributo (%)</span>
+                <span>Bônus de dano dos atributos (%)</span>
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                 {[
@@ -1403,9 +1442,12 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           <button
             type="button"
             onClick={handleCalculateDamage}
-            className="w-full py-3.5 bg-gradient-to-r from-rose-600 via-purple-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+            style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
+            className={`w-full py-3.5 ${
+              activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
+            } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
           >
-            <Flame className="w-5 h-5 animate-pulse" />
+            <Flame className="w-5 h-5" />
             <span>Calcular Dano</span>
           </button>
 
@@ -1469,11 +1511,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       {activeSubTab === 'acerto' && (
         <div className="space-y-6">
           
-          {/* ATRIBUTOS PARA ACERTO */}
+          {/* ATRIBUTOS */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
             <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
               <Crosshair className="w-4 h-4 text-blue-400" />
-              <span>Atributos de Acerto (1 a 5/8)</span>
+              <span>Atributos</span>
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
               {(Object.keys(attackerAttrs) as Array<keyof AtributosPersonagem>).map((attrKey) => {
@@ -1492,6 +1534,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       min="1"
                       max="10"
                       value={attackerAttrs[attrKey]}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) =>
                         setAttackerAttrs((prev) => ({ ...prev, [attrKey]: Math.max(1, Number(e.target.value)) }))
                       }
@@ -1541,6 +1584,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                         min="0"
                         max="100"
                         value={w.aptidao}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setHitWeapons((prev) => prev.map((item) => (item.id === w.id ? { ...item, aptidao: val } : item)));
@@ -1553,6 +1597,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       <input
                         type="number"
                         value={w.bonusCritico}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setHitWeapons((prev) => prev.map((item) => (item.id === w.id ? { ...item, bonusCritico: val } : item)));
@@ -1597,6 +1642,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       <input
                         type="number"
                         value={opt.bonus}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => {
                           const val = Number(e.target.value);
                           setHitActionOptions((prev) => ({
@@ -1651,9 +1697,12 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           <button
             type="button"
             onClick={handleCalculateHit}
-            className="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+            style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
+            className={`w-full py-3.5 ${
+              activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
+            } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
           >
-            <Crosshair className="w-5 h-5 animate-pulse" />
+            <Crosshair className="w-5 h-5" />
             <span>Calcular Acertos</span>
           </button>
 

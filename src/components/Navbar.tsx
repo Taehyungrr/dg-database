@@ -80,11 +80,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('combate')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'combate'
-                  ? 'bg-[var(--fundo3)] text-rose-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <Swords className="w-3.5 h-3.5 text-rose-500" />
+              <Swords className="w-3.5 h-3.5 text-blue-500" />
               <span>Combate</span>
             </button>
 
@@ -94,11 +94,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('evolucao')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'evolucao'
-                  ? 'bg-[var(--fundo3)] text-emerald-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
               <span>Evolução</span>
             </button>
           </nav>
@@ -179,10 +179,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('combate')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'combate' ? 'bg-[var(--fundo3)] text-rose-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'combate' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <Swords className="w-3 h-3 text-rose-500" />
+          <Swords className="w-3 h-3 text-blue-500" />
           <span>Combate</span>
         </button>
 
@@ -190,10 +190,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('evolucao')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'evolucao' ? 'bg-[var(--fundo3)] text-emerald-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'evolucao' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <TrendingUp className="w-3 h-3 text-emerald-500" />
+          <TrendingUp className="w-3 h-3 text-blue-500" />
           <span>Evolução</span>
         </button>
       </div>

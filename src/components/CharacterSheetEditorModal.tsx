@@ -1077,7 +1077,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                           min={1}
                           max={70}
                           value={formData.nivel}
-                          onChange={(e) => handleLevelChange(parseInt(e.target.value, 10))}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') return;
+                            handleLevelChange(Math.max(1, Math.min(70, parseInt(val, 10) || 1)));
+                          }}
                           className="flex-1 h-9 px-2 text-center bg-[var(--fundo1)] border border-[var(--bordadg)] focus:border-blue-500 rounded-xl font-mono text-sm font-bold text-[var(--ctexto1)] focus:outline-none"
                         />
 
@@ -1127,11 +1132,13 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                             type="number"
                             min={0}
                             value={formData.exp || 0}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => {
-                              const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setFormData({ ...formData, exp: val });
+                              const val = e.target.value;
+                              const num = val === '' ? 0 : Math.max(0, parseInt(val, 10) || 0);
+                              setFormData((prev) => ({ ...prev, exp: num }));
                             }}
-                            className="w-16 h-6 px-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded text-center text-xs font-mono font-bold text-[var(--ctexto1)] focus:outline-none focus:border-blue-500"
+                            className="w-24 h-7 px-2 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded text-center text-xs font-mono font-bold text-[var(--ctexto1)] focus:outline-none focus:border-blue-500"
                           />
                         </div>
                       </div>

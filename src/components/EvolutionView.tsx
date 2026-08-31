@@ -28,15 +28,25 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
   const [selectedSheetId, setSelectedSheetId] = useState<string>('');
 
   // Evolution Fields
-  const [nivelAtual, setNivelAtual] = useState<number>(1);
-  const [expAtual, setExpAtual] = useState<number>(0);
-  const [expGanha, setExpGanha] = useState<number>(0);
+  const [nivelAtual, setNivelAtual] = useState<number | string>(1);
+  const [expAtual, setExpAtual] = useState<number | string>(0);
+  const [expGanha, setExpGanha] = useState<number | string>(0);
 
   // Status Attributes
-  const [forca, setForca] = useState<number>(1);
-  const [vigorStat, setVigorStat] = useState<number>(1);
-  const [magia, setMagia] = useState<number>(1);
-  const [espiritualidade, setEspiritualidade] = useState<number>(1);
+  const [forca, setForca] = useState<number | string>(1);
+  const [vigorStat, setVigorStat] = useState<number | string>(1);
+  const [magia, setMagia] = useState<number | string>(1);
+  const [espiritualidade, setEspiritualidade] = useState<number | string>(1);
+
+  // Helper numeric values
+  const nNivelAtual = Math.max(1, typeof nivelAtual === 'number' ? nivelAtual : (parseInt(nivelAtual, 10) || 1));
+  const nExpAtual = Math.max(0, typeof expAtual === 'number' ? expAtual : (parseInt(expAtual, 10) || 0));
+  const nExpGanha = Math.max(0, typeof expGanha === 'number' ? expGanha : (parseInt(expGanha, 10) || 0));
+
+  const nForca = Math.max(1, typeof forca === 'number' ? forca : (parseInt(forca, 10) || 1));
+  const nVigorStat = Math.max(1, typeof vigorStat === 'number' ? vigorStat : (parseInt(vigorStat, 10) || 1));
+  const nMagia = Math.max(1, typeof magia === 'number' ? magia : (parseInt(magia, 10) || 1));
+  const nEspiritualidade = Math.max(1, typeof espiritualidade === 'number' ? espiritualidade : (parseInt(espiritualidade, 10) || 1));
 
   // Success Feedback Toast
   const [saveToast, setSaveToast] = useState<string | null>(null);
@@ -66,17 +76,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
   };
 
   // Evolution Calculation Logic
-  let nivelFinal = nivelAtual;
-  let expTemp = expAtual + expGanha;
-  const nivelInicial = nivelAtual;
+  let nivelFinal = nNivelAtual;
+  let expTemp = nExpAtual + nExpGanha;
+  const nivelInicial = nNivelAtual;
 
   while (expTemp >= nivelFinal * 100) {
     expTemp -= nivelFinal * 100;
     nivelFinal++;
   }
 
-  const expNecessariaAtual = nivelAtual * 100;
-  const pctExpAtual = Math.min(100, Math.round((expAtual / expNecessariaAtual) * 100));
+  const expNecessariaAtual = nNivelAtual * 100;
+  const pctExpAtual = Math.min(100, Math.round((nExpAtual / expNecessariaAtual) * 100));
 
   const expNecessariaFinal = nivelFinal * 100;
   const pctExpFinal = Math.min(100, Math.round((expTemp / expNecessariaFinal) * 100));
@@ -84,8 +94,8 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
   const ganhosNivel = nivelFinal - nivelInicial;
   const ganhosTexto = `+${ganhosNivel} níveis, +${ganhosNivel * 10} vida, +${ganhosNivel * 10} mana, +${ganhosNivel * 10} vigor`;
 
-  const statusAtual = calcularValoresStatus(nivelInicial, forca, vigorStat, magia, espiritualidade);
-  const statusFinal = calcularValoresStatus(nivelFinal, forca, vigorStat, magia, espiritualidade);
+  const statusAtual = calcularValoresStatus(nivelInicial, nForca, nVigorStat, nMagia, nEspiritualidade);
+  const statusFinal = calcularValoresStatus(nivelFinal, nForca, nVigorStat, nMagia, nEspiritualidade);
 
   // Handler to apply evolution directly to the selected character sheet
   const handleApplyToSheet = () => {
@@ -204,8 +214,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 min="1"
                 max="100"
                 value={nivelAtual}
-                onChange={(e) => setNivelAtual(Math.max(1, Number(e.target.value)))}
-                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setNivelAtual(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (nivelAtual === '' || typeof nivelAtual !== 'number' || isNaN(nivelAtual)) {
+                    setNivelAtual(1);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
 
@@ -215,8 +234,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 type="number"
                 min="0"
                 value={expAtual}
-                onChange={(e) => setExpAtual(Math.max(0, Number(e.target.value)))}
-                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setExpAtual(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (expAtual === '' || typeof expAtual !== 'number' || isNaN(expAtual)) {
+                    setExpAtual(0);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
 
@@ -226,9 +254,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 type="number"
                 min="0"
                 value={expGanha}
-                onChange={(e) => setExpGanha(Math.max(0, Number(e.target.value)))}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setExpGanha(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (expGanha === '' || typeof expGanha !== 'number' || isNaN(expGanha)) {
+                    setExpGanha(0);
+                  }
+                }}
                 placeholder="Digite os pontos de EXP recebidos"
-                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-emerald-400 border border-emerald-500/40 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-sm font-bold text-emerald-400 border border-emerald-500/40 focus:outline-none focus:border-emerald-500 font-mono"
               />
             </div>
           </div>
@@ -245,8 +282,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 min="1"
                 max="5"
                 value={forca}
-                onChange={(e) => setForca(Number(e.target.value))}
-                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForca(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (forca === '' || typeof forca !== 'number' || isNaN(forca)) {
+                    setForca(1);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
 
@@ -257,8 +303,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 min="1"
                 max="5"
                 value={vigorStat}
-                onChange={(e) => setVigorStat(Number(e.target.value))}
-                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setVigorStat(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (vigorStat === '' || typeof vigorStat !== 'number' || isNaN(vigorStat)) {
+                    setVigorStat(1);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
 
@@ -269,8 +324,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 min="1"
                 max="5"
                 value={magia}
-                onChange={(e) => setMagia(Number(e.target.value))}
-                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setMagia(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (magia === '' || typeof magia !== 'number' || isNaN(magia)) {
+                    setMagia(1);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
 
@@ -281,8 +345,17 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 min="1"
                 max="5"
                 value={espiritualidade}
-                onChange={(e) => setEspiritualidade(Number(e.target.value))}
-                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setEspiritualidade(v === '' ? '' : parseInt(v, 10));
+                }}
+                onBlur={() => {
+                  if (espiritualidade === '' || typeof espiritualidade !== 'number' || isNaN(espiritualidade)) {
+                    setEspiritualidade(1);
+                  }
+                }}
+                className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
           </div>
