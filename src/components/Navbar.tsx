@@ -4,6 +4,7 @@ import {
   Database, 
   TreePine, 
   FileText, 
+  Skull,
   Swords, 
   TrendingUp, 
   Sun, 
@@ -72,6 +73,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {savedSheetsCount}
                 </span>
               )}
+            </button>
+
+            <button
+              type="button"
+              id="nav-tab-bestiario"
+              onClick={() => setActiveTab('bestiario')}
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === 'bestiario'
+                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
+              }`}
+            >
+              <Skull className="w-3.5 h-3.5 text-blue-500" />
+              <span>Bestiário</span>
             </button>
 
             <button
@@ -171,8 +186,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             activeTab === 'fichas' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <FileText className="w-3 h-3" />
+          <FileText className="w-3 h-3 text-blue-500" />
           <span>Fichas ({savedSheetsCount})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('bestiario')}
+          className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
+            activeTab === 'bestiario' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+          }`}
+        >
+          <Skull className="w-3 h-3 text-blue-500" />
+          <span>Bestiário</span>
         </button>
 
         <button

@@ -1,4 +1,4 @@
-import { Deus, Ramo, Poder } from '../types';
+import { Deus, Ramo, Poder, Monstro, MonstroPoder } from '../types';
 
 export const INITIAL_DEUSES: Deus[] = [
   {
@@ -578,3 +578,166 @@ export const INITIAL_PODERES: Poder[] = [
     nivel_3_desc: 'Teleporte continental ou dimensional para o Submundo, com mínimo cansaço físico.'
   }
 ];
+
+export const INITIAL_MONSTROS: Monstro[] = [
+  {
+    id: "dracaena",
+    nome: "Dracaena",
+    descricao: "A dracaena original roubou os cavalos de Héracles/Hércules e os devolveu em troca de uma noite com o semideus, o que resultou em três filhas. Na atualidade, são monstros muito comuns em todo o mundo, vivendo especialmente próximas a áreas florestadas e não se dando muito bem com o mundo urbano, embora se adaptem fácil. As dracaenae vivem em grupos controlados por rainhas e possuem uma rainha suprema, mas podem ser encontradas individualmente.",
+    indole: "As dracaenae são inerentemente cruéis e predatórias. Criadas para matar, atacam tanto para se defender quanto por oportunismo, escolhendo alvos vulneráveis sempre que possível. Alimentam-se de carne e, após uma caçada bem-sucedida, são capazes de devorar um semideus inteiro.\n\nApesar de sua agressividade, não são criaturas especialmente inteligentes ou orgulhosas, o que as torna relativamente fáceis de manipular por meios psicológicos ou estratégicos. Ainda assim, subestimá-las costuma ser fatal, pois sua violência é rápida, coordenada e implacável.",
+    aparencia: "As dracaenae são criaturas de corpo híbrido: possuem busto humano feminino e, no lugar das pernas, duas longas caudas serpentinas cobertas por escamas verdes e resistentes. Medem cerca de dois metros de altura quando eretas e se movem com fluidez predatória, usando as caudas tanto para impulsão quanto para mudanças bruscas de direção em combate. Seus rostos também são cobertos por escamas finas, com olhos de íris fendidas, idênticas às de víboras.\n\nSão guerreiras treinadas, frequentemente vistas empunhando lanças e escudos, e por vezes utilizando armaduras adaptadas ao seu corpo. Suas bocas escondem presas longas e pontiagudas, capazes de penetrar profundamente a carne dos inimigos e injetar toxinas letais. Ao falar, puxam involuntariamente o “s”, produzindo um sibilo constante que reforça sua natureza serpentina.",
+    atributos_principais: "",
+    tipo: "terrestre",
+    perigoso: false,
+    cor_hex: "#eab308",
+    imagem_url: "https://i.pinimg.com/736x/f8/f4/d8/f8f4d8f5f8a336c412fb3ea4c4cd734a.jpg"
+  },
+  {
+    id: "espectro",
+    nome: "Espectro",
+    descricao: "Por terem fugido do submundo e tendo se mantido dessa maneira por anos, Hades e Tânatos costumam recompensar a captura de um espectro com passagem livre (uma única vez) para a corte do deus dos mortos.",
+    indole: "Sendo necromantes que mantiveram seus dons mesmo após a morte, espectros são malignos e depravados em seus métodos. Preferem agir sozinhos, sendo extremamente raro encontrá-los em grupos, e estão constantemente buscando por meios de escapar de Tânatos (seja fugindo ou achando meios de se esconder dele).",
+    aparencia: "Espectros possuem uma aparência que parece mesclar o espiritual com o físico. Seus corpos translúcidos parecem manter traços de vida, como adornos e joias, e quase todos vestem capas ou mantos negros para se ocultar da morte. Suas armas são feitas em metal negro e corrompidas a partir das almas de suas vítimas para obter o aspecto espectral.",
+    atributos_principais: "",
+    tipo: "ctonico",
+    perigoso: true,
+    cor_hex: "#ef4444",
+    imagem_url: "https://i.pinimg.com/1200x/a6/1f/23/a61f2360815e1193b262d17ee9c4f33d.jpg"
+  }
+];
+
+export const INITIAL_MONSTRO_PODERES: MonstroPoder[] = [
+  {
+    id: "dracaena_p1",
+    monstro_id: "dracaena",
+    numero: 1,
+    nome: "Combate Marcial",
+    tipo: "ativo",
+    nivel_1_desc: "Dracaenae se movem com extrema agilidade, fazendo com que seus ataques venham de ângulos difíceis de prever e defender. Inimigos possuem 10% a menos de chance de bloqueio e esquiva, além de 15% a menos de chance de contra-ataque.",
+    nivel_2_desc: "A redução na chance de esquiva e bloqueio passa a ser de 15%, enquanto a chance de contra-ataque é reduzida em 20%.",
+    nivel_3_desc: "A redução na chance de esquiva e bloqueio passa a ser de 20%. Neste nível, os ataques da dracaena não podem ser contra-atacados.",
+    nivel_4_desc: "A redução na chance de bloqueio e esquiva passa a ser de 25%. Caso a dracaena erre um ataque armado, ela pode realizar imediatamente um segundo ataque que causa metade do dano."
+  },
+  {
+    id: "dracaena_p2",
+    monstro_id: "dracaena",
+    numero: 2,
+    nome: "Perícia com Escudo",
+    tipo: "passivo",
+    nivel_1_desc: "Dracaenae recebem +15% de chance de bloqueio ao empunharem um escudo. Essa bonificação não se aplica a ataques em área ou ataques mentais e espirituais. A cada bloqueio bem-sucedido, essa chance extra é reduzida em 5%. Ao chegar a zero, o efeito entra em recarga por três turnos.",
+    nivel_2_desc: "A chance de bloqueio extra aumenta para 30%. Caso a chance total ultrapasse 100%, o próximo bloqueio realizado é considerado crítico.",
+    nivel_3_desc: "A dracaena pode bloquear um número indefinido de ataques utilizando seu escudo, ignorando o limite imposto por sua constituição. Cada bloqueio realizado além do limite, sendo ele bem-sucedido ou não, reduz a chance total de bloqueio em 10%.",
+    nivel_4_desc: "O primeiro ataque recebido por uma dracaena empunhando um escudo é automaticamente bloqueado, caso seja possível. A partir disso, ela pode escolher bloquear automaticamente um ataque a cada três turnos. Em combates narrados, o narrador decide em qual ataque essa característica será utilizada."
+  },
+  {
+    id: "dracaena_p3",
+    monstro_id: "dracaena",
+    numero: 3,
+    nome: "Gladiadora",
+    tipo: "ativo",
+    nivel_1_desc: "Sempre que realiza um bloqueio com o escudo, a dracaena recebe +10% de aptidão no próximo ataque armado. Sempre que acerta um ataque armado, recebe +5% de chance de bloqueio na próxima defesa. Os efeitos não se acumulam.",
+    nivel_2_desc: "A dracaena pode utilizar seu escudo ofensivamente, usando sua chance de bloqueio no lugar da aptidão para determinar o ataque. Cada ataque realizado dessa forma reduz em 10% a chance de bloqueio extra concedida por Perícia com Escudo.",
+    nivel_3_desc: "Ataques bem-sucedidos realizados com o escudo causam atordoamento por dois turnos, fazendo com que o inimigo perca suas ações curtas.",
+    nivel_4_desc: "Ataques armados contra alvos sob efeito de atordoamento são sempre considerados como um nível acima na rolagem. Um erro passa a ser um acerto comum, e um acerto acima da média passa a ser um acerto crítico."
+  },
+  {
+    id: "dracaena_p4",
+    monstro_id: "dracaena",
+    numero: 4,
+    nome: "Constrição",
+    tipo: "passivo",
+    nivel_1_desc: "A dracaena pode abrir mão de um ataque para tentar prender um inimigo ao custo de 60 de energia, enrolando uma de suas caudas serpentinas ao redor de um membro do alvo. A tentativa compara a força da dracaena com a força do inimigo. Um inimigo preso perde toda sua movimentação comum e quaisquer defesas que dependam do membro afetado. Qualquer dano recebido pela dracaena quebra a constrição. Quando quebrada, entra em tempo de recarga por três turnos. Caso o ataque constritor falhe, o tempo de recarga é de apenas dois turnos.",
+    nivel_2_desc: "Ao custo de 80 de energia, a dracaena pode realizar uma constrição completa, prendendo o corpo inteiro do inimigo. O alvo perde toda a movimentação e defesas que dependam dela. Receber dano ainda quebra a constrição.",
+    nivel_3_desc: "Enquanto mantém a constrição completa, a dracaena pode usar sua ação ofensiva e gastar 40 de energia para esmagar o inimigo, gerando um acúmulo da condição Sufocado. Este efeito possui 100% de chance de sucesso, mas pode ser interrompido por uma ação defensiva coerente. Cada acúmulo reduz em 40 a mana e o vigor do inimigo. Ao atingir seis acúmulos, o alvo desmaia. Caso a constrição seja quebrada, os acúmulos de Sufocado diminuem em 1 por turno.",
+    nivel_4_desc: "A dracaena pode gastar 100 de energia para aplicar um aperto final, gerando imediatamente três acúmulos de Sufocado. Essa ação só pode ser realizada uma vez por combate e encerra a constrição ao final do uso."
+  },
+  {
+    id: "dracaena_p5",
+    monstro_id: "dracaena",
+    numero: 5,
+    nome: "Presa Venenosa",
+    tipo: "ativo",
+    nivel_1_desc: "Dracaenae possuem veneno natural em suas presas, podendo injetá-lo ao realizar um ataque de mordida, considerado um ataque desarmado, ao custo de 20 de energia. Neste nível, o ataque só pode ser usado contra inimigos sob efeito de Constrição (parcial ou completa). O veneno causa 10 de dano venenoso por turno durante três turnos, sendo cumulativo. Não possui tempo de recarga, mas usos em turnos subsequentes cusstam 10 de energia a mais, cumulativo por turno.",
+    nivel_2_desc: "A dracaena pode utilizar a mordida venenosa mesmo sem o alvo estar sob Constrição, porém com uma penalidade de -10% na aptidão do ataque. O dano passa a ser de 15 por turno durante quatro turnos, ao custo de 30 de energia.",
+    nivel_3_desc: "A penalidade para uso fora da Constrição é removida. O veneno passa a causar 20 de dano por turno durante cinco turnos, ao custo de 50 de energia.",
+    nivel_4_desc: "Ao morder um inimigo sob Constrição, a dracaena pode aplicar todo o dano do nível 3 de uma só vez, totalizando 100 pontos de dano venenoso. Alternativamente, contra inimigos livres, o veneno passa a causar 50 de dano por turno durante dois turnos. Este efeito custa 50 de energia  (além do gasto pelo nível 3) e não interage com Estoque de Venenos."
+  },
+  {
+    id: "dracaena_p6",
+    monstro_id: "dracaena",
+    numero: 6,
+    nome: "Estoque de Venenos",
+    tipo: "passivo",
+    nivel_1_desc: "A Presa Venenosa pode aplicar um veneno alternativo que, em vez de causar dano, drena 20% da mana e do vigor do alvo. Pode ser utilizado uma vez por combate para cada nível de monstro que a dracaena possua. Aumenta o custo de energia do poder original em 20 pontos.",
+    nivel_2_desc: "A Presa Venenosa pode aplicar um veneno que enfraquece a musculatura do inimigo, reduzindo em 10% o dano final de todos os ataques físicos. Pode ser utilizado uma vez por combate para cada nível de monstro que a dracaena possua. Aumenta o custo de energia do poder original em 30 pontos.",
+    nivel_3_desc: "A Presa Venenosa pode aplicar um veneno que prejudica os sentidos do alvo, reduzindo em 15% a chance de acerto de todos os seus ataques. Pode ser utilizado uma vez por combate para cada nível de monstro que a dracaena possua. Aumenta o custo de energia do poder original em 40 pontos.",
+    nivel_4_desc: "A Presa Venenosa pode aplicar um veneno que fecha os pulmões do inimigo, gerando um acúmulo da condição Sufocado por uso bem-sucedido. Acúmulos de Sufocado obtidos dessa forma não diminuem ao fim do turno. Pode ser utilizado uma vez por combate para cada nível de monstro que a dracaena possua. Aumenta o custo de energia do poder original em 50 pontos."
+  },
+  {
+    id: "espectro_p1",
+    monstro_id: "espectro",
+    numero: 1,
+    nome: "Espírito Insurgente",
+    tipo: "ativo",
+    nivel_1_desc: "Todo dano causado pelo espectro é convertido para espiritual, utilizando este atributo no lugar de força para os cálculos e rolagens de acerto. Além disso, o espectro recebe 20% de bônus em espiritualidade e 5% de chance de acerto espiritual.",
+    nivel_2_desc: "O bônus em espiritualidade aumenta para 40%, e a chance de acerto espiritual para 10%.",
+    nivel_3_desc: "O bônus em espiritualidade aumenta para 60%, e a chance de acerto espiritual para 15%.",
+    nivel_4_desc: "O bônus em espiritualidade aumenta para 80%, e a chance de acerto espiritual para 20% (ultrapassando o teto do fórum)."
+  },
+  {
+    id: "espectro_p2",
+    monstro_id: "espectro",
+    numero: 2,
+    nome: "Imortalidade Desesperada",
+    tipo: "passivo",
+    nivel_1_desc: "Espectros são resistentes a dano não por sua constituição, mas pelo desespero de se atrelar a uma forma quase doentia de vida. Neste nível, todo dano não espiritual que recebam é reduzido em 5% (que se soma à resistência normal do espectro). Caso receba dano espiritual, essa passiva deixa de funcionar em todos os seus níveis até o fim do turno.",
+    nivel_2_desc: "Neste nível, a redução aumenta para 10%.",
+    nivel_3_desc: "Neste nível, a redução aumenta para 15%",
+    nivel_4_desc: "No nível final, a redução aumenta para 20% e, uma vez por combate, o espectro ignora completamente o aumento de dano gerado por um acerto crítico que tenha sofrido."
+  },
+  {
+    id: "espectro_p3",
+    monstro_id: "espectro",
+    numero: 3,
+    nome: "Domínio Profano",
+    tipo: "ativo",
+    nivel_1_desc: "Espectros clamam o domínio sobre os mortos, mas não oferecem a eles qualquer lealdade. Quando uma criatura invocada pelo espectro morre, este recupera 20 de energia.",
+    nivel_2_desc: "A partir deste nível, qualquer criatura invocada pelo espectro utiliza a chance de acerto por espiritualidade dele para atacar, caso seja maior que suas próprias aptidões.",
+    nivel_3_desc: "Um dos mortos-vivos invocado pelo espectro passa a surgir com 200 HP, no lugar de 100. Essa passiva só entra em efeito uma vez por combate.",
+    nivel_4_desc: "Mortos-vivos invocados pelo espectro passam a ter seu dano convertido para espiritual, assim como o próprio invocador."
+  },
+  {
+    id: "espectro_p4",
+    monstro_id: "espectro",
+    numero: 4,
+    nome: "Reivindicar os Mortos",
+    tipo: "passivo",
+    nivel_1_desc: "Um espectro é capaz de convocar os mortos e reivindicar o domínio para si, um ato de necromancia que ofende os deuses da morte. Invocações de qualquer nível deste poder possuem enjoo, mas não pagam energia por ataque. Neste nível, por 40 de energia, é capaz de trazer um zumbi que possui a mesma ficha do bestiário, e nível 1 de monstro. Todos os seus atributos físicos possuem 1 ponto e ele possui 100 de HP - qualquer poder ativo usado consome a energia do próprio espectro. Caso use o poder em níveis mais altos, pode invocar um zumbi extra por nível, pagando 40 de energia por cada.",
+    nivel_2_desc: "Neste nível e pagando 60 de energia, é capaz de trazer um ghoul que possui a mesma ficha do bestiário, e nível 1 de monstro. Todos os seus atributos físicos possuem 2 pontos, e ele possui 100 de HP. Qualquer poder ativo utilizado consome a energia do próprio espectro. Caso use o poder em níveis mais altos, consegue invocar um ghoul extra por nível, pagando 60 de energia por cada.",
+    nivel_3_desc: "Neste nível e pagando 80 de energia, é capaz de trazer um spartus que possui a mesma ficha do bestiário, e nível 1 de monstro. Todos os seus atributos físicos possuem 3 pontos, e ele possui 100 de HP. Qualquer poder ativo utilizado consome a energia do próprio espectro. Caso use o poder em níveis mais altos, consegue invocar um spartus extra por nível, pagando 80 de energia por cada.",
+    nivel_4_desc: "No nível final, um espectro clama domínio completo sobre a morte. Ao invocar uma criatura, é possível pagar mais 20 de energia (por invocação) para que ela surja no nível 2. Cada criatura invocada dessa maneira também surge com 50 de energia para usar suas próprias habilidades. Usar o poder dessa maneira ainda conta como um uso de nível mais alto (seria possível, por exemplo, invocar quatro zumbis de nível 2 ao custo de 240 de energia)."
+  },
+  {
+    id: "espectro_p5",
+    monstro_id: "espectro",
+    numero: 5,
+    nome: "Âncora da Existência",
+    tipo: "ativo",
+    nivel_1_desc: "O espectro força sua alma a se prender temporariamente a ecos de morte ao seu redor - mortos-vivos ou criaturas espirituais aliadas. Pagando 40 de energia, ele ancora sua essência a uma criatura deste tipo, redirecionando 30% de todo o dano que receber (após cálculo das resistências) para ela. Além disso, o alvo ancorado perde 10% de dano. O efeito dura por dois turnos e entra em tempo de espera por mais dois. Quando um alvo ancorado morre, o espectro pode pagar imediatamente o custo do poder para ancorar um novo pelo restante da duração do poder.",
+    nivel_2_desc: "No nível 2, o custo de energia passa a ser 60, e agora 40% de todo o dano recebido pelo espectro é direcionado ao alvo. A criatura afetada não tem mais debuff em dano, e o poder passa a durar por três turnos antes de entrar em espera.",
+    nivel_3_desc: "No nível 3, o custo de energia passa a ser 80, e agora 50% de todo o dano recebido pelo espectro é direcionado ao alvo. Todo dano espiritual causado por um espectro que ancorou sua essência é aumentado em 10%, e a duração do poder aumenta para quatro turnos.",
+    nivel_4_desc: "O nível 4 funciona como os anteriores, mas agora custa 100 de energia para aumentar a duração para cinco turnos. Adicionalmente, caso o espectro sofra dano letal enquanto tem sua essência ancorada, o alvo da âncora morre em seu lugar e o dano causado ao espectro é anulado."
+  },
+  {
+    id: "espectro_p6",
+    monstro_id: "espectro",
+    numero: 6,
+    nome: "Drenar Essência",
+    tipo: "passivo",
+    nivel_1_desc: "Espectros são seres repletos de energia negativa, capazes de sugar tudo o que é bom e converter em pura maldade. Através do toque, podem lançar uma onda de energia necrótica em seus inimigos. Por 40 de energia, causa 40 de dano espiritual em um alvo e cura o espectro em 50% do dano causado. Três turnos de tempo de recarga.",
+    nivel_2_desc: "Tanto o custo quando o dano causado aumentam para 60, com o espectro ainda se curando em 50% deste. Alternativamente, pode pagar o custo para curar qualquer morto-vivo que não esteja sob o efeito de Âncora da Existência em 60 de HP.",
+    nivel_3_desc: "Neste nível, tanto o custo quanto o dano causado aumentam para 80, mas a cura agora é de 60% do dano causado. O uso alternativo passa a curar 90 de HP do morto-vivo afetado.",
+    nivel_4_desc: "No nível final, o poder custa 100 de energia e causa 100 de dano espiritual, ainda curando o espectro em 60% do valor causado. O uso alternativo passa a curar mortos-vivos em área, devolvendo 90 HP a todos que estiverem a até 5 metros do espectro."
+  }
+];
+

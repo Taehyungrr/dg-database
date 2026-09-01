@@ -134,4 +134,36 @@ export interface SupabaseConfig {
   lastTested?: string;
 }
 
-export type TabType = 'arvore' | 'fichas' | 'combate' | 'evolucao';
+export type TipoMonstro = 'terrestre' | 'voador' | 'aquatico' | 'ctonico' | string;
+
+export interface Monstro {
+  id: string;
+  nome: string;
+  descricao?: string;
+  indole?: string;
+  aparencia?: string;
+  atributos_principais?: string;
+  tipo: TipoMonstro;
+  perigoso: boolean;
+  cor_hex?: string;
+  imagem_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MonstroPoder {
+  id: string;
+  monstro_id: string;
+  numero: number;
+  nome: string;
+  tipo?: 'ativo' | 'passivo' | string;
+  nivel_1_desc?: string;
+  nivel_2_desc?: string;
+  nivel_3_desc?: string;
+  nivel_4_desc?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type TabType = 'arvore' | 'fichas' | 'bestiario' | 'combate' | 'evolucao';
+

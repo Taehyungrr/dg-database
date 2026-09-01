@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Deus, Ramo, Poder, FichaPersonagem, TabType, SupabaseConfig } from './types';
+import { Deus, Ramo, Poder, Monstro, MonstroPoder, FichaPersonagem, TabType, SupabaseConfig } from './types';
 import { 
   fetchAllDeuses, 
   fetchAllRamos, 
-  fetchAllPoderes, 
+  fetchAllPoderes,
+  fetchAllMonstros,
+  fetchAllMonstroPoderes,
   getSavedSupabaseConfig
 } from './services/supabaseClient';
 import { getSavedSheets, createNewSheet, saveSheet, hasUnexportedChanges } from './services/characterSheets';
 import { Navbar } from './components/Navbar';
 import { PowerTreeCalculator } from './components/PowerTreeCalculator';
 import { CharacterSheetsView } from './components/CharacterSheetsView';
+import { BestiaryView } from './components/BestiaryView';
 import { CombatCalculatorView } from './components/CombatCalculatorView';
 import { EvolutionView } from './components/EvolutionView';
 import { BBCodeModal } from './components/BBCodeModal';
@@ -60,6 +63,8 @@ export default function App() {
   const [deuses, setDeuses] = useState<Deus[]>([]);
   const [ramos, setRamos] = useState<Ramo[]>([]);
   const [poderes, setPoderes] = useState<Poder[]>([]);
+  const [monstros, setMonstros] = useState<Monstro[]>([]);
+  const [monstroPoderes, setMonstroPoderes] = useState<MonstroPoder[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -80,15 +85,19 @@ export default function App() {
     else setIsLoading(true);
 
     try {
-      const [d, r, p] = await Promise.all([
+      const [d, r, p, m, mp] = await Promise.all([
         fetchAllDeuses(),
         fetchAllRamos(),
-        fetchAllPoderes()
+        fetchAllPoderes(),
+        fetchAllMonstros(),
+        fetchAllMonstroPoderes()
       ]);
       
       setDeuses(d);
       setRamos(r);
       setPoderes(p);
+      setMonstros(m);
+      setMonstroPoderes(mp);
       setSupabaseConfig(getSavedSupabaseConfig());
     } catch (e) {
       console.error('Erro ao carregar dados do RPG:', e);
@@ -333,7 +342,15 @@ export default function App() {
                 />
               )}
 
-              {/* TAB 3: COMBATE (CALCULADORA DE DANO E ACERTO) */}
+              {/* TAB 3: BESTIÁRIO (BANCO DE DADOS DE MONSTROS & HABILIDADES) */}
+              {activeTab === 'bestiario' && (
+                <BestiaryView
+                  monstros={monstros}
+                  monstroPoderes={monstroPoderes}
+                />
+              )}
+
+              {/* TAB 4: COMBATE (CALCULADORA DE DANO E ACERTO) */}
               {activeTab === 'combate' && (
                 <CombatCalculatorView
                   sheets={savedSheets}

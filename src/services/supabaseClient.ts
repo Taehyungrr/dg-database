@@ -1,11 +1,19 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Deus, Ramo, Poder, SupabaseConfig } from '../types';
-import { INITIAL_DEUSES, INITIAL_RAMOS, INITIAL_PODERES } from '../data/defaultData';
+import { Deus, Ramo, Poder, Monstro, MonstroPoder, SupabaseConfig } from '../types';
+import { 
+  INITIAL_DEUSES, 
+  INITIAL_RAMOS, 
+  INITIAL_PODERES,
+  INITIAL_MONSTROS,
+  INITIAL_MONSTRO_PODERES
+} from '../data/defaultData';
 
 const CONFIG_STORAGE_KEY = 'pj_supabase_config_v1';
 const LOCAL_STORAGE_DEUSES = 'pj_local_deuses_v1';
 const LOCAL_STORAGE_RAMOS = 'pj_local_ramos_v1';
 const LOCAL_STORAGE_PODERES = 'pj_local_poderes_v1';
+const LOCAL_STORAGE_MONSTROS = 'pj_local_monstros_v1';
+const LOCAL_STORAGE_MONSTRO_PODERES = 'pj_local_monstro_poderes_v1';
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -96,6 +104,8 @@ export function clearLocalCache(): void {
     localStorage.removeItem(LOCAL_STORAGE_DEUSES);
     localStorage.removeItem(LOCAL_STORAGE_RAMOS);
     localStorage.removeItem(LOCAL_STORAGE_PODERES);
+    localStorage.removeItem(LOCAL_STORAGE_MONSTROS);
+    localStorage.removeItem(LOCAL_STORAGE_MONSTRO_PODERES);
   } catch (e) {
     console.error('Erro ao limpar cache local:', e);
   }
@@ -275,3 +285,54 @@ export async function fetchAllPoderes(): Promise<Poder[]> {
     icone_url: p.icone_url || p.icone || p.icon || p.icone_css || 'zap'
   }));
 }
+
+/**
+ * Fetches all Monstros from Supabase with fallback to local cache / defaultData
+ */
+export async function fetchAllMonstros(): Promise<Monstro[]> {
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client.from('monstros').select('*').order('nome', { ascending: true });
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((m: any) => ({
+          ...m,
+          tipo: (m.tipo || 'terrestre').toLowerCase().trim(),
+          perigoso: Boolean(m.perigoso),
+          cor_hex: m.cor_hex || '#38bdf8'
+        }));
+        setLocalData(LOCAL_STORAGE_MONSTROS, mapped);
+        return mapped as Monstro[];
+      }
+    } catch (e) {
+      console.warn('Supabase inacessível, usando dados locais de monstros:', e);
+    }
+  }
+  const localList = getLocalData<Monstro>(LOCAL_STORAGE_MONSTROS, INITIAL_MONSTROS);
+  return localList.map((m: any) => ({
+    ...m,
+    tipo: (m.tipo || 'terrestre').toLowerCase().trim(),
+    perigoso: Boolean(m.perigoso),
+    cor_hex: m.cor_hex || '#38bdf8'
+  }));
+}
+
+/**
+ * Fetches all Monstro Poderes from Supabase with fallback to local cache / defaultData
+ */
+export async function fetchAllMonstroPoderes(): Promise<MonstroPoder[]> {
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client.from('monstro_poderes').select('*').order('numero', { ascending: true });
+      if (!error && data && data.length > 0) {
+        setLocalData(LOCAL_STORAGE_MONSTRO_PODERES, data);
+        return data as MonstroPoder[];
+      }
+    } catch (e) {
+      console.warn('Supabase inacessível, usando dados locais de poderes de monstros:', e);
+    }
+  }
+  return getLocalData<MonstroPoder>(LOCAL_STORAGE_MONSTRO_PODERES, INITIAL_MONSTRO_PODERES);
+}
+
