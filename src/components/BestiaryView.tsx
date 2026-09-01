@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Monstro, MonstroPoder, TipoMonstro } from '../types';
 import { matchesAnySearchQuery } from '../utils/textUtils';
 import { BBCodeRenderer } from './BBCodeRenderer';
+import { GiMinotaur } from 'react-icons/gi';
 import { 
-  Skull, 
   Search, 
   Flame, 
   Waves, 
@@ -13,7 +13,8 @@ import {
   Info, 
   Swords, 
   AlertTriangle,
-  Compass
+  Compass,
+  X
 } from 'lucide-react';
 
 interface BestiaryViewProps {
@@ -69,16 +70,21 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
   // Active monster ID
   const [selectedMonstroId, setSelectedMonstroId] = useState<string>('');
 
-  // Filter monstros based on active category & search query
-  const filteredMonstros = useMemo(() => {
-    return monstros.filter((m) => {
-      const monstroCat = normalizeCategory(m.tipo);
-      const targetCat = normalizeCategory(activeCategory);
-      
-      if (monstroCat !== targetCat) return false;
+  const isSearching = searchMonstroQuery.trim().length > 0;
 
-      // Text search
-      if (searchMonstroQuery.trim()) {
+  // Filter and sort monstros:
+  // When searching, search across ALL 4 categories.
+  // Standard monsters (alphabetical A-Z) first, followed by dangerous monsters (also alphabetical A-Z) at the end.
+  const filteredMonstros = useMemo(() => {
+    const list = monstros.filter((m) => {
+      const monstroCat = normalizeCategory(m.tipo);
+
+      // If not searching, filter strictly by active category
+      if (!isSearching) {
+        const targetCat = normalizeCategory(activeCategory);
+        if (monstroCat !== targetCat) return false;
+      } else {
+        // Search across all 4 categories
         const matches = matchesAnySearchQuery(
           [m.nome, m.descricao, m.indole, m.aparencia, m.tipo, m.atributos_principais],
           searchMonstroQuery
@@ -88,7 +94,16 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
       return true;
     });
-  }, [monstros, activeCategory, searchMonstroQuery]);
+
+    return list.sort((a, b) => {
+      const aDanger = !!a.perigoso;
+      const bDanger = !!b.perigoso;
+      if (aDanger !== bDanger) {
+        return aDanger ? 1 : -1; // dangerous monsters go to the end
+      }
+      return (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [monstros, activeCategory, searchMonstroQuery, isSearching]);
 
   // Keep selection synchronized when category or filtered results change
   useEffect(() => {
@@ -142,7 +157,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
     });
   }, [currentMonstroPowers, searchPowerQuery]);
 
-  // Category counts
+  // Category counts (reflects search matches when searching, otherwise total count per category)
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     CATEGORIES.forEach((cat) => {
@@ -151,11 +166,21 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
     monstros.forEach((m) => {
       const cat = normalizeCategory(m.tipo);
       if (counts[cat] !== undefined) {
-        counts[cat] += 1;
+        if (!isSearching) {
+          counts[cat] += 1;
+        } else {
+          const matches = matchesAnySearchQuery(
+            [m.nome, m.descricao, m.indole, m.aparencia, m.tipo, m.atributos_principais],
+            searchMonstroQuery
+          );
+          if (matches) {
+            counts[cat] += 1;
+          }
+        }
       }
     });
     return counts;
-  }, [monstros]);
+  }, [monstros, searchMonstroQuery, isSearching]);
 
   // Category label helper
   const getCategoryLabel = (tipo?: string): string => {
@@ -181,8 +206,8 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--bordadg)]">
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-cinzel font-bold text-[var(--ctexto1)] tracking-wide flex items-center gap-2">
-              <Skull className="w-5 h-5 text-blue-500" />
-              <span>Bestiário Mitológico</span>
+              <GiMinotaur className="w-6 h-6 text-blue-500" />
+              <span>Bestiário</span>
             </h2>
             <p className="text-xs text-[var(--ctexto2)] mt-0.5">
               Enciclopédia de criaturas, monstros lendários e suas características de combate
@@ -198,8 +223,18 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 value={searchMonstroQuery}
                 onChange={(e) => setSearchMonstroQuery(e.target.value)}
                 placeholder="Buscar monstro..."
-                className="pl-8 pr-3 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-xl text-xs text-[var(--ctexto1)] placeholder-[var(--ctexto2)] focus:outline-none focus:border-blue-500 w-48 sm:w-56"
+                className="pl-8 pr-8 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-xl text-xs text-[var(--ctexto1)] placeholder-[var(--ctexto2)] focus:outline-none focus:border-blue-500 w-48 sm:w-60"
               />
+              {searchMonstroQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchMonstroQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--ctexto2)] hover:text-[var(--ctexto1)] p-0.5 transition-colors cursor-pointer"
+                  title="Limpar busca"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -218,6 +253,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 id={`filter-cat-${cat.id}`}
                 onClick={() => {
                   setActiveCategory(cat.id);
+                  if (isSearching) {
+                    setSearchMonstroQuery('');
+                  }
                 }}
                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                   isCategoryActive
@@ -249,7 +287,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         <div className="flex flex-wrap items-center gap-2 pt-1">
           {filteredMonstros.length === 0 ? (
             <div className="p-4 text-center w-full bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto2)]">
-              Nenhum monstro encontrado para a categoria selecionada.
+              {isSearching 
+                ? `Nenhum monstro encontrado para "${searchMonstroQuery}".` 
+                : 'Nenhum monstro encontrado para a categoria selecionada.'}
             </div>
           ) : (
             filteredMonstros.map((m) => {
@@ -263,6 +303,10 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                   id={`monstro-select-${m.id}`}
                   onClick={() => {
                     setSelectedMonstroId(m.id);
+                    const mCat = normalizeCategory(m.tipo);
+                    if (mCat && mCat !== activeCategory) {
+                      setActiveCategory(mCat);
+                    }
                   }}
                   className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                     isSelected
@@ -317,10 +361,10 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
             <div className="relative z-10 flex flex-col md:flex-row items-start gap-6">
               
-              {/* Left Column: Monster Portrait (Size Cover, Position Center Center) */}
+              {/* Left Column: Monster Portrait (250x400 size cover, position center) */}
               <div className="w-full md:w-auto shrink-0 flex flex-col items-center">
                 <div 
-                  className="w-[200px] sm:w-[220px] h-[300px] sm:h-[340px] rounded-2xl border shadow-2xl overflow-hidden relative bg-[var(--fundo1)] flex items-center justify-center group"
+                  className="w-[250px] h-[400px] rounded-2xl border shadow-2xl overflow-hidden relative bg-[var(--fundo1)] flex items-center justify-center group shrink-0"
                   style={{
                     borderColor: `${monstroColor}50`,
                     boxShadow: `0 10px 25px -5px ${monstroColor}30`
@@ -339,7 +383,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center p-4 text-center space-y-2">
-                      <Skull className="w-16 h-16 opacity-40" style={{ color: monstroColor }} />
+                      <GiMinotaur className="w-20 h-20 opacity-40" style={{ color: monstroColor }} />
                       <span className="text-xs font-cinzel font-bold text-[var(--ctexto2)]">
                         {selectedMonstro.nome}
                       </span>
@@ -451,17 +495,11 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
             
             {/* Powers Section Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--bordadg)]">
-              <div className="flex items-center gap-2.5">
-                <div 
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: monstroColor }}
-                />
-                <div>
-                  <h3 className="font-cinzel text-base sm:text-lg font-bold text-[var(--ctexto1)] flex items-center gap-2">
-                    <Swords className="w-4 h-4 text-blue-500" />
-                    <span>Poderes e Habilidades</span>
-                  </h3>
-                </div>
+              <div>
+                <h3 className="font-cinzel text-base sm:text-lg font-bold text-[var(--ctexto1)] flex items-center gap-2">
+                  <Swords className="w-4 h-4" style={{ color: monstroColor }} />
+                  <span>Poderes e Habilidades</span>
+                </h3>
               </div>
 
               <div className="flex items-center gap-3">

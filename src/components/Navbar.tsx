@@ -1,10 +1,10 @@
 import React from 'react';
 import { TabType } from '../types';
+import { MinotaurIcon } from './icons/MinotaurIcon';
 import { 
   Database, 
   TreePine, 
   FileText, 
-  Skull,
   Swords, 
   TrendingUp, 
   Sun, 
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <Skull className="w-3.5 h-3.5 text-blue-500" />
+              <MinotaurIcon className="w-3.5 h-3.5 text-blue-500" />
               <span>Bestiário</span>
             </button>
 
@@ -197,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             activeTab === 'bestiario' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <Skull className="w-3 h-3 text-blue-500" />
+          <MinotaurIcon className="w-3.5 h-3.5 text-blue-500" />
           <span>Bestiário</span>
         </button>
 
