@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Monstro, MonstroPoder, TipoMonstro } from '../types';
 import { matchesAnySearchQuery } from '../utils/textUtils';
+import { generateMonstroPoderesBBCode } from '../utils/bbcode';
 import { BBCodeRenderer } from './BBCodeRenderer';
-import { GiMinotaur } from 'react-icons/gi';
+import { MinotaurIcon } from './icons/MinotaurIcon';
 import { 
   Search, 
   Flame, 
@@ -14,7 +15,9 @@ import {
   Swords, 
   AlertTriangle,
   Compass,
-  X
+  X,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface BestiaryViewProps {
@@ -70,7 +73,39 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
   // Active monster ID
   const [selectedMonstroId, setSelectedMonstroId] = useState<string>('');
 
+  // BBCode copy level selector (1, 2, 3, or 4)
+  const [bbcodeLevel, setBbcodeLevel] = useState<number>(4);
+  const [copiedBBCode, setCopiedBBCode] = useState<boolean>(false);
+
   const isSearching = searchMonstroQuery.trim().length > 0;
+
+  // Group powers by monster ID for rapid lookup
+  const powersByMonstroId = useMemo(() => {
+    const map = new Map<string, MonstroPoder[]>();
+    for (const p of monstroPoderes) {
+      const list = map.get(p.monstro_id) || [];
+      list.push(p);
+      map.set(p.monstro_id, list);
+    }
+    return map;
+  }, [monstroPoderes]);
+
+  // Check if monster matches search query (ONLY name and powers including levels, ignoring description, indole, and appearance)
+  const checkMonstroMatches = (m: Monstro, query: string): boolean => {
+    if (!query.trim()) return true;
+    const powers = powersByMonstroId.get(m.id) || [];
+    const fieldsToSearch: (string | undefined)[] = [
+      m.nome,
+      ...powers.flatMap((p) => [
+        p.nome,
+        p.nivel_1_desc,
+        p.nivel_2_desc,
+        p.nivel_3_desc,
+        p.nivel_4_desc
+      ])
+    ];
+    return matchesAnySearchQuery(fieldsToSearch, query);
+  };
 
   // Filter and sort monstros:
   // When searching, search across ALL 4 categories.
@@ -84,12 +119,8 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         const targetCat = normalizeCategory(activeCategory);
         if (monstroCat !== targetCat) return false;
       } else {
-        // Search across all 4 categories
-        const matches = matchesAnySearchQuery(
-          [m.nome, m.descricao, m.indole, m.aparencia, m.tipo, m.atributos_principais],
-          searchMonstroQuery
-        );
-        if (!matches) return false;
+        // Search across all 4 categories, taking into account only name and powers (including levels)
+        if (!checkMonstroMatches(m, searchMonstroQuery)) return false;
       }
 
       return true;
@@ -103,7 +134,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
       }
       return (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
     });
-  }, [monstros, activeCategory, searchMonstroQuery, isSearching]);
+  }, [monstros, activeCategory, searchMonstroQuery, isSearching, powersByMonstroId]);
 
   // Keep selection synchronized when category or filtered results change
   useEffect(() => {
@@ -157,6 +188,30 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
     });
   }, [currentMonstroPowers, searchPowerQuery]);
 
+  // Copy monster powers as BBCode up to selected level
+  const handleCopyPowersBBCode = async () => {
+    if (!selectedMonstro || currentMonstroPowers.length === 0) return;
+    const bbcode = generateMonstroPoderesBBCode(currentMonstroPowers, bbcodeLevel);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(bbcode);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = bbcode;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiedBBCode(true);
+      setTimeout(() => setCopiedBBCode(false), 2500);
+    } catch (err) {
+      console.error('Falha ao copiar BBCode:', err);
+    }
+  };
+
   // Category counts (reflects search matches when searching, otherwise total count per category)
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -169,18 +224,14 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         if (!isSearching) {
           counts[cat] += 1;
         } else {
-          const matches = matchesAnySearchQuery(
-            [m.nome, m.descricao, m.indole, m.aparencia, m.tipo, m.atributos_principais],
-            searchMonstroQuery
-          );
-          if (matches) {
+          if (checkMonstroMatches(m, searchMonstroQuery)) {
             counts[cat] += 1;
           }
         }
       }
     });
     return counts;
-  }, [monstros, searchMonstroQuery, isSearching]);
+  }, [monstros, searchMonstroQuery, isSearching, checkMonstroMatches]);
 
   // Category label helper
   const getCategoryLabel = (tipo?: string): string => {
@@ -206,7 +257,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--bordadg)]">
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-cinzel font-bold text-[var(--ctexto1)] tracking-wide flex items-center gap-2">
-              <GiMinotaur className="w-6 h-6 text-blue-500" />
+              <MinotaurIcon className="w-6 h-6 text-blue-500" />
               <span>Bestiário</span>
             </h2>
             <p className="text-xs text-[var(--ctexto2)] mt-0.5">
@@ -383,7 +434,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center p-4 text-center space-y-2">
-                      <GiMinotaur className="w-20 h-20 opacity-40" style={{ color: monstroColor }} />
+                      <MinotaurIcon className="w-20 h-20 opacity-40" style={{ color: monstroColor }} />
                       <span className="text-xs font-cinzel font-bold text-[var(--ctexto2)]">
                         {selectedMonstro.nome}
                       </span>
@@ -502,7 +553,52 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 </h3>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Level selector & Copy BBCode */}
+                {currentMonstroPowers.length > 0 && (
+                  <div className="flex items-center gap-1.5 bg-[var(--fundo3)] p-1 rounded-xl border border-[var(--bordadg)]">
+                    <label htmlFor="bbcode-level-select" className="text-[11px] font-semibold text-[var(--ctexto2)] pl-1 hidden sm:inline">
+                      Nível:
+                    </label>
+                    <select
+                      id="bbcode-level-select"
+                      value={bbcodeLevel}
+                      onChange={(e) => setBbcodeLevel(Number(e.target.value))}
+                      className="bg-[var(--fundo1)] text-[var(--ctexto1)] text-xs font-bold px-2 py-1 rounded-lg border border-[var(--bordadg)] focus:outline-none focus:border-blue-500 cursor-pointer"
+                      title="Selecione o nível máximo dos poderes para o BBCode"
+                    >
+                      <option value={1}>Nível 1</option>
+                      <option value={2}>Nível 2</option>
+                      <option value={3}>Nível 3</option>
+                      <option value={4}>Nível 4</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      id="btn-copy-monster-bbcode"
+                      onClick={handleCopyPowersBBCode}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm ${
+                        copiedBBCode
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-blue-600 hover:bg-blue-500 text-white'
+                      }`}
+                      title="Copiar poderes do monstro em formato BBCode"
+                    >
+                      {copiedBBCode ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar BBCode</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
                 {/* Search Input for Powers */}
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-[var(--ctexto2)] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -511,7 +607,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                     value={searchPowerQuery}
                     onChange={(e) => setSearchPowerQuery(e.target.value)}
                     placeholder="Filtrar habilidades..."
-                    className="pl-8 pr-3 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-xl text-xs text-[var(--ctexto1)] placeholder-[var(--ctexto2)] focus:outline-none focus:border-blue-500 w-44 sm:w-52"
+                    className="pl-8 pr-3 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-xl text-xs text-[var(--ctexto1)] placeholder-[var(--ctexto2)] focus:outline-none focus:border-blue-500 w-36 sm:w-44"
                   />
                 </div>
               </div>

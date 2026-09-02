@@ -165,5 +165,5 @@ export interface MonstroPoder {
   updated_at?: string;
 }
 
-export type TabType = 'arvore' | 'fichas' | 'bestiario' | 'combate' | 'evolucao';
+export type TabType = 'arvore' | 'fichas' | 'bestiario' | 'calculadoras' | 'combate' | 'evolucao';
 

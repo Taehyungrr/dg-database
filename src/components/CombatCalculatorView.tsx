@@ -5,7 +5,10 @@ import { saveSheet } from '../services/characterSheets';
 import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
 import { montarFaixas, ATTR_NOME_EXIBICAO, erroCritico, bonusCriticoFisico, aplicarTeto, progressaoEnergetica, clamp } from '../utils/combatUtils';
 import { calculateDamage, DamageCalculationParams, DamageCalculationResult, WeaponMaterialInput, ChannelingMetalInput } from '../utils/damageCalculator';
+import { EvolutionView } from './EvolutionView';
 import { 
+  Calculator,
+  TrendingUp,
   Swords, 
   Crosshair, 
   User, 
@@ -92,7 +95,7 @@ interface CombatCalculatorViewProps {
 }
 
 export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets, onUpdateSheet }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto'>('dano');
+  const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto' | 'evolucao'>('dano');
 
   // Selected Character Sheets (Default: Preenchimento Manual)
   const [selectedSheetId, setSelectedSheetId] = useState<string>('');
@@ -532,11 +535,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[var(--ctexto1)] flex items-center gap-2">
-              <Swords className="w-5 h-5 text-rose-500" />
-              Calculadora de Combate
+              <Calculator className="w-5 h-5 text-blue-500" />
+              Calculadoras
             </h2>
             <p className="text-xs text-[var(--ctexto2)]">
-              Calcule dano e acerto com precisão, manualmente ou puxando os dados de uma ficha do Minhas Fichas.
+              Calculadoras de combate (dano e acerto) e calculadora de evolução e EXP para semideuses.
             </p>
           </div>
 
@@ -562,14 +565,26 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               <Crosshair className="w-3.5 h-3.5" />
               <span>Calculadora de Acerto</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('evolucao')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeSubTab === 'evolucao' ? 'bg-emerald-600 text-white shadow' : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Calculadora de Evolução</span>
+            </button>
           </div>
         </div>
 
-        {/* Character Sheet Selector for Auto-Fill */}
+        {/* Character Sheet Selector for Auto-Fill (Dano, Acerto & Evolução) */}
         <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <User className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-xs font-bold text-[var(--ctexto1)] whitespace-nowrap">Carregar Ficha Atacante:</span>
+            <span className="text-xs font-bold text-[var(--ctexto1)] whitespace-nowrap">
+              {activeSubTab === 'evolucao' ? 'Carregar Ficha:' : 'Carregar Ficha Atacante:'}
+            </span>
             <select
               value={selectedSheetId}
               onChange={(e) => setSelectedSheetId(e.target.value)}
@@ -1844,6 +1859,21 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 3: CALCULADORA DE EVOLUÇÃO & EXP                                     */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'evolucao' && (
+        <div className="space-y-6">
+          <EvolutionView
+            sheets={sheets}
+            onUpdateSheet={onUpdateSheet}
+            hideHeader
+            selectedSheetId={selectedSheetId}
+            onSelectSheetId={setSelectedSheetId}
+          />
         </div>
       )}
 

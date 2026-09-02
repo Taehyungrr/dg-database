@@ -19,13 +19,28 @@ import {
 interface EvolutionViewProps {
   sheets: FichaPersonagem[];
   onUpdateSheet?: (updatedSheet: FichaPersonagem) => void;
+  hideHeader?: boolean;
+  selectedSheetId?: string;
+  onSelectSheetId?: (id: string) => void;
 }
 
 export const EvolutionView: React.FC<EvolutionViewProps> = ({
   sheets,
-  onUpdateSheet
+  onUpdateSheet,
+  hideHeader = false,
+  selectedSheetId: externalSelectedSheetId,
+  onSelectSheetId: externalOnSelectSheetId
 }) => {
-  const [selectedSheetId, setSelectedSheetId] = useState<string>('');
+  const [internalSelectedSheetId, setInternalSelectedSheetId] = useState<string>('');
+
+  const selectedSheetId = externalSelectedSheetId !== undefined ? externalSelectedSheetId : internalSelectedSheetId;
+  const setSelectedSheetId = (id: string) => {
+    if (externalOnSelectSheetId) {
+      externalOnSelectSheetId(id);
+    } else {
+      setInternalSelectedSheetId(id);
+    }
+  };
 
   // Evolution Fields
   const [nivelAtual, setNivelAtual] = useState<number | string>(1);
@@ -118,53 +133,55 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
   const selectedSheet = sheets.find((s) => s.id === selectedSheetId);
 
   return (
-    <div className="space-y-6 pb-12 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 pb-12 animate-fadeIn">
       
       {/* HEADER */}
-      <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-6 border border-[var(--bordadg)] shadow-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[var(--ctexto1)] flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              Evolução e Calculadora de EXP
-            </h2>
-            <p className="text-xs text-[var(--ctexto2)]">
-              Acompanhe o ganho de experiência, subida de nível e projeção de atributos do seu semideus.
-            </p>
-          </div>
-        </div>
-
-        {/* Character Sheet Selector */}
-        <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <User className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="text-xs font-bold text-[var(--ctexto1)] whitespace-nowrap">Carregar Ficha:</span>
-            <select
-              value={selectedSheetId}
-              onChange={(e) => setSelectedSheetId(e.target.value)}
-              className="w-full sm:w-64 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 cursor-pointer"
-            >
-              <option value="">-- Preenchimento Manual --</option>
-              {sheets.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nome} (Nível {s.nivel})
-                </option>
-              ))}
-            </select>
+      {!hideHeader && (
+        <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-6 border border-[var(--bordadg)] shadow-md space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[var(--ctexto1)] flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                Evolução e Calculadora de EXP
+              </h2>
+              <p className="text-xs text-[var(--ctexto2)]">
+                Acompanhe o ganho de experiência, subida de nível e projeção de atributos do seu semideus.
+              </p>
+            </div>
           </div>
 
-          {selectedSheetId && (
-            <button
-              type="button"
-              onClick={() => setSelectedSheetId('')}
-              className="text-xs text-rose-400 hover:text-rose-300 font-semibold cursor-pointer underline flex items-center gap-1"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Limpar Seleção (Modo Manual)</span>
-            </button>
-          )}
+          {/* Character Sheet Selector */}
+          <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <User className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="text-xs font-bold text-[var(--ctexto1)] whitespace-nowrap">Carregar Ficha:</span>
+              <select
+                value={selectedSheetId}
+                onChange={(e) => setSelectedSheetId(e.target.value)}
+                className="w-full sm:w-64 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 cursor-pointer"
+              >
+                <option value="">-- Preenchimento Manual --</option>
+                {sheets.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome} (Nível {s.nivel})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedSheetId && (
+              <button
+                type="button"
+                onClick={() => setSelectedSheetId('')}
+                className="text-xs text-rose-400 hover:text-rose-300 font-semibold cursor-pointer underline flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Limpar Seleção (Modo Manual)</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* SAVE TOAST NOTIFICATION */}
       {saveToast && (
@@ -271,7 +288,7 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
           </div>
 
           <h4 className="font-cinzel text-xs font-bold text-[var(--ctexto1)] pt-2 border-t border-[var(--bordadg)]">
-            Atributos Relevantes para Status (1 a 5)
+            Atributos
           </h4>
 
           <div className="grid grid-cols-2 gap-2.5">
@@ -398,7 +415,7 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
             {/* Status Breakdown (Vida, Mana, Vigor) */}
             <div className="space-y-2 pt-2">
               <h4 className="text-xs font-bold uppercase text-[var(--ctexto1)]">
-                Projeção de Status Combatentes:
+                Status após evolução
               </h4>
 
               <div className="space-y-2">

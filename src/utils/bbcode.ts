@@ -1,4 +1,4 @@
-import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
+import { Deus, FichaPersonagem, Poder, Ramo, MonstroPoder } from '../types';
 import { calculateSheetPoints, SheetCalculationResult } from './calculator';
 
 export interface BBCodeOptions {
@@ -232,5 +232,60 @@ Poderes no template:
 [/code]`;
 
   return output;
+}
+
+/**
+ * Generates BBCode for monster powers matching the semideuses format,
+ * up to a specified maximum level (1, 2, 3, or 4).
+ * (Monsters do not have base descriptions and have up to 4 levels).
+ */
+export function generateMonstroPoderesBBCode(
+  powers: MonstroPoder[],
+  maxLevel: number = 4
+): string {
+  if (!powers || powers.length === 0) return '';
+
+  const sortedPowers = [...powers].sort((a, b) => (a.numero || 0) - (b.numero || 0));
+
+  const powerBlocks = sortedPowers.map((poder, index) => {
+    const num = poder.numero ?? (index + 1);
+    const lines: string[] = [`[b]${num}. ${poder.nome}[/b]`];
+
+    if (maxLevel >= 1 && poder.nivel_1_desc) {
+      const clean1 = poder.nivel_1_desc
+        .replace(/^\[b\]Nível\s*1\[\/b\]\s*:?\s*/i, '')
+        .replace(/^Nível\s*1\s*:?\s*/i, '')
+        .trim();
+      if (clean1) lines.push(`[b]Nível 1:[/b] ${clean1}`);
+    }
+
+    if (maxLevel >= 2 && poder.nivel_2_desc) {
+      const clean2 = poder.nivel_2_desc
+        .replace(/^\[b\]Nível\s*2\[\/b\]\s*:?\s*/i, '')
+        .replace(/^Nível\s*2\s*:?\s*/i, '')
+        .trim();
+      if (clean2) lines.push(`[b]Nível 2:[/b] ${clean2}`);
+    }
+
+    if (maxLevel >= 3 && poder.nivel_3_desc) {
+      const clean3 = poder.nivel_3_desc
+        .replace(/^\[b\]Nível\s*3\[\/b\]\s*:?\s*/i, '')
+        .replace(/^Nível\s*3\s*:?\s*/i, '')
+        .trim();
+      if (clean3) lines.push(`[b]Nível 3:[/b] ${clean3}`);
+    }
+
+    if (maxLevel >= 4 && poder.nivel_4_desc) {
+      const clean4 = poder.nivel_4_desc
+        .replace(/^\[b\]Nível\s*4\[\/b\]\s*:?\s*/i, '')
+        .replace(/^Nível\s*4\s*:?\s*/i, '')
+        .trim();
+      if (clean4) lines.push(`[b]Nível 4:[/b] ${clean4}`);
+    }
+
+    return lines.join('\n');
+  });
+
+  return powerBlocks.join('\n\n');
 }
 

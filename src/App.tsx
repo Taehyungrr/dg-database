@@ -147,8 +147,38 @@ export default function App() {
     const inspectAndObserveParentTheme = () => {
       let isHandled = false;
 
-      // 1. Check parent window (e.g. if embedded in iframe)
-      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      // 0. URL search parameters & hash (ideal for iframes, e.g. ?theme=dark, ?theme=light, ?hideThemeToggle=true)
+      if (typeof window !== 'undefined') {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const themeParam = urlParams.get('theme')?.toLowerCase()?.trim();
+          const hideParam = urlParams.get('hideThemeToggle')?.toLowerCase()?.trim();
+          const hash = window.location.hash?.toLowerCase()?.trim();
+
+          if (themeParam === 'dark' || themeParam === 'light') {
+            setIsControlledByParent(true);
+            setIsDarkMode(themeParam === 'dark');
+            isHandled = true;
+          } else if (hash === '#dark' || hash === '#theme=dark') {
+            setIsControlledByParent(true);
+            setIsDarkMode(true);
+            isHandled = true;
+          } else if (hash === '#light' || hash === '#theme=light') {
+            setIsControlledByParent(true);
+            setIsDarkMode(false);
+            isHandled = true;
+          }
+
+          if (hideParam === 'true' || hideParam === '1') {
+            setIsControlledByParent(true);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // 1. Check parent window (same-origin iframe)
+      if (!isHandled && typeof window !== 'undefined' && window.parent && window.parent !== window) {
         try {
           const parentHtml = window.parent.document.documentElement;
           if (parentHtml) {
@@ -350,20 +380,9 @@ export default function App() {
                 />
               )}
 
-              {/* TAB 4: COMBATE (CALCULADORA DE DANO E ACERTO) */}
-              {activeTab === 'combate' && (
+              {/* TAB 4: CALCULADORAS (DANO, ACERTO E EVOLUÇÃO) */}
+              {(activeTab === 'calculadoras' || activeTab === 'combate' || activeTab === 'evolucao') && (
                 <CombatCalculatorView
-                  sheets={savedSheets}
-                  onUpdateSheet={(updatedSheet) => {
-                    const newSheets = saveSheet(updatedSheet);
-                    setSavedSheets(newSheets);
-                  }}
-                />
-              )}
-
-              {/* TAB 4: EVOLUÇÃO (CALCULADORA DE EXP E BARRA DE PROGRESSO) */}
-              {activeTab === 'evolucao' && (
-                <EvolutionView
                   sheets={savedSheets}
                   onUpdateSheet={(updatedSheet) => {
                     const newSheets = saveSheet(updatedSheet);
