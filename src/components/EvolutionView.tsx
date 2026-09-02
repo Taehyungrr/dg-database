@@ -58,10 +58,10 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
   const nExpAtual = Math.max(0, typeof expAtual === 'number' ? expAtual : (parseInt(expAtual, 10) || 0));
   const nExpGanha = Math.max(0, typeof expGanha === 'number' ? expGanha : (parseInt(expGanha, 10) || 0));
 
-  const nForca = Math.max(1, typeof forca === 'number' ? forca : (parseInt(forca, 10) || 1));
-  const nVigorStat = Math.max(1, typeof vigorStat === 'number' ? vigorStat : (parseInt(vigorStat, 10) || 1));
-  const nMagia = Math.max(1, typeof magia === 'number' ? magia : (parseInt(magia, 10) || 1));
-  const nEspiritualidade = Math.max(1, typeof espiritualidade === 'number' ? espiritualidade : (parseInt(espiritualidade, 10) || 1));
+  const nForca = Math.min(5, Math.max(1, typeof forca === 'number' ? forca : (parseInt(forca, 10) || 1)));
+  const nVigorStat = Math.min(5, Math.max(1, typeof vigorStat === 'number' ? vigorStat : (parseInt(vigorStat, 10) || 1)));
+  const nMagia = Math.min(5, Math.max(1, typeof magia === 'number' ? magia : (parseInt(magia, 10) || 1)));
+  const nEspiritualidade = Math.min(5, Math.max(1, typeof espiritualidade === 'number' ? espiritualidade : (parseInt(espiritualidade, 10) || 1)));
 
   // Success Feedback Toast
   const [saveToast, setSaveToast] = useState<string | null>(null);
@@ -74,10 +74,10 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
 
     setNivelAtual(sheet.nivel || 1);
     setExpAtual(sheet.exp || 0);
-    setForca(sheet.atributos.forca || 1);
-    setVigorStat(sheet.atributos.constituicao || 1);
-    setMagia(sheet.atributos.magia || 1);
-    setEspiritualidade(sheet.atributos.espiritualidade || 1);
+    setForca(Math.min(5, Math.max(1, sheet.atributos.forca || 1)));
+    setVigorStat(Math.min(5, Math.max(1, sheet.atributos.constituicao || 1)));
+    setMagia(Math.min(5, Math.max(1, sheet.atributos.magia || 1)));
+    setEspiritualidade(Math.min(5, Math.max(1, sheet.atributos.espiritualidade || 1)));
   }, [selectedSheetId, sheets]);
 
   // Status calculation helper
@@ -302,11 +302,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setForca(v === '' ? '' : parseInt(v, 10));
+                  if (v === '') {
+                    setForca('');
+                  } else {
+                    const num = parseInt(v, 10);
+                    setForca(isNaN(num) ? 1 : Math.min(5, Math.max(1, num)));
+                  }
                 }}
                 onBlur={() => {
-                  if (forca === '' || typeof forca !== 'number' || isNaN(forca)) {
+                  if (forca === '' || typeof forca !== 'number' || isNaN(forca) || forca < 1) {
                     setForca(1);
+                  } else if (forca > 5) {
+                    setForca(5);
                   }
                 }}
                 className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
@@ -323,11 +330,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setVigorStat(v === '' ? '' : parseInt(v, 10));
+                  if (v === '') {
+                    setVigorStat('');
+                  } else {
+                    const num = parseInt(v, 10);
+                    setVigorStat(isNaN(num) ? 1 : Math.min(5, Math.max(1, num)));
+                  }
                 }}
                 onBlur={() => {
-                  if (vigorStat === '' || typeof vigorStat !== 'number' || isNaN(vigorStat)) {
+                  if (vigorStat === '' || typeof vigorStat !== 'number' || isNaN(vigorStat) || vigorStat < 1) {
                     setVigorStat(1);
+                  } else if (vigorStat > 5) {
+                    setVigorStat(5);
                   }
                 }}
                 className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
@@ -344,11 +358,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setMagia(v === '' ? '' : parseInt(v, 10));
+                  if (v === '') {
+                    setMagia('');
+                  } else {
+                    const num = parseInt(v, 10);
+                    setMagia(isNaN(num) ? 1 : Math.min(5, Math.max(1, num)));
+                  }
                 }}
                 onBlur={() => {
-                  if (magia === '' || typeof magia !== 'number' || isNaN(magia)) {
+                  if (magia === '' || typeof magia !== 'number' || isNaN(magia) || magia < 1) {
                     setMagia(1);
+                  } else if (magia > 5) {
+                    setMagia(5);
                   }
                 }}
                 className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"
@@ -365,11 +386,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setEspiritualidade(v === '' ? '' : parseInt(v, 10));
+                  if (v === '') {
+                    setEspiritualidade('');
+                  } else {
+                    const num = parseInt(v, 10);
+                    setEspiritualidade(isNaN(num) ? 1 : Math.min(5, Math.max(1, num)));
+                  }
                 }}
                 onBlur={() => {
-                  if (espiritualidade === '' || typeof espiritualidade !== 'number' || isNaN(espiritualidade)) {
+                  if (espiritualidade === '' || typeof espiritualidade !== 'number' || isNaN(espiritualidade) || espiritualidade < 1) {
                     setEspiritualidade(1);
+                  } else if (espiritualidade > 5) {
+                    setEspiritualidade(5);
                   }
                 }}
                 className="w-full bg-[var(--fundo3)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 font-mono"

@@ -251,8 +251,12 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     const sheet = sheets.find((s) => s.id === selectedSheetId);
     if (!sheet) return;
 
-    // Load attributes
-    setAttackerAttrs({ ...sheet.atributos });
+    // Load attributes (clamped 1 to 5)
+    const clampedAttrs = {} as AtributosPersonagem;
+    (Object.keys(sheet.atributos) as Array<keyof AtributosPersonagem>).forEach((k) => {
+      clampedAttrs[k] = Math.min(5, Math.max(1, sheet.atributos[k] || 1));
+    });
+    setAttackerAttrs(clampedAttrs);
 
     // Load combat bonuses
     const cb = sheet.bonus_combate;
@@ -322,7 +326,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     if (!selectedDefenderSheetId) return;
     const sheet = sheets.find((s) => s.id === selectedDefenderSheetId);
     if (sheet) {
-      setDefenderAttrs({ ...sheet.atributos });
+      const clampedAttrs = {} as AtributosPersonagem;
+      (Object.keys(sheet.atributos) as Array<keyof AtributosPersonagem>).forEach((k) => {
+        clampedAttrs[k] = Math.min(5, Math.max(1, sheet.atributos[k] || 1));
+      });
+      setDefenderAttrs(clampedAttrs);
     }
   }, [selectedDefenderSheetId, sheets]);
 
@@ -639,11 +647,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                     <input
                       type="number"
                       min="1"
-                      max="20"
+                      max="5"
                       value={attackerAttrs[attrKey]}
-                      onChange={(e) =>
-                        setAttackerAttrs((prev) => ({ ...prev, [attrKey]: Math.max(1, Number(e.target.value)) }))
-                      }
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setAttackerAttrs((prev) => ({
+                          ...prev,
+                          [attrKey]: isNaN(val) ? 1 : Math.min(5, Math.max(1, val))
+                        }));
+                      }}
                       className="w-full text-center bg-[var(--fundo1)] py-1 rounded-lg font-mono font-bold text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 shadow-inner"
                     />
                   </div>
@@ -1377,11 +1390,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       <input
                         type="number"
                         min="1"
-                        max="20"
+                        max="5"
                         value={defenderAttrs[k]}
-                        onChange={(e) =>
-                          setDefenderAttrs((prev) => ({ ...prev, [k]: Math.max(1, Number(e.target.value)) }))
-                        }
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setDefenderAttrs((prev) => ({
+                            ...prev,
+                            [k]: isNaN(val) ? 1 : Math.min(5, Math.max(1, val))
+                          }));
+                        }}
                         className="w-full text-center bg-[var(--fundo1)] py-1 rounded-lg font-mono font-bold text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] shadow-inner"
                       />
                     </div>
@@ -1601,12 +1619,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                     <input
                       type="number"
                       min="1"
-                      max="10"
+                      max="5"
                       value={attackerAttrs[attrKey]}
                       onFocus={(e) => e.target.select()}
-                      onChange={(e) =>
-                        setAttackerAttrs((prev) => ({ ...prev, [attrKey]: Math.max(1, Number(e.target.value)) }))
-                      }
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setAttackerAttrs((prev) => ({
+                          ...prev,
+                          [attrKey]: isNaN(val) ? 1 : Math.min(5, Math.max(1, val))
+                        }));
+                      }}
                       className="w-full text-center bg-[var(--fundo1)] py-1 rounded-lg font-mono font-bold text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] shadow-inner"
                     />
                   </div>
