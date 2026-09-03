@@ -291,7 +291,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
           {CATEGORIES.map((cat) => {
             const isCategoryActive = activeCategory === cat.id;
             const count = categoryCounts[cat.id] || 0;
@@ -308,7 +308,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                     setSearchMonstroQuery('');
                   }
                 }}
-                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 border cursor-pointer w-full ${
                   isCategoryActive
                     ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-md font-bold'
                     : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
@@ -340,9 +340,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
         </div>
 
         {/* Monster Selector Badges */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2 pt-1 w-full">
           {filteredMonstros.length === 0 ? (
-            <div className="p-4 text-center w-full bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto2)]">
+            <div className="p-4 text-center w-full col-span-full bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto2)]">
               {isSearching 
                 ? `Nenhum monstro encontrado para "${searchMonstroQuery}".` 
                 : 'Nenhum monstro encontrado para a categoria selecionada.'}
@@ -364,7 +364,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                       setActiveCategory(mCat);
                     }
                   }}
-                  className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 border cursor-pointer w-full ${
                     isSelected
                       ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-lg font-bold'
                       : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
@@ -386,10 +386,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                   {m.perigoso && (
                     <span 
                       title="Criatura Perigosa"
-                      className="px-1.5 py-0.2 rounded-md text-[9px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-0.5"
+                      className="px-1 py-0.2 rounded text-[8px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-0.5 shrink-0"
                     >
                       <AlertTriangle className="w-2.5 h-2.5" />
-                      <span>PERIGOSO</span>
                     </span>
                   )}
                 </button>

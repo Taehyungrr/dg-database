@@ -137,7 +137,7 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
         </div>
 
         {/* Deity Badges Wrapped Grid */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-2 pt-1 w-full">
           {filteredDeuses.map((d) => {
             const isSelected = d.id === selectedDeusId;
             const cardColor = d.cor_hex || '#3b82f6';
@@ -151,9 +151,9 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
                   setSelectedDeusId(d.id);
                   setActiveBranchTab('all');
                 }}
-                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 border cursor-pointer w-full ${
                   isSelected
-                    ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-lg'
+                    ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-lg font-bold'
                     : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                 }`}
                 style={{
