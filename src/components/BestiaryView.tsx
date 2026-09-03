@@ -35,14 +35,14 @@ interface CategoryFilter {
 const CATEGORIES: CategoryFilter[] = [
   { id: 'terrestre', name: 'Terrestre', color: '#eab308', icon: Mountain },
   { id: 'voador', name: 'Voador', color: '#38bdf8', icon: Feather },
-  { id: 'aquatico', name: 'Aquático', color: '#0ea5e9', icon: Waves },
+  { id: 'aquatico', name: 'Aquático', color: '#14b8a6', icon: Waves },
   { id: 'ctonico', name: 'Ctônico', color: '#ef4444', icon: Flame }
 ];
 
 const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   terrestre: '#eab308',
   voador: '#38bdf8',
-  aquatico: '#0ea5e9',
+  aquatico: '#14b8a6',
   ctonico: '#ef4444'
 };
 
@@ -310,12 +310,14 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 }}
                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                   isCategoryActive
-                    ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-md border-[var(--bordadg)] font-bold'
+                    ? 'shadow-md font-bold'
                     : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                 }`}
                 style={{
                   borderColor: isCategoryActive ? cat.color : undefined,
-                  boxShadow: isCategoryActive ? `0 0 12px 0 ${cat.color}25` : undefined
+                  backgroundColor: isCategoryActive ? `${cat.color}15` : undefined,
+                  color: isCategoryActive ? cat.color : undefined,
+                  boxShadow: isCategoryActive ? `0 0 12px 0 ${cat.color}30` : undefined
                 }}
               >
                 <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: cat.color }} />
@@ -323,9 +325,14 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 <span 
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
                     isCategoryActive 
-                      ? 'bg-blue-500/20 text-blue-400 font-bold' 
+                      ? 'font-bold' 
                       : 'bg-[var(--fundo2)] text-[var(--ctexto2)]'
                   }`}
+                  style={
+                    isCategoryActive
+                      ? { backgroundColor: `${cat.color}25`, color: cat.color }
+                      : undefined
+                  }
                 >
                   {count}
                 </span>
@@ -361,11 +368,13 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                   }}
                   className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                     isSelected
-                      ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-lg'
+                      ? 'shadow-lg font-bold'
                       : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                   }`}
                   style={{
                     borderColor: isSelected ? cardColor : undefined,
+                    backgroundColor: isSelected ? `${cardColor}15` : undefined,
+                    color: isSelected ? cardColor : undefined,
                     boxShadow: isSelected ? `0 0 15px 0 ${cardColor}30` : undefined
                   }}
                 >
