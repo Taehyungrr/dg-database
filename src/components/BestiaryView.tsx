@@ -310,13 +310,11 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                 }}
                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                   isCategoryActive
-                    ? 'shadow-md font-bold'
+                    ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-md font-bold'
                     : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                 }`}
                 style={{
                   borderColor: isCategoryActive ? cat.color : undefined,
-                  backgroundColor: isCategoryActive ? `${cat.color}15` : undefined,
-                  color: isCategoryActive ? cat.color : undefined,
                   boxShadow: isCategoryActive ? `0 0 12px 0 ${cat.color}30` : undefined
                 }}
               >
@@ -368,20 +366,20 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                   }}
                   className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border cursor-pointer ${
                     isSelected
-                      ? 'shadow-lg font-bold'
+                      ? 'bg-[var(--fundo3)] text-[var(--ctexto1)] shadow-lg font-bold'
                       : 'bg-[var(--fundo1)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                   }`}
                   style={{
                     borderColor: isSelected ? cardColor : undefined,
-                    backgroundColor: isSelected ? `${cardColor}15` : undefined,
-                    color: isSelected ? cardColor : undefined,
                     boxShadow: isSelected ? `0 0 15px 0 ${cardColor}30` : undefined
                   }}
                 >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: cardColor }}
-                  />
+                  {isSearching && (
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: cardColor }}
+                    />
+                  )}
                   <span className="font-medium whitespace-nowrap">
                     {m.nome}
                   </span>
