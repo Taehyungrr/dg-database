@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, X, Award, ArrowUpCircle } from 'lucide-react';
 
 interface PointsExhaustedModalProps {
@@ -20,6 +20,16 @@ export const PointsExhaustedModal: React.FC<PointsExhaustedModalProps> = ({
   onIncreaseLevel,
   godColor = '#ef4444'
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (

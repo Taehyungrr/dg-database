@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
 import { calculateSheetPoints } from '../utils/calculator';
 import { generateForumBBCode } from '../utils/bbcode';
@@ -24,6 +24,16 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [previewMode, setPreviewMode] = useState<'raw' | 'preview'>('raw');
+
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -96,6 +96,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
   useEffect(() => {
     if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
       const normalizedAttrs = normalizeAttributes(sheet.atributos);
       const planAttrs = sheet.planejamento?.atributos_planejados 
         ? normalizeAttributes(sheet.planejamento.atributos_planejados)
@@ -114,6 +117,10 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       setCopiedBBCode(false);
       setSuggestPlanningModal(null);
       setPlanConflictModal(null);
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     }
   }, [isOpen, sheet, isNew]);
 
@@ -699,8 +706,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
-      <div className="bg-[var(--fundo2)] text-[var(--ctexto1)] w-full max-w-7xl h-full max-h-[96vh] rounded-2xl border border-[var(--bordadg)] shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
+      <div className="bg-[var(--fundo2)] text-[var(--ctexto1)] w-full max-w-7xl h-full max-h-full rounded-2xl border border-[var(--bordadg)] shadow-2xl overflow-hidden flex flex-col">
         
         {/* Toast */}
         {toastMsg && (
