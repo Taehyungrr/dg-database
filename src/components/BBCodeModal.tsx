@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
 import { calculateSheetPoints } from '../utils/calculator';
 import { generateForumBBCode } from '../utils/bbcode';
@@ -35,7 +36,7 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const selectedDeus = deuses.find((d) => d.id === activeSheet.deus_id);
   const godRamos = ramos.filter((r) => r.deus_id === selectedDeus?.id);
@@ -73,9 +74,9 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
-      <div className="bg-[var(--fundo2)] border border-[var(--bordadg)] w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full max-h-full">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex flex-col p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="bg-[var(--fundo2)] border border-[var(--bordadg)] w-full max-w-3xl mx-auto flex-1 min-h-0 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-[var(--bordadg)] flex items-center justify-between bg-[var(--fundo1)]">
@@ -263,6 +264,7 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

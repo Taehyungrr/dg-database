@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X, Award, ArrowUpCircle } from 'lucide-react';
 
 interface PointsExhaustedModalProps {
@@ -30,11 +31,11 @@ export const PointsExhaustedModal: React.FC<PointsExhaustedModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
-      <div className="relative w-full max-w-md bg-[var(--fundo2)] border border-red-500/50 rounded-2xl shadow-2xl p-6 space-y-5 text-center text-[var(--ctexto1)] max-h-[calc(100vh-2.5rem)] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="relative w-full max-w-md bg-[var(--fundo2)] border border-red-500/50 rounded-2xl shadow-2xl p-6 space-y-5 text-center text-[var(--ctexto1)] max-h-full overflow-y-auto">
         
         {/* Close Button */}
         <button
@@ -106,6 +107,7 @@ export const PointsExhaustedModal: React.FC<PointsExhaustedModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

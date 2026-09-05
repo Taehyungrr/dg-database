@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Deus, Ramo, Poder, FichaPersonagem, AtributosPersonagem } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
 import { 
@@ -124,7 +125,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     }
   }, [isOpen, sheet, isNew]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -705,9 +706,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     }
   ];
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
-      <div className="bg-[var(--fundo2)] text-[var(--ctexto1)] w-full max-w-7xl h-full max-h-full rounded-2xl border border-[var(--bordadg)] shadow-2xl overflow-hidden flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex flex-col p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="bg-[var(--fundo2)] text-[var(--ctexto1)] w-full max-w-7xl mx-auto flex-1 min-h-0 rounded-2xl border border-[var(--bordadg)] shadow-2xl overflow-hidden flex flex-col">
         
         {/* Toast */}
         {toastMsg && (
@@ -1985,6 +1986,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
