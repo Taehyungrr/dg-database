@@ -706,7 +706,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fadeIn overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
       <div className="bg-[var(--fundo2)] text-[var(--ctexto1)] w-full max-w-7xl h-full max-h-full rounded-2xl border border-[var(--bordadg)] shadow-2xl overflow-hidden flex flex-col">
         
         {/* Toast */}

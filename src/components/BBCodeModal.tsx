@@ -74,8 +74,8 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-[var(--fundo2)] border border-[var(--bordadg)] w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="bg-[var(--fundo2)] border border-[var(--bordadg)] w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full max-h-full">
         
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-[var(--bordadg)] flex items-center justify-between bg-[var(--fundo1)]">

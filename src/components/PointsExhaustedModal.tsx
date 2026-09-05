@@ -33,8 +33,8 @@ export const PointsExhaustedModal: React.FC<PointsExhaustedModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-md bg-[var(--fundo2)] border border-red-500/50 rounded-2xl shadow-2xl p-6 space-y-5 text-center text-[var(--ctexto1)]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-5 bg-black/40 backdrop-blur-sm animate-fadeIn overflow-hidden">
+      <div className="relative w-full max-w-md bg-[var(--fundo2)] border border-red-500/50 rounded-2xl shadow-2xl p-6 space-y-5 text-center text-[var(--ctexto1)] max-h-[calc(100vh-2.5rem)] overflow-y-auto">
         
         {/* Close Button */}
         <button
