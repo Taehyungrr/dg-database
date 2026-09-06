@@ -39,8 +39,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 min-h-[38px]">
           
-          {/* Main Action / Navigation Buttons */}
-          <nav className="flex items-center gap-1 sm:gap-2 flex-wrap">
+          {/* Mobile-only brand badge/title */}
+          <div className="flex md:hidden items-center">
+            <span className="font-mono font-black text-xs text-blue-500 uppercase tracking-wider">
+              Divine Ground RPG
+            </span>
+          </div>
+
+          {/* Main Desktop Navigation Buttons */}
+          <nav className="hidden md:flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               id="nav-tab-arvore"

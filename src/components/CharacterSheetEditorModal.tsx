@@ -1112,28 +1112,37 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, item_ponto_poder: !prev.item_ponto_poder }))}
-                        className={`w-full flex items-center justify-between p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer select-none ${
-                          formData.item_ponto_poder
-                            ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-sm'
-                            : 'bg-[var(--fundo1)] border-[var(--bordadg)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:border-amber-500/30'
-                        }`}
+                        className="w-full flex items-center justify-between p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer select-none"
+                        style={{
+                          backgroundColor: formData.item_ponto_poder ? `${godColor}15` : 'var(--fundo1)',
+                          borderColor: formData.item_ponto_poder ? `${godColor}60` : 'var(--bordadg)',
+                          color: formData.item_ponto_poder ? godColor : 'var(--ctexto2)',
+                        }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
-                            formData.item_ponto_poder ? 'bg-amber-500 border-amber-400 text-black shadow-sm' : 'border-[var(--bordadg)] bg-[var(--fundo2)]'
-                          }`}>
+                          <div 
+                            className="w-4 h-4 rounded-md border flex items-center justify-center transition-all shadow-sm"
+                            style={{
+                              backgroundColor: formData.item_ponto_poder ? godColor : 'var(--fundo2)',
+                              borderColor: formData.item_ponto_poder ? godColor : 'var(--bordadg)',
+                              color: formData.item_ponto_poder ? '#000' : 'transparent',
+                            }}
+                          >
                             {formData.item_ponto_poder && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                           <span className="flex items-center gap-1.5 font-medium">
-                            <Sparkles className={`w-3.5 h-3.5 ${formData.item_ponto_poder ? 'text-amber-400' : 'text-amber-500/60'}`} />
+                            <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: godColor }} />
                             Item de Ponto de Poder
                           </span>
                         </div>
-                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wide ${
-                          formData.item_ponto_poder 
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                            : 'bg-[var(--fundo2)] text-[var(--ctexto2)] border border-[var(--bordadg)]'
-                        }`}>
+                        <span 
+                          className="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wide border transition-all"
+                          style={{
+                            backgroundColor: formData.item_ponto_poder ? `${godColor}25` : 'var(--fundo2)',
+                            borderColor: formData.item_ponto_poder ? `${godColor}50` : 'var(--bordadg)',
+                            color: formData.item_ponto_poder ? godColor : 'var(--ctexto2)',
+                          }}
+                        >
                           +1 pt
                         </span>
                       </button>
@@ -1492,9 +1501,13 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
               <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--fundo2)] border grid grid-cols-3 gap-1.5 sm:gap-3 text-center transition-all ${
                 isPlanningMode ? 'border-amber-500/40' : 'border-[var(--bordadg)]'
               }`}>
-                <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--fundo1)] border transition-all flex flex-col justify-between items-center text-center min-h-[92px] ${
-                  formData.item_ponto_poder ? 'border-amber-500/40 bg-amber-950/10' : 'border-[var(--bordadg)]'
-                }`}>
+                <div 
+                  className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--fundo1)] border transition-all flex flex-col justify-between items-center text-center min-h-[92px]"
+                  style={{
+                    borderColor: formData.item_ponto_poder ? `${godColor}60` : 'var(--bordadg)',
+                    backgroundColor: formData.item_ponto_poder ? `${godColor}12` : 'var(--fundo1)',
+                  }}
+                >
                   <div className="flex flex-col items-center">
                     <span className="text-[9px] sm:text-[10px] text-[var(--ctexto2)] uppercase font-bold block truncate">Disponíveis</span>
                     <div className="flex items-baseline gap-1 my-0.5">
@@ -1511,20 +1524,26 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, item_ponto_poder: !prev.item_ponto_poder }))}
-                    className={`mt-1.5 w-full py-1 px-1.5 rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none text-[9px] sm:text-[10px] font-semibold ${
-                      formData.item_ponto_poder
-                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
-                        : 'bg-[var(--fundo2)] border-[var(--bordadg)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:border-amber-500/40'
-                    }`}
+                    className="mt-1.5 w-full py-1 px-1.5 rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none text-[9px] sm:text-[10px] font-semibold"
+                    style={{
+                      backgroundColor: formData.item_ponto_poder ? `${godColor}25` : 'var(--fundo2)',
+                      borderColor: formData.item_ponto_poder ? `${godColor}60` : 'var(--bordadg)',
+                      color: formData.item_ponto_poder ? godColor : 'var(--ctexto2)',
+                    }}
                     title="Item de Ponto de Poder (+1 pt de poder adicional)"
                   >
-                    <div className={`w-3 h-3 rounded flex items-center justify-center border transition-all shrink-0 ${
-                      formData.item_ponto_poder ? 'bg-amber-500 border-amber-400 text-black shadow-sm' : 'border-[var(--bordadg)] bg-[var(--fundo1)]'
-                    }`}>
+                    <div 
+                      className="w-3 h-3 rounded flex items-center justify-center border transition-all shrink-0"
+                      style={{
+                        backgroundColor: formData.item_ponto_poder ? godColor : 'var(--fundo1)',
+                        borderColor: formData.item_ponto_poder ? godColor : 'var(--bordadg)',
+                        color: formData.item_ponto_poder ? '#000' : 'transparent',
+                      }}
+                    >
                       {formData.item_ponto_poder && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                     </div>
                     <span className="font-semibold truncate">Item Ponto de Poder</span>
-                    {formData.item_ponto_poder && <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />}
+                    {formData.item_ponto_poder && <Sparkles className="w-2.5 h-2.5 shrink-0" style={{ color: godColor }} />}
                   </button>
                 </div>
 
