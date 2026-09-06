@@ -47,7 +47,8 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     activeSheet.nivel,
     activeSheet.poderes_comprados,
     godPoderes,
-    godRamos
+    godRamos,
+    activeSheet.item_ponto_poder
   );
 
   const bbcodeText = generateForumBBCode(

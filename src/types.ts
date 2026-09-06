@@ -114,6 +114,7 @@ export interface FichaPersonagem {
   deus_id: string;
   nivel: number;
   exp?: number; // Pontos de EXP atuais
+  item_ponto_poder?: boolean; // Item especial que concede +1 ponto de poder
   poderes_comprados: Record<string, number>; // poder_id -> nivel (1, 2, or 3)
   atributos: AtributosPersonagem;
   planejamento?: PlanejamentoFicha;

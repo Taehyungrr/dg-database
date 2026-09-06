@@ -298,7 +298,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
               sheet.nivel,
               sheet.poderes_comprados || {},
               deityPoderes,
-              deityRamos
+              deityRamos,
+              sheet.item_ponto_poder
             );
 
             const sheetExp = sheet.exp || 0;

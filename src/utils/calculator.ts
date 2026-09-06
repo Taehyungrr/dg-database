@@ -122,10 +122,11 @@ export function calculateSheetPoints(
   characterLevel: number,
   purchasedPowers: Record<string, number>,
   allPowers: Poder[],
-  allRamos: Ramo[]
+  allRamos: Ramo[],
+  hasPowerPointItem: boolean = false
 ): SheetCalculationResult {
   const clampedLevel = Math.min(40, Math.max(1, characterLevel));
-  const totalPointsAvailable = clampedLevel;
+  const totalPointsAvailable = clampedLevel + (hasPowerPointItem ? 1 : 0);
   let totalPointsSpent = 0;
   let activePowersCount = 0;
   const powerDetails: Record<string, PowerCostInfo> = {};

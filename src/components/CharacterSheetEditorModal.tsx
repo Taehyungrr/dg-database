@@ -159,7 +159,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     formData.nivel,
     evolutionPowers,
     godPoderes,
-    godRamos
+    godRamos,
+    formData.item_ponto_poder
   );
 
   // Planning Data (Simulated at Level 40, max 20 attribute points and 40 power points)
@@ -174,7 +175,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     40,
     planningPowers,
     godPoderes,
-    godRamos
+    godRamos,
+    formData.item_ponto_poder
   );
 
   // Active references based on current mode
@@ -434,7 +436,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       isPlanningMode ? 40 : formData.nivel,
       testPurchased,
       godPoderes,
-      godRamos
+      godRamos,
+      formData.item_ponto_poder
     );
 
     if (testResult.pointsRemaining < 0) {
@@ -447,7 +450,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
           pendingAction: () => {
             setEditorMode('planejamento');
             const testPlan = { ...planningPowers, [poderId]: targetLevel };
-            const testPlanResult = calculateSheetPoints(40, testPlan, godPoderes, godRamos);
+            const testPlanResult = calculateSheetPoints(40, testPlan, godPoderes, godRamos, formData.item_ponto_poder);
             if (testPlanResult.pointsRemaining >= 0) {
               applyPowerChange(poderId, targetLevel, true);
               showToast(`Entrou no Modo Planejamento e adicionou Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}"!`);
@@ -458,25 +461,25 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         });
         return;
       } else {
-        showToast('Limite de 40 pontos de poder do planejamento atingido!');
+        showToast(`Limite de ${testResult.totalPointsAvailable} pontos de poder do planejamento atingido!`);
         return;
       }
     }
 
-    // If in Evolution Mode and an active power planning exists, check if combining evolution + planned powers exceeds 40 points
+    // If in Evolution Mode and an active power planning exists, check if combining evolution + planned powers exceeds limit
     if (!isPlanningMode && hasActivePowerPlanning) {
       const mergedPlanPowers: Record<string, number> = {
         ...planningPowers,
         [poderId]: Math.max(planningPowers[poderId] || 0, targetLevel)
       };
 
-      const testMerged = calculateSheetPoints(40, mergedPlanPowers, godPoderes, godRamos);
+      const testMerged = calculateSheetPoints(40, mergedPlanPowers, godPoderes, godRamos, formData.item_ponto_poder);
       if (testMerged.pointsRemaining < 0) {
         const powerObj = godPoderes.find((p) => p.id === poderId);
         setPlanConflictModal({
           open: true,
           title: 'Limite do Planejamento Excedido',
-          message: `Adquirir o Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}" fará com que a soma da evolução com os poderes planejados ultrapasse o limite total de 40 pontos de poder (${testMerged.totalPointsSpent}/40 pts). Deseja prosseguir e ajustar o planejamento?`,
+          message: `Adquirir o Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}" fará com que a soma da evolução com os poderes planejados ultrapasse o limite total de ${testMerged.totalPointsAvailable} pontos de poder (${testMerged.totalPointsSpent}/${testMerged.totalPointsAvailable} pts). Deseja prosseguir e ajustar o planejamento?`,
           onConfirm: () => {
             applyPowerChange(poderId, targetLevel);
             setPlanConflictModal(null);
@@ -1104,6 +1107,36 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
+
+                      {/* Toggle Item de Ponto de Poder */}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, item_ponto_poder: !prev.item_ponto_poder }))}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer select-none ${
+                          formData.item_ponto_poder
+                            ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-sm'
+                            : 'bg-[var(--fundo1)] border-[var(--bordadg)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:border-amber-500/30'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                            formData.item_ponto_poder ? 'bg-amber-500 border-amber-400 text-black shadow-sm' : 'border-[var(--bordadg)] bg-[var(--fundo2)]'
+                          }`}>
+                            {formData.item_ponto_poder && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Sparkles className={`w-3.5 h-3.5 ${formData.item_ponto_poder ? 'text-amber-400' : 'text-amber-500/60'}`} />
+                            Item de Ponto de Poder
+                          </span>
+                        </div>
+                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-wide ${
+                          formData.item_ponto_poder 
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                            : 'bg-[var(--fundo2)] text-[var(--ctexto2)] border border-[var(--bordadg)]'
+                        }`}>
+                          +1 pt
+                        </span>
+                      </button>
                     </div>
 
                     {/* Experiência (EXP) & Barra de Progresso Integrada */}
@@ -1459,12 +1492,40 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
               <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--fundo2)] border grid grid-cols-3 gap-1.5 sm:gap-3 text-center transition-all ${
                 isPlanningMode ? 'border-amber-500/40' : 'border-[var(--bordadg)]'
               }`}>
-                <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--fundo1)] border border-[var(--bordadg)] flex flex-col justify-center">
-                  <span className="text-[9px] sm:text-[10px] text-[var(--ctexto2)] uppercase font-bold block truncate">Disponíveis</span>
-                  <span className="text-base sm:text-xl font-mono font-black text-[var(--ctexto1)]">{calcResult.totalPointsAvailable} <span className="text-[10px] font-normal text-[var(--ctexto2)]">pts</span></span>
-                  <span className="text-[8px] sm:text-[9px] text-[var(--ctexto2)] opacity-75 hidden sm:block">
-                    {isPlanningMode ? '(Meta Nv. 40)' : `(Nv. Real ${Math.min(40, formData.nivel)})`}
-                  </span>
+                <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--fundo1)] border transition-all flex flex-col justify-between items-center text-center min-h-[92px] ${
+                  formData.item_ponto_poder ? 'border-amber-500/40 bg-amber-950/10' : 'border-[var(--bordadg)]'
+                }`}>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] sm:text-[10px] text-[var(--ctexto2)] uppercase font-bold block truncate">Disponíveis</span>
+                    <div className="flex items-baseline gap-1 my-0.5">
+                      <span className="text-base sm:text-xl font-mono font-black text-[var(--ctexto1)]">
+                        {calcResult.totalPointsAvailable}
+                      </span>
+                      <span className="text-[10px] font-normal text-[var(--ctexto2)]">pts</span>
+                    </div>
+                    <span className="text-[8px] sm:text-[9px] text-[var(--ctexto2)] opacity-75 hidden sm:block">
+                      {isPlanningMode ? (formData.item_ponto_poder ? '(Meta Nv. 40 + Item)' : '(Meta Nv. 40)') : `(Nv. Real ${Math.min(40, formData.nivel)}${formData.item_ponto_poder ? ' + Item' : ''})`}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, item_ponto_poder: !prev.item_ponto_poder }))}
+                    className={`mt-1.5 w-full py-1 px-1.5 rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none text-[9px] sm:text-[10px] font-semibold ${
+                      formData.item_ponto_poder
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
+                        : 'bg-[var(--fundo2)] border-[var(--bordadg)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:border-amber-500/40'
+                    }`}
+                    title="Item de Ponto de Poder (+1 pt de poder adicional)"
+                  >
+                    <div className={`w-3 h-3 rounded flex items-center justify-center border transition-all shrink-0 ${
+                      formData.item_ponto_poder ? 'bg-amber-500 border-amber-400 text-black shadow-sm' : 'border-[var(--bordadg)] bg-[var(--fundo1)]'
+                    }`}>
+                      {formData.item_ponto_poder && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                    <span className="font-semibold truncate">Item Ponto de Poder</span>
+                    {formData.item_ponto_poder && <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />}
+                  </button>
                 </div>
 
                 <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--fundo1)] border border-[var(--bordadg)] flex flex-col justify-center">

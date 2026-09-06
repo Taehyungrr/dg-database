@@ -58,7 +58,8 @@ export function generateForumBBCode(
       baseFicha.nivel || 1,
       baseFicha.poderes_comprados || {},
       poderes,
-      ramos
+      ramos,
+      baseFicha.item_ponto_poder
     );
   }
 
