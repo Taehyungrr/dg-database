@@ -530,13 +530,6 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
                     </div>
                   )}
 
-                  {/* 4. Atributos Principais (se houver) */}
-                  {selectedMonstro.atributos_principais && (
-                    <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto2)] flex items-center gap-2">
-                      <strong className="text-[var(--ctexto1)] font-mono uppercase">Atributos:</strong>
-                      <span>{selectedMonstro.atributos_principais}</span>
-                    </div>
-                  )}
 
                 </div>
 
