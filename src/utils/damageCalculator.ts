@@ -39,6 +39,12 @@ export interface ChannelingMetalInput {
   applyEffect: boolean;
 }
 
+export interface DefenseBonusInput {
+  valor: number;
+  descricao: string;
+  alvo?: 'ambos' | 'attr1' | 'attr2';
+}
+
 export interface DamageCalculationParams {
   attackerAttributes: AtributosPersonagem;
   damageType: 'unarmed' | 'melee' | 'ranged' | 'crossbow' | 'energy' | 'especial';
@@ -77,7 +83,7 @@ export interface DamageCalculationParams {
     splitPercent2?: number;
   };
   defenderAttributes: AtributosPersonagem;
-  defenseBonuses?: Array<{ valor: number; descricao: string }>;
+  defenseBonuses?: DefenseBonusInput[];
   effects?: {
     vampirismPercent?: number;
     enableVampirism?: boolean;
@@ -593,6 +599,11 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
       let totalReductionPercent = 0;
       const reductionParts: string[] = [];
 
+      const defBonuses = params.defenseBonuses || [];
+      const bonusBoth = defBonuses.filter((b) => !b.alvo || b.alvo === 'ambos').reduce((sum, b) => sum + b.valor, 0);
+      const bonusAttr1 = defBonuses.filter((b) => b.alvo === 'attr1').reduce((sum, b) => sum + b.valor, 0);
+      const bonusAttr2 = defBonuses.filter((b) => b.alvo === 'attr2').reduce((sum, b) => sum + b.valor, 0);
+
       if (enableConversion && conv) {
         if (conv.type === 'single' && conv.singleAttr) {
           const convShort = FULL_TO_SHORT[conv.singleAttr] || 'con';
@@ -601,22 +612,33 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
           const isConstitution = convShort === 'con';
           const defenseName = attrDisplayNamesShort[convShort] || 'Constituição';
 
+          const baseConvertedReduction = getDefenseReduction(defenseValue, isConstitution);
+          const finalConvertedReduction = baseConvertedReduction + bonusAttr1;
+
           if (convPercent < 100) {
             const convertedPortion = convPercent / 100;
             const normalPortion = 1 - convertedPortion;
-            const convertedReduction = getDefenseReduction(defenseValue, isConstitution);
-            const normalReduction = getDefenseReduction(defenderMap.con, true);
+            const baseNormalReduction = getDefenseReduction(defenderMap.con, true);
+            const finalNormalReduction = baseNormalReduction + bonusAttr2;
 
-            totalReductionPercent = convertedReduction * convertedPortion + normalReduction * normalPortion;
+            const part1 = finalConvertedReduction * convertedPortion;
+            const part2 = finalNormalReduction * normalPortion;
+
+            totalReductionPercent = part1 + part2 + bonusBoth;
+
+            const b1Text = bonusAttr1 !== 0 ? ` (${bonusAttr1 > 0 ? '+' : ''}${bonusAttr1}% mod)` : '';
+            const b2Text = bonusAttr2 !== 0 ? ` (${bonusAttr2 > 0 ? '+' : ''}${bonusAttr2}% mod)` : '';
+
             reductionParts.push(
-              `Conversão ${convPercent}% (${defenseName}=${defenseValue}): ${convertedReduction}% × ${(convertedPortion * 100).toFixed(0)}% = ${(convertedReduction * convertedPortion).toFixed(1)}%`
+              `Conversão ${convPercent}% (${defenseName}=${defenseValue}): (${baseConvertedReduction}%${b1Text}) × ${(convertedPortion * 100).toFixed(0)}% = ${part1.toFixed(1)}%`
             );
             reductionParts.push(
-              `CON=${defenderMap.con}: ${normalReduction}% × ${(normalPortion * 100).toFixed(0)}% = ${(normalReduction * normalPortion).toFixed(1)}%`
+              `CON=${defenderMap.con}: (${baseNormalReduction}%${b2Text}) × ${(normalPortion * 100).toFixed(0)}% = ${part2.toFixed(1)}%`
             );
           } else {
-            totalReductionPercent = getDefenseReduction(defenseValue, isConstitution);
-            reductionParts.push(`Conversão (${defenseName}=${defenseValue}): ${totalReductionPercent}%`);
+            totalReductionPercent = finalConvertedReduction + bonusBoth;
+            const b1Text = bonusAttr1 !== 0 ? ` (${bonusAttr1 > 0 ? '+' : ''}${bonusAttr1}% mod)` : '';
+            reductionParts.push(`Conversão (${defenseName}=${defenseValue}): ${baseConvertedReduction}%${b1Text}`);
           }
         } else if (conv.type === 'split' && conv.splitAttr1 && conv.splitAttr2) {
           const s1Short = FULL_TO_SHORT[conv.splitAttr1] || 'con';
@@ -630,20 +652,34 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
             const defName1 = attrDisplayNamesShort[s1Short];
             const defName2 = attrDisplayNamesShort[s2Short];
 
-            const reduction1 = getDefenseReduction(defenderMap[s1Short], s1Short === 'con');
-            const reduction2 = getDefenseReduction(defenderMap[s2Short], s2Short === 'con');
+            const baseRed1 = getDefenseReduction(defenderMap[s1Short], s1Short === 'con');
+            const baseRed2 = getDefenseReduction(defenderMap[s2Short], s2Short === 'con');
 
-            totalReductionPercent = reduction1 * portion1 + reduction2 * portion2;
+            const finalRed1 = baseRed1 + bonusAttr1;
+            const finalRed2 = baseRed2 + bonusAttr2;
+
+            const part1 = finalRed1 * portion1;
+            const part2 = finalRed2 * portion2;
+
+            totalReductionPercent = part1 + part2 + bonusBoth;
+
+            const b1Text = bonusAttr1 !== 0 ? ` (${bonusAttr1 > 0 ? '+' : ''}${bonusAttr1}% mod)` : '';
+            const b2Text = bonusAttr2 !== 0 ? ` (${bonusAttr2 > 0 ? '+' : ''}${bonusAttr2}% mod)` : '';
+
             reductionParts.push(
-              `${defName1}=${defenderMap[s1Short]}: ${reduction1}% × ${p1Pct}% = ${(reduction1 * portion1).toFixed(1)}%`
+              `${defName1}=${defenderMap[s1Short]}: (${baseRed1}%${b1Text}) × ${p1Pct}% = ${part1.toFixed(1)}%`
             );
             reductionParts.push(
-              `${defName2}=${defenderMap[s2Short]}: ${reduction2}% × ${p2Pct}% = ${(reduction2 * portion2).toFixed(1)}%`
+              `${defName2}=${defenderMap[s2Short]}: (${baseRed2}%${b2Text}) × ${p2Pct}% = ${part2.toFixed(1)}%`
             );
           } else {
-            totalReductionPercent = getDefenseReduction(defenderMap.con, true);
+            totalReductionPercent = getDefenseReduction(defenderMap.con, true) + bonusBoth + bonusAttr1 + bonusAttr2;
             reductionParts.push(`Constituição (padrão): ${totalReductionPercent}%`);
           }
+        }
+
+        if (bonusBoth !== 0) {
+          reductionParts.push(`${bonusBoth > 0 ? '+ Bônus' : '- Ônus'} Geral de Defesa: ${bonusBoth > 0 ? '+' : ''}${bonusBoth}%`);
         }
       } else {
         let relevantDefense = 0;
@@ -670,15 +706,13 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
         } else {
           relevantDefense = getDefenseReduction(defenderMap.con, true);
         }
-        totalReductionPercent = relevantDefense;
-        reductionParts.push(`Redução base: ${totalReductionPercent}%`);
-      }
 
-      const defBonuses = params.defenseBonuses || [];
-      if (defBonuses.length > 0) {
-        const totalDefBonus = defBonuses.reduce((sum, b) => sum + b.valor, 0);
-        totalReductionPercent += totalDefBonus;
-        reductionParts.push(`+ Bônus de Defesa: +${totalDefBonus}%`);
+        const totalDefBonus = bonusBoth + bonusAttr1 + bonusAttr2;
+        totalReductionPercent = relevantDefense + totalDefBonus;
+        reductionParts.push(`Redução base: ${relevantDefense}%`);
+        if (totalDefBonus !== 0) {
+          reductionParts.push(`${totalDefBonus > 0 ? '+ Bônus de Defesa: +' : '- Ônus de Defesa: '}${totalDefBonus}%`);
+        }
       }
 
       overallReductionPercent = totalReductionPercent;

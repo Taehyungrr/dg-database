@@ -207,9 +207,10 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     espiritualidade: 1
   });
 
-  const [defenseBonuses, setDefenseBonuses] = useState<Array<{ id: string; valor: number; descricao: string }>>([]);
+  const [defenseBonuses, setDefenseBonuses] = useState<Array<{ id: string; valor: number; descricao: string; alvo?: 'ambos' | 'attr1' | 'attr2' }>>([]);
   const [newDefVal, setNewDefVal] = useState<number>(0);
   const [newDefDesc, setNewDefDesc] = useState<string>('');
+  const [newDefTarget, setNewDefTarget] = useState<'ambos' | 'attr1' | 'attr2'>('ambos');
 
   // Extra Effects
   const [vampirismo, setVampirismo] = useState<boolean>(false);
@@ -1408,58 +1409,136 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               )}
             </div>
 
-            {/* BÔNUS DE DEFESA */}
-            <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2">
-              <label className="text-xs font-bold text-[var(--ctexto1)] flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
-                <span>Bônus de Defesa (% de Redução):</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {defenseBonuses.map((b) => (
-                  <span key={b.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/30">
-                    +{b.valor}% {b.descricao && `(${b.descricao})`}
-                    <button
-                      type="button"
-                      onClick={() => setDefenseBonuses((prev) => prev.filter((item) => item.id !== b.id))}
-                      className="hover:text-rose-400 cursor-pointer ml-1"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+            {/* BÔNUS / ÔNUS DE DEFESA */}
+            <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2.5">
+              <div className="space-y-0.5">
+                <label className="text-xs font-bold text-[var(--ctexto1)] flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Bônus / Ônus de Defesa (% de Redução ou Penalidade):</span>
+                </label>
+                <p className="text-[10px] text-[var(--ctexto2)]">
+                  Insira valores positivos (ex: 20) para bônus de defesa ou negativos (ex: -20) para ônus/fraqueza de resistência.
+                </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-                <input
-                  type="number"
-                  placeholder="Ex: 20"
-                  value={newDefVal || ''}
-                  onChange={(e) => setNewDefVal(Number(e.target.value))}
-                  className="w-full sm:w-28 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                />
-                <input
-                  type="text"
-                  placeholder="Descrição (ex: Escudo Mágico, Pele de Pedra)"
-                  value={newDefDesc}
-                  onChange={(e) => setNewDefDesc(e.target.value)}
-                  className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newDefVal > 0) {
-                      setDefenseBonuses((prev) => [
-                        ...prev,
-                        { id: `def_${Date.now()}`, valor: newDefVal, descricao: newDefDesc }
-                      ]);
-                      setNewDefVal(0);
-                      setNewDefDesc('');
+              <div className="flex flex-wrap gap-2">
+                {defenseBonuses.map((b) => {
+                  const isBonus = b.valor > 0;
+                  const convLabels = (() => {
+                    if (!enableConversion) return { attr1: '', attr2: '' };
+                    if (conversionType === 'single') {
+                      return {
+                        attr1: ATTR_CONFIG[conversionAttr]?.name || 'Atributo Convertido',
+                        attr2: 'Constituição'
+                      };
+                    } else {
+                      return {
+                        attr1: ATTR_CONFIG[splitAttr1]?.name || '1º Atributo',
+                        attr2: ATTR_CONFIG[splitAttr2]?.name || '2º Atributo'
+                      };
                     }
-                  }}
-                  className="w-full sm:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold cursor-pointer"
-                >
-                  Adicionar Defesa
-                </button>
+                  })();
+
+                  let targetTag = '';
+                  if (enableConversion && b.alvo && b.alvo !== 'ambos') {
+                    if (b.alvo === 'attr1') targetTag = ` [${convLabels.attr1}]`;
+                    if (b.alvo === 'attr2') targetTag = ` [${convLabels.attr2}]`;
+                  }
+
+                  return (
+                    <span
+                      key={b.id}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                        isBonus
+                          ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                          : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                      }`}
+                    >
+                      {isBonus ? '+' : ''}{b.valor}% {b.descricao && `(${b.descricao})`}{targetTag}
+                      <button
+                        type="button"
+                        onClick={() => setDefenseBonuses((prev) => prev.filter((item) => item.id !== b.id))}
+                        className="hover:text-rose-400 cursor-pointer ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2 pt-1 border-t border-[var(--bordadg)]/50">
+                {enableConversion && (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase shrink-0">
+                      Aplicar Modificador em:
+                    </label>
+                    <select
+                      value={newDefTarget}
+                      onChange={(e) => setNewDefTarget(e.target.value as 'ambos' | 'attr1' | 'attr2')}
+                      className="bg-[var(--fundo1)] px-2.5 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                    >
+                      <option value="ambos">Ambos os Atributos Defensivos</option>
+                      {conversionType === 'single' ? (
+                        <>
+                          <option value="attr1">
+                            Apenas no Atributo Convertido ({ATTR_CONFIG[conversionAttr]?.name || 'Atributo'} - {conversionPercent}%)
+                          </option>
+                          <option value="attr2">
+                            Apenas em Constituição ({100 - conversionPercent}%)
+                          </option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="attr1">
+                            Apenas no 1º Atributo ({ATTR_CONFIG[splitAttr1]?.name || '1º Atributo'} - {splitPercent1}%)
+                          </option>
+                          <option value="attr2">
+                            Apenas no 2º Atributo ({ATTR_CONFIG[splitAttr2]?.name || '2º Atributo'} - {splitPercent2}%)
+                          </option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="Ex: 20 ou -20"
+                    value={newDefVal || ''}
+                    onChange={(e) => setNewDefVal(Number(e.target.value))}
+                    className="w-full sm:w-32 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Descrição (ex: -20% de Resistência, Escudo Mágico)"
+                    value={newDefDesc}
+                    onChange={(e) => setNewDefDesc(e.target.value)}
+                    className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newDefVal !== 0) {
+                        setDefenseBonuses((prev) => [
+                          ...prev,
+                          {
+                            id: `def_${Date.now()}`,
+                            valor: newDefVal,
+                            descricao: newDefDesc,
+                            alvo: enableConversion ? newDefTarget : 'ambos'
+                          }
+                        ]);
+                        setNewDefVal(0);
+                        setNewDefDesc('');
+                      }
+                    }}
+                    className="w-full sm:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                  >
+                    Adicionar Modificador
+                  </button>
+                </div>
               </div>
             </div>
 
