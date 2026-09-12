@@ -624,8 +624,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       {/* ========================================================================= */}
       {/* VIEW 1: CALCULADORA DE DANO                                              */}
       {/* ========================================================================= */}
-      {activeSubTab === 'dano' && (
-        <div className="space-y-6">
+      <div className={activeSubTab === 'dano' ? 'space-y-6' : 'hidden'}>
           
           {/* ATRIBUTOS */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
@@ -1669,13 +1668,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           )}
 
         </div>
-      )}
 
       {/* ========================================================================= */}
       {/* VIEW 2: CALCULADORA DE ACERTO                                            */}
       {/* ========================================================================= */}
-      {activeSubTab === 'acerto' && (
-        <div className="space-y-6">
+      <div className={activeSubTab === 'acerto' ? 'space-y-6' : 'hidden'}>
           
           {/* ATRIBUTOS */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
@@ -1961,22 +1958,19 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           )}
 
         </div>
-      )}
 
       {/* ========================================================================= */}
       {/* VIEW 3: CALCULADORA DE EVOLUÇÃO & EXP                                     */}
       {/* ========================================================================= */}
-      {activeSubTab === 'evolucao' && (
-        <div className="space-y-6">
-          <EvolutionView
-            sheets={sheets}
-            onUpdateSheet={onUpdateSheet}
-            hideHeader
-            selectedSheetId={selectedSheetId}
-            onSelectSheetId={setSelectedSheetId}
-          />
-        </div>
-      )}
+      <div className={activeSubTab === 'evolucao' ? 'space-y-6' : 'hidden'}>
+        <EvolutionView
+          sheets={sheets}
+          onUpdateSheet={onUpdateSheet}
+          hideHeader
+          selectedSheetId={selectedSheetId}
+          onSelectSheetId={setSelectedSheetId}
+        />
+      </div>
 
     </div>
   );

@@ -1012,9 +1012,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
           {/* ========================================================================= */}
           {/* TAB 1: DADOS, ATRIBUTOS E STATUS DE COMBATE (LAYOUT WIDESCREEN 2 COLUNAS) */}
           {/* ========================================================================= */}
-          {activeSubTab === 'atributos' && (
-            <div className="animate-fadeIn">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div className={activeSubTab === 'atributos' ? 'animate-fadeIn' : 'hidden'}>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                 
                 {/* --------------------------------------------------------------------- */}
                 {/* COLUNA ESQUERDA: IDENTIFICAÇÃO, PROGENITOR E STATUS DE COMBATE       */}
@@ -1488,14 +1487,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                 </div>
 
               </div>
-            </div>
-          )}
+          </div>
 
           {/* ========================================================================= */}
           {/* TAB 2: DISTRIBUIÇÃO DE PODERES COM DESCRIÇÕES COMPLETAS DOS NÍVEIS        */}
           {/* ========================================================================= */}
-          {activeSubTab === 'poderes' && (
-            <div className="space-y-6 animate-fadeIn">
+          <div className={activeSubTab === 'poderes' ? 'space-y-6 animate-fadeIn' : 'hidden'}>
               
               {/* Points Scoreboard for Powers */}
               <div className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--fundo2)] border grid grid-cols-3 gap-1.5 sm:gap-3 text-center transition-all ${
@@ -1949,21 +1946,19 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
               </div>
 
             </div>
-          )}
 
           {/* ========================================================================= */}
           {/* TAB 3: INVENTÁRIO & BÔNUS DE COMBATE                                     */}
           {/* ========================================================================= */}
-          {activeSubTab === 'inventario' && (
+          <div className={activeSubTab === 'inventario' ? 'block' : 'hidden'}>
             <InventoryManager formData={formData} setFormData={setFormData} />
-          )}
+          </div>
 
           {/* ========================================================================= */}
           {/* TAB 4: BBCODE FÓRUM PREVIEW & COPY                                       */}
           {/* ========================================================================= */}
-          {activeSubTab === 'bbcode' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className={activeSubTab === 'bbcode' ? 'space-y-4 animate-fadeIn' : 'hidden'}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
                     <FileCode className="w-4 h-4 text-emerald-400" />
@@ -2020,7 +2015,6 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                 className="w-full flex-1 min-h-[380px] p-4 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-xl font-mono text-xs text-emerald-500 focus:outline-none focus:border-emerald-500 leading-relaxed selection:bg-emerald-700 selection:text-white"
               />
             </div>
-          )}
 
         </div>
 

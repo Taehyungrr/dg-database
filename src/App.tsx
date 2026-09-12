@@ -348,17 +348,17 @@ export default function App() {
           ) : (
             <>
               {/* TAB 1: VISUALIZADOR DA ÁRVORE DE PODERES */}
-              {activeTab === 'arvore' && (
+              <div className={activeTab === 'arvore' ? 'block' : 'hidden'}>
                 <PowerTreeCalculator
                   deuses={deuses}
                   ramos={ramos}
                   poderes={poderes}
                   onOpenCreateSheetWithDeus={handleCreateSheetWithDeus}
                 />
-              )}
+              </div>
 
               {/* TAB 2: MINHAS FICHAS (DISTRIBUIÇÃO DE ATRIBUTOS, PODERES & BBCODE) */}
-              {activeTab === 'fichas' && (
+              <div className={activeTab === 'fichas' ? 'block' : 'hidden'}>
                 <CharacterSheetsView
                   sheets={savedSheets}
                   setSheets={setSavedSheets}
@@ -370,18 +370,18 @@ export default function App() {
                   initialNewSheetDeusId={initialNewSheetDeusId}
                   onClearInitialDeusId={() => setInitialNewSheetDeusId(null)}
                 />
-              )}
+              </div>
 
               {/* TAB 3: BESTIÁRIO (BANCO DE DADOS DE MONSTROS & HABILIDADES) */}
-              {activeTab === 'bestiario' && (
+              <div className={activeTab === 'bestiario' ? 'block' : 'hidden'}>
                 <BestiaryView
                   monstros={monstros}
                   monstroPoderes={monstroPoderes}
                 />
-              )}
+              </div>
 
               {/* TAB 4: CALCULADORAS (DANO, ACERTO E EVOLUÇÃO) */}
-              {(activeTab === 'calculadoras' || activeTab === 'combate' || activeTab === 'evolucao') && (
+              <div className={(activeTab === 'calculadoras' || activeTab === 'combate' || activeTab === 'evolucao') ? 'block' : 'hidden'}>
                 <CombatCalculatorView
                   sheets={savedSheets}
                   onUpdateSheet={(updatedSheet) => {
@@ -389,7 +389,7 @@ export default function App() {
                     setSavedSheets(newSheets);
                   }}
                 />
-              )}
+              </div>
             </>
           )}
 
