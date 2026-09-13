@@ -401,9 +401,10 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
               <div
                 key={sheet.id}
                 id={`sheet-card-${sheet.id}`}
+                style={isActive ? { borderColor: `${godColor}80` } : undefined}
                 className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
                   isActive
-                    ? 'bg-[var(--fundo2)] border-[#b8a944]/50 shadow-xl'
+                    ? 'bg-[var(--fundo2)] shadow-xl'
                     : 'bg-[var(--fundo2)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                 }`}
               >
@@ -545,7 +546,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                         <div className="space-y-1.5">
                           {ramosWithAcquiredPowers.map(({ ramo, powers: ramoPowersList }) => (
                             <div key={ramo.id} className="text-[10px] bg-[var(--fundo2)] p-1.5 rounded-lg border border-[var(--bordadg)]">
-                              <div className="font-semibold text-[#b8a944] text-[10px] mb-1 font-mono flex items-center justify-between">
+                              <div className="font-semibold text-[10px] mb-1 font-mono flex items-center justify-between" style={{ color: godColor }}>
                                 <span className="truncate">{ramo.nome}</span>
                                 <span className="text-[9px] text-[var(--ctexto2)] font-normal shrink-0 ml-1">({ramoPowersList.length})</span>
                               </div>
@@ -582,7 +583,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(sheet)}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#b8a944] hover:bg-[#a39438] text-white shadow-md transition-all cursor-pointer"
+                      style={{ backgroundColor: godColor }}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white shadow-md transition-all hover:opacity-90 cursor-pointer"
                     >
                       <Edit className="w-3 h-3" />
                       <span>Editar & Distribuir</span>
