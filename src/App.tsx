@@ -320,7 +320,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[var(--fundo1)] text-[var(--ctexto1)] font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col transition-colors duration-200">
+    <div className="min-h-screen w-full bg-[var(--fundo1)] text-[var(--ctexto1)] font-sans antialiased selection:bg-[#b8a944] selection:text-white flex flex-col transition-colors duration-200">
       <div className="flex-1 flex flex-col w-full">
         {/* Navigation Bar */}
         <Navbar
@@ -340,7 +340,7 @@ export default function App() {
           
           {isLoading ? (
             <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-              <div className="w-10 h-10 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-[#b8a944]/20 border-t-[#b8a944] animate-spin" />
               <p className="font-cinzel text-xs uppercase tracking-widest text-[var(--ctexto2)]">
                 Carregando poderes do Divine Ground...
               </p>

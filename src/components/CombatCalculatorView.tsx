@@ -544,7 +544,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[var(--ctexto1)] flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-blue-500" />
+              <Calculator className="w-5 h-5 text-[#b8a944]" />
               Calculadoras
             </h2>
             <p className="text-xs text-[var(--ctexto2)]">
@@ -568,7 +568,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               type="button"
               onClick={() => setActiveSubTab('acerto')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSubTab === 'acerto' ? 'bg-blue-600 text-white shadow' : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
+                activeSubTab === 'acerto' ? 'bg-[#b8a944] text-white shadow' : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)]'
               }`}
             >
               <Crosshair className="w-3.5 h-3.5" />
@@ -1533,7 +1533,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                         setNewDefDesc('');
                       }
                     }}
-                    className="w-full sm:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                    className="w-full sm:w-auto px-3 py-1.5 bg-[#b8a944] hover:bg-[#a39438] text-white rounded-lg text-xs font-bold cursor-pointer shrink-0"
                   >
                     Adicionar Modificador
                   </button>
@@ -1609,7 +1609,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             onClick={handleCalculateDamage}
             style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
             className={`w-full py-3.5 ${
-              activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
+              activeGodColor ? 'hover:opacity-90' : 'bg-[#b8a944] hover:bg-[#a39438]'
             } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
           >
             <Flame className="w-5 h-5" />
@@ -1677,7 +1677,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           {/* ATRIBUTOS */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
             <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
-              <Crosshair className="w-4 h-4 text-blue-400" />
+              <Crosshair className="w-4 h-4 text-[#b8a944]" />
               <span>Atributos</span>
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
@@ -1723,7 +1723,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               <button
                 type="button"
                 onClick={handleAddHitWeapon}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                className="px-3 py-1 bg-[#b8a944] hover:bg-[#a39438] text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nova Arma</span>
@@ -1800,7 +1800,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                 return (
                   <div key={tipoKey} className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2">
                     <label className="text-xs font-bold text-[var(--ctexto1)] flex items-center gap-1.5 truncate">
-                      <ActionIcon className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      <ActionIcon className="w-3.5 h-3.5 text-[#b8a944] shrink-0" />
                       <span className="truncate">{meta.nome}</span>
                     </label>
 
@@ -1884,7 +1884,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               onClick={handleCalculateHit}
               style={activeGodColor ? { backgroundColor: activeGodColor } : undefined}
               className={`flex-1 py-3.5 ${
-                activeGodColor ? 'hover:opacity-90' : 'bg-blue-600 hover:bg-blue-500'
+                activeGodColor ? 'hover:opacity-90' : 'bg-[#b8a944] hover:bg-[#a39438]'
               } text-white font-cinzel text-base font-bold rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2`}
             >
               <Crosshair className="w-5 h-5" />
@@ -1906,9 +1906,9 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
           {/* HIT RESULTS DISPLAY */}
           {hitResultsText && (
-            <div className="bg-[var(--fundo2)] rounded-2xl p-5 border border-blue-500/30 shadow-xl space-y-3 animate-fadeIn">
+            <div className="bg-[var(--fundo2)] rounded-2xl p-5 border border-[#b8a944]/30 shadow-xl space-y-3 animate-fadeIn">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--bordadg)] pb-2">
-                <h3 className="font-cinzel text-base font-bold text-blue-400 flex items-center gap-2">
+                <h3 className="font-cinzel text-base font-bold text-[#b8a944] flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   <span>Resultado das Faixas de Acerto</span>
                 </h3>

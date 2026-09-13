@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           
           {/* Mobile-only brand badge/title */}
           <div className="flex md:hidden items-center">
-            <span className="font-mono font-black text-xs text-blue-500 uppercase tracking-wider">
+            <span className="font-mono font-black text-xs text-[#b8a944] uppercase tracking-wider">
               Divine Ground RPG
             </span>
           </div>
@@ -54,11 +54,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('arvore')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'arvore'
-                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-[#b8a944] border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <TreePine className="w-3.5 h-3.5 text-blue-500" />
+              <TreePine className="w-3.5 h-3.5 text-[#b8a944]" />
               <span>Árvore de Poderes</span>
             </button>
 
@@ -68,14 +68,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('fichas')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'fichas'
-                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-[#b8a944] border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <FileText className="w-3.5 h-3.5 text-blue-500" />
+              <FileText className="w-3.5 h-3.5 text-[#b8a944]" />
               <span>Minhas Fichas</span>
               {savedSheetsCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-blue-500 text-white">
+                <span className="ml-1 px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-[#b8a944] text-white">
                   {savedSheetsCount}
                 </span>
               )}
@@ -87,11 +87,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('bestiario')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'bestiario'
-                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-[#b8a944] border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <MinotaurIcon className="w-3.5 h-3.5 text-blue-500" />
+              <MinotaurIcon className="w-3.5 h-3.5 text-[#b8a944]" />
               <span>Bestiário</span>
             </button>
 
@@ -101,11 +101,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('calculadoras')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === 'calculadoras' || activeTab === 'combate'
-                  ? 'bg-[var(--fundo3)] text-blue-500 border border-[var(--bordadg)] shadow-sm font-bold'
+                  ? 'bg-[var(--fundo3)] text-[#b8a944] border border-[var(--bordadg)] shadow-sm font-bold'
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <Calculator className="w-3.5 h-3.5 text-blue-500" />
+              <Calculator className="w-3.5 h-3.5 text-[#b8a944]" />
               <span>Calculadoras</span>
             </button>
           </nav>
@@ -135,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Recarregar dados do banco"
                 className="p-1.5 rounded-xl text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-[var(--bordadg)] transition-all cursor-pointer disabled:opacity-50"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-500' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#b8a944]' : ''}`} />
               </button>
             </div>
 
@@ -148,7 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="p-1.5 rounded-xl text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent hover:border-[var(--bordadg)] transition-all cursor-pointer"
                 title={isDarkMode ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
               >
-                {isDarkMode ? <Moon className="w-3.5 h-3.5 text-blue-400" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
+                {isDarkMode ? <Moon className="w-3.5 h-3.5 text-[#b8a944]" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
               </button>
             )}
 
@@ -163,10 +163,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('arvore')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'arvore' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'arvore' ? 'bg-[var(--fundo3)] text-[#b8a944] font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <TreePine className="w-3 h-3" />
+          <TreePine className="w-3 h-3 text-[#b8a944]" />
           <span>Árvore</span>
         </button>
 
@@ -174,10 +174,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('fichas')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'fichas' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'fichas' ? 'bg-[var(--fundo3)] text-[#b8a944] font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <FileText className="w-3 h-3 text-blue-500" />
+          <FileText className="w-3 h-3 text-[#b8a944]" />
           <span>Fichas ({savedSheetsCount})</span>
         </button>
 
@@ -185,10 +185,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('bestiario')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'bestiario' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'bestiario' ? 'bg-[var(--fundo3)] text-[#b8a944] font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <MinotaurIcon className="w-3.5 h-3.5 text-blue-500" />
+          <MinotaurIcon className="w-3.5 h-3.5 text-[#b8a944]" />
           <span>Bestiário</span>
         </button>
 
@@ -197,10 +197,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           id="nav-tab-calculadoras-mobile"
           onClick={() => setActiveTab('calculadoras')}
           className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-semibold py-1 px-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'calculadoras' || activeTab === 'combate' ? 'bg-[var(--fundo3)] text-blue-500 font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
+            activeTab === 'calculadoras' || activeTab === 'combate' ? 'bg-[var(--fundo3)] text-[#b8a944] font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <Calculator className="w-3.5 h-3.5 text-blue-500" />
+          <Calculator className="w-3.5 h-3.5 text-[#b8a944]" />
           <span>Calculadoras</span>
         </button>
       </div>

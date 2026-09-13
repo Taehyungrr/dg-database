@@ -25,7 +25,7 @@
   --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
 
   /* Variável dinâmica para a cor do deus */
-  --god-color: #0ea5e9;
+  --god-color: #b8a944;
 }
 
 [data-theme="dark"], .dark {
@@ -78,7 +78,7 @@
 }
 
 ::selection {
-  background-color: var(--god-color, #3b82f6);
+  background-color: var(--god-color, #b8a944);
   color: #ffffff;
 }
 
@@ -93,14 +93,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--god-color, #3b82f6);
+  background: var(--god-color, #b8a944);
   opacity: 0.8;
   border-radius: 9999px;
   border: 1px solid var(--bordadg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--god-color, #3b82f6);
+  background: var(--god-color, #b8a944);
   filter: brightness(1.2);
 }
 
@@ -114,12 +114,12 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--god-color, #3b82f6);
+  background: var(--god-color, #b8a944);
   border-radius: 9999px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: var(--god-color, #3b82f6);
+  background: var(--god-color, #b8a944);
   filter: brightness(1.2);
 }
 

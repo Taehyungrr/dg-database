@@ -22,7 +22,10 @@ import {
   Swords,
   Heart,
   Flame,
-  Sparkles
+  Sparkles,
+  SortAsc,
+  Clock,
+  ArrowUpDown
 } from 'lucide-react';
 
 interface CharacterSheetsViewProps {
@@ -51,6 +54,47 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [deletingSheetId, setDeletingSheetId] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Sorting mode state ('alfabetica' | 'edicao') persisted in localStorage
+  const SORT_STORAGE_KEY = 'pj_sheets_sort_order';
+  const [sortMode, setSortMode] = useState<'alfabetica' | 'edicao'>(() => {
+    try {
+      const saved = localStorage.getItem(SORT_STORAGE_KEY);
+      if (saved === 'alfabetica' || saved === 'edicao') {
+        return saved;
+      }
+    } catch (e) {
+      console.error('Erro ao ler preferência de ordenação:', e);
+    }
+    return 'alfabetica';
+  });
+
+  const handleSortChange = (mode: 'alfabetica' | 'edicao') => {
+    setSortMode(mode);
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, mode);
+    } catch (e) {
+      console.error('Erro ao salvar preferência de ordenação:', e);
+    }
+  };
+
+  const sortedSheets = React.useMemo(() => {
+    const copy = [...sheets];
+    if (sortMode === 'alfabetica') {
+      return copy.sort((a, b) => {
+        const nameA = (a.nome || '').trim();
+        const nameB = (b.nome || '').trim();
+        return nameA.localeCompare(nameB, 'pt-BR', { sensitivity: 'base' });
+      });
+    } else {
+      // 'edicao': mais recentes primeiro (atualizado_em ou criado_em)
+      return copy.sort((a, b) => {
+        const timeA = a.atualizado_em ? new Date(a.atualizado_em).getTime() : (a.criado_em ? new Date(a.criado_em).getTime() : 0);
+        const timeB = b.atualizado_em ? new Date(b.atualizado_em).getTime() : (b.criado_em ? new Date(b.criado_em).getTime() : 0);
+        return timeB - timeA;
+      });
+    }
+  }, [sheets, sortMode]);
 
   // Sheet Editor Modal State
   const [editingSheet, setEditingSheet] = useState<FichaPersonagem | null>(() => {
@@ -193,8 +237,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
 
       {/* Toast */}
       {feedbackMsg && (
-        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--fundo2)] text-blue-500 rounded-xl shadow-2xl border border-blue-500/40 text-xs font-semibold animate-fadeIn flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-blue-500 shrink-0" />
+        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--fundo2)] text-[#b8a944] rounded-xl shadow-2xl border border-[#b8a944]/40 text-xs font-semibold animate-fadeIn flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-[#b8a944] shrink-0" />
           <span className="text-[var(--ctexto1)]">{feedbackMsg}</span>
         </div>
       )}
@@ -203,7 +247,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
       <div className="bg-[var(--fundo2)] border border-[var(--bordadg)] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[var(--ctexto2)] font-bold flex items-center gap-2">
-            <FileText className="w-4 h-4 text-blue-500" />
+            <FileText className="w-4 h-4 text-[#b8a944]" />
             Minhas Fichas de Semideuses
           </h2>
           <p className="text-sm font-semibold text-[var(--ctexto1)] mt-0.5">
@@ -216,7 +260,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
             type="button"
             id="btn-new-character-sheet"
             onClick={handleOpenCreateNew}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-95 uppercase tracking-wider cursor-pointer"
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#b8a944] hover:bg-[#a39438] text-white shadow-lg shadow-[#b8a944]/20 transition-all active:scale-95 uppercase tracking-wider cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Criar Nova Ficha</span>
@@ -256,10 +300,57 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
         </div>
       </div>
 
+      {/* Bar de Controles e Ordenação (Fora do header, alinhado à direita) */}
+      <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+        <div className="text-xs font-semibold text-[var(--ctexto2)]">
+          {sheets.length > 0 && (
+            <span>Exibindo <strong className="text-[var(--ctexto1)]">{sheets.length}</strong> {sheets.length === 1 ? 'ficha' : 'fichas'}</span>
+          )}
+        </div>
+
+        {/* Alternador de Ordenação (Alfabética vs Última Edição) */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-[var(--ctexto2)] uppercase tracking-wider flex items-center gap-1">
+            <ArrowUpDown className="w-3.5 h-3.5 text-[#b8a944]" />
+            Organizar:
+          </span>
+          <div className="flex items-center bg-[var(--fundo2)] p-0.5 rounded-xl border border-[var(--bordadg)] shadow-xs" role="group" aria-label="Ordenação das Fichas">
+            <button
+              type="button"
+              id="btn-sort-alphabetical"
+              onClick={() => handleSortChange('alfabetica')}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${
+                sortMode === 'alfabetica'
+                  ? 'bg-[#b8a944] text-white shadow-xs font-bold'
+                  : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] font-medium'
+              }`}
+              title="Ordenar fichas em Ordem Alfabética (A-Z)"
+            >
+              <SortAsc className="w-3 h-3 shrink-0" />
+              <span>Ordem Alfabética</span>
+            </button>
+            <button
+              type="button"
+              id="btn-sort-last-edited"
+              onClick={() => handleSortChange('edicao')}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${
+                sortMode === 'edicao'
+                  ? 'bg-[#b8a944] text-white shadow-xs font-bold'
+                  : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] font-medium'
+              }`}
+              title="Ordenar fichas por Data da Última Edição"
+            >
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>Última Edição</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Sheets Grid */}
       {sheets.length === 0 ? (
         <div className="p-12 text-center bg-[var(--fundo2)] border border-[var(--bordadg)] rounded-2xl space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#b8a944]/10 border border-[#b8a944]/30 flex items-center justify-center text-[#b8a944] mx-auto">
             <Swords className="w-7 h-7" />
           </div>
           <div>
@@ -273,16 +364,16 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
           <button
             type="button"
             onClick={handleOpenCreateNew}
-            className="px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white uppercase tracking-wider shadow-lg shadow-blue-500/20 cursor-pointer"
+            className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#b8a944] hover:bg-[#a39438] text-white uppercase tracking-wider shadow-lg shadow-[#b8a944]/20 cursor-pointer"
           >
             Criar Ficha Agora
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 items-stretch min-h-[400px]">
-          {sheets.map((sheet) => {
+          {sortedSheets.map((sheet) => {
             const deus = deuses.find((d) => d.id === sheet.deus_id);
-            const godColor = deus?.cor_hex || '#3b82f6';
+            const godColor = deus?.cor_hex || '#b8a944';
             const godIcon = (deus?.icone_url || deus?.icone_css || deus?.simbolo || (deus as any)?.game_icon || (deus as any)?.icone || '').trim();
             const isActive = sheet.id === activeSheetId;
             const isConfirmingDelete = deletingSheetId === sheet.id;
@@ -312,7 +403,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                 id={`sheet-card-${sheet.id}`}
                 className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
                   isActive
-                    ? 'bg-[var(--fundo2)] border-blue-500/50 shadow-xl'
+                    ? 'bg-[var(--fundo2)] border-[#b8a944]/50 shadow-xl'
                     : 'bg-[var(--fundo2)] hover:bg-[var(--fundo3)] border-[var(--bordadg)]'
                 }`}
               >
@@ -454,7 +545,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                         <div className="space-y-1.5">
                           {ramosWithAcquiredPowers.map(({ ramo, powers: ramoPowersList }) => (
                             <div key={ramo.id} className="text-[10px] bg-[var(--fundo2)] p-1.5 rounded-lg border border-[var(--bordadg)]">
-                              <div className="font-semibold text-blue-500 text-[10px] mb-1 font-mono flex items-center justify-between">
+                              <div className="font-semibold text-[#b8a944] text-[10px] mb-1 font-mono flex items-center justify-between">
                                 <span className="truncate">{ramo.nome}</span>
                                 <span className="text-[9px] text-[var(--ctexto2)] font-normal shrink-0 ml-1">({ramoPowersList.length})</span>
                               </div>
@@ -491,7 +582,7 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(sheet)}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-all cursor-pointer"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#b8a944] hover:bg-[#a39438] text-white shadow-md transition-all cursor-pointer"
                     >
                       <Edit className="w-3 h-3" />
                       <span>Editar & Distribuir</span>
