@@ -67,7 +67,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const handleAddConditional = () => {
     const newCond: BonusCondicionalAcerto = {
       id: `cond_${Date.now()}`,
-      nomeCondicao: 'durante Deus do Sol',
+      nomeCondicao: 'durante [nome do efeito]',
       tipoAcao: 'esquiva',
       bonus: 20
     };
@@ -244,7 +244,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
               {conditionals.length === 0 ? (
                 <div className="text-[11px] text-[var(--ctexto2)] italic bg-[var(--fundo3)] p-2.5 rounded-xl border border-dashed border-[var(--bordadg)] text-center">
-                  Nenhum bônus condicional cadastrado. Clique em "Adicionar Condicional" para criar bônus específicos (ex: "durante Deus do Sol" +20 em Esquiva).
+                  Nenhum bônus condicional cadastrado. Clique em "Adicionar Condicional" para criar bônus específicos (ex: "durante [nome do efeito]" +20 em Esquiva ou Todas as Defesas).
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -257,6 +257,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                           onChange={(e) => handleUpdateConditional(cond.id, { tipoAcao: e.target.value })}
                           className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                         >
+                          <option value="todas_defesas">🛡️ Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)</option>
                           {Object.entries(NOMES_ACOES_ACERTO).map(([key, meta]) => (
                             <option key={key} value={key}>
                               {meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '')}
@@ -280,7 +281,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         <input
                           type="text"
                           value={cond.nomeCondicao}
-                          placeholder="Ex: durante Deus do Sol"
+                          placeholder="durante [nome do efeito]"
                           onChange={(e) => handleUpdateConditional(cond.id, { nomeCondicao: e.target.value })}
                           className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                         />

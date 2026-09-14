@@ -468,7 +468,9 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       output += f.textoFormatado + '\n';
 
       // CONDICIONAIS
-      const condsForAction = hitConditionals.filter((c) => c.tipoAcao === nomeKey);
+      const condsForAction = hitConditionals.filter(
+        (c) => c.tipoAcao === nomeKey || (c.tipoAcao === 'todas_defesas' && ['bloqueio', 'esquiva', 'contra'].includes(nomeKey))
+      );
       condsForAction.forEach((cond) => {
         const nomeCondicao = cond.nomeCondicao.trim() || 'Condicional';
         const bonusCond = cond.bonus || 0;
@@ -1918,7 +1920,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       id: `cond_${Date.now()}`,
                       tipoAcao: defaultType,
                       bonus: 20,
-                      nomeCondicao: 'durante Deus do Sol'
+                      nomeCondicao: 'durante [nome do efeito]'
                     }
                   ]);
                 }}
@@ -1955,6 +1957,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                           }}
                           className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                         >
+                          <option value="todas_defesas">🛡️ Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)</option>
                           {availableActionKeys.map((key) => {
                             const meta = NOMES_ACOES_ACERTO[key];
                             return (
@@ -1988,7 +1991,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                         <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Nome da Condição:</label>
                         <input
                           type="text"
-                          placeholder="Ex: durante Deus do Sol"
+                          placeholder="durante [nome do efeito]"
                           value={cond.nomeCondicao}
                           onChange={(e) => {
                             const val = e.target.value;
