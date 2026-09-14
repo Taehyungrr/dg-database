@@ -435,6 +435,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   };
 
   // Hit Calculation Trigger
+  // Hit Calculation Trigger
   const handleCalculateHit = () => {
     let output = '';
 
@@ -450,6 +451,28 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
     const erroBase = erroCritico(destreza);
     const bonusCritFisico = bonusCriticoFisico(destreza);
+
+    const getConditionalsForAction = (nomeKey: string) => {
+      return hitConditionals.filter((c) => {
+        const cat = c.categoria || 'acerto';
+        if (cat === 'critico' && c.tipoAcao === 'todos_acertos') return true;
+        if (c.tipoAcao === nomeKey) return true;
+        if (c.tipoAcao === 'todas_defesas' && ['bloqueio', 'esquiva', 'contra'].includes(nomeKey)) return true;
+        return false;
+      });
+    };
+
+    const getConditionalsForWeapon = (w: { id: string; nome: string }) => {
+      const nome = w.nome.trim();
+      return hitConditionals.filter((c) => {
+        const cat = c.categoria || 'acerto';
+        if (cat === 'critico' && c.tipoAcao === 'todos_acertos') return true;
+        if (c.tipoAcao === 'todas_armas' || c.tipoAcao === 'arma' || c.tipoAcao === 'armas') return true;
+        if (c.tipoAcao === `arma:${w.id}` || c.tipoAcao === `arma:${nome}`) return true;
+        if (c.tipoAcao === w.id || c.tipoAcao === nome) return true;
+        return false;
+      });
+    };
 
     const montar = (nomeKey: string, base: number, teto: number, attrErro: number, extraCrit: number = 0) => {
       const opt = hitActionOptions[nomeKey];
@@ -467,19 +490,28 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       const f = montarFaixas(nomeExibicao, total, erroCritico(attrErro), extraCrit);
       output += f.textoFormatado + '\n';
 
-      // CONDICIONAIS
-      const condsForAction = hitConditionals.filter(
-        (c) => c.tipoAcao === nomeKey || (c.tipoAcao === 'todas_defesas' && ['bloqueio', 'esquiva', 'contra'].includes(nomeKey))
-      );
+      // CONDICIONAIS PARA ESTA AÇÃO
+      const condsForAction = getConditionalsForAction(nomeKey);
+      const groups: Record<string, { acertoBonus: number; critBonus: number }> = {};
       condsForAction.forEach((cond) => {
-        const nomeCondicao = cond.nomeCondicao.trim() || 'Condicional';
-        const bonusCond = cond.bonus || 0;
+        const nomeCond = cond.nomeCondicao.trim() || 'Condicional';
+        if (!groups[nomeCond]) {
+          groups[nomeCond] = { acertoBonus: 0, critBonus: 0 };
+        }
+        const cat = cond.categoria || 'acerto';
+        if (cat === 'critico') {
+          groups[nomeCond].critBonus += cond.bonus || 0;
+        } else {
+          groups[nomeCond].acertoBonus += cond.bonus || 0;
+        }
+      });
 
-        let totalCond = aplicarTeto(base + bonusNormal + bonusCond, teto, quebra);
+      Object.entries(groups).forEach(([nomeCondicao, { acertoBonus, critBonus }]) => {
+        let totalCond = aplicarTeto(base + bonusNormal + acertoBonus, teto, quebra);
         totalCond = clamp(totalCond);
 
         const nomeExibicaoCond = `${nomeExibicao} (${nomeCondicao})`;
-        const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroCritico(attrErro), extraCrit);
+        const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroCritico(attrErro), extraCrit + critBonus);
         output += fCond.textoFormatado + '\n';
       });
     };
@@ -499,20 +531,25 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         output += f.textoFormatado + '\n';
 
         // CONDICIONAIS PARA ESTA ARMA
-        const condsForWeapon = hitConditionals.filter((c) => {
-          if (c.tipoAcao === 'todas_armas' || c.tipoAcao === 'arma' || c.tipoAcao === 'armas') return true;
-          if (c.tipoAcao === `arma:${w.id}` || c.tipoAcao === `arma:${nome}`) return true;
-          if (c.tipoAcao === w.id || c.tipoAcao === nome) return true;
-          return false;
+        const condsForWeapon = getConditionalsForWeapon(w);
+        const groups: Record<string, { acertoBonus: number; critBonus: number }> = {};
+        condsForWeapon.forEach((cond) => {
+          const nomeCond = cond.nomeCondicao.trim() || 'Condicional';
+          if (!groups[nomeCond]) {
+            groups[nomeCond] = { acertoBonus: 0, critBonus: 0 };
+          }
+          const cat = cond.categoria || 'acerto';
+          if (cat === 'critico') {
+            groups[nomeCond].critBonus += cond.bonus || 0;
+          } else {
+            groups[nomeCond].acertoBonus += cond.bonus || 0;
+          }
         });
 
-        condsForWeapon.forEach((cond) => {
-          const nomeCondicao = cond.nomeCondicao.trim() || 'Condicional';
-          const bonusCond = cond.bonus || 0;
-
-          let totalCond = clamp(numero + bonusCond);
+        Object.entries(groups).forEach(([nomeCondicao, { acertoBonus, critBonus }]) => {
+          let totalCond = clamp(numero + acertoBonus);
           const nomeExibicaoCond = `${nomeExibicao} (${nomeCondicao})`;
-          const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroBase, bonusCrit + bonusCritFisico);
+          const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroBase, bonusCrit + bonusCritFisico + critBonus);
           output += fCond.textoFormatado + '\n';
         });
       }
@@ -1937,6 +1974,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                     ...prev,
                     {
                       id: `cond_${Date.now()}`,
+                      categoria: 'acerto',
                       tipoAcao: defaultType,
                       bonus: 20,
                       nomeCondicao: 'durante [nome do efeito]'
@@ -1960,9 +1998,35 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                   const availableActionKeys = Object.keys(NOMES_ACOES_ACERTO).filter(
                     (k) => !hitActionOptions[k]?.ignorar || k === cond.tipoAcao
                   );
+                  const isCrit = cond.categoria === 'critico';
 
                   return (
                     <div key={cond.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)]">
+                      {/* Tipo de Bônus */}
+                      <div className="w-full sm:w-36 shrink-0">
+                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Tipo de Bônus:</label>
+                        <select
+                          value={cond.categoria || 'acerto'}
+                          onChange={(e) => {
+                            const val = e.target.value as 'acerto' | 'critico';
+                            setHitConditionals((prev) =>
+                              prev.map((item) => {
+                                if (item.id !== cond.id) return item;
+                                let nextTipoAcao = item.tipoAcao;
+                                if (val === 'acerto' && nextTipoAcao === 'todos_acertos') {
+                                  nextTipoAcao = availableActionKeys[0] || 'esquiva';
+                                }
+                                return { ...item, categoria: val, tipoAcao: nextTipoAcao };
+                              })
+                            );
+                          }}
+                          className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                        >
+                          <option value="acerto">Acerto</option>
+                          <option value="critico">Chance de Crítico</option>
+                        </select>
+                      </div>
+
                       {/* Tipo de Ação */}
                       <div className="flex-1 min-w-[160px]">
                         <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Ação Afetada:</label>
@@ -2039,6 +2103,14 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                               );
                             }
 
+                            if (isCrit) {
+                              items.push(
+                                <option key="todos_acertos" value="todos_acertos">
+                                  Todos os Acertos (Aplicar em todos)
+                                </option>
+                              );
+                            }
+
                             return items;
                           })()}
                         </select>
@@ -2046,7 +2118,9 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
                       {/* Bônus */}
                       <div className="w-full sm:w-28">
-                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Bônus (+):</label>
+                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">
+                          {isCrit ? 'Bônus Crítico:' : 'Bônus (+):'}
+                        </label>
                         <input
                           type="number"
                           value={cond.bonus}

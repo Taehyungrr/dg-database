@@ -86,6 +86,7 @@ export interface BonusCondicionalAcerto {
   nomeCondicao: string;
   tipoAcao: string;
   bonus: number;
+  categoria?: 'acerto' | 'critico';
 }
 
 export interface BonusCombateFicha {
