@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FichaPersonagem, ItemInventario } from '../types';
-import { MATERIAIS_ARMA } from '../data/combatData';
+import { FichaPersonagem, ItemInventario, BonusCondicionalAcerto } from '../types';
+import { MATERIAIS_ARMA, NOMES_ACOES_ACERTO } from '../data/combatData';
 import { 
   Swords, 
   Plus, 
@@ -33,6 +33,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const combatBonuses = formData.bonus_combate || {};
   const attrDmgBonuses = combatBonuses.bonusDanoAtributos || {};
   const hitBonuses = combatBonuses.bonusAcerto || {};
+  const conditionals = combatBonuses.bonusCondicionaisAcerto || [];
 
   // Handlers for Attr % Damage Bonuses
   const handleAttrDmgBonusChange = (attrKey: string, val: number) => {
@@ -58,6 +59,45 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           ...prev.bonus_combate?.bonusAcerto,
           [hitKey]: val
         }
+      }
+    }));
+  };
+
+  // Handlers for Conditional Hit Bonuses
+  const handleAddConditional = () => {
+    const newCond: BonusCondicionalAcerto = {
+      id: `cond_${Date.now()}`,
+      nomeCondicao: 'durante Deus do Sol',
+      tipoAcao: 'esquiva',
+      bonus: 20
+    };
+    setFormData((prev) => ({
+      ...prev,
+      bonus_combate: {
+        ...prev.bonus_combate,
+        bonusCondicionaisAcerto: [...(prev.bonus_combate?.bonusCondicionaisAcerto || []), newCond]
+      }
+    }));
+  };
+
+  const handleUpdateConditional = (id: string, updates: Partial<BonusCondicionalAcerto>) => {
+    setFormData((prev) => ({
+      ...prev,
+      bonus_combate: {
+        ...prev.bonus_combate,
+        bonusCondicionaisAcerto: (prev.bonus_combate?.bonusCondicionaisAcerto || []).map((c) =>
+          c.id === id ? { ...c, ...updates } : c
+        )
+      }
+    }));
+  };
+
+  const handleRemoveConditional = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      bonus_combate: {
+        ...prev.bonus_combate,
+        bonusCondicionaisAcerto: (prev.bonus_combate?.bonusCondicionaisAcerto || []).filter((c) => c.id !== id)
       }
     }));
   };
@@ -157,7 +197,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
             {/* Bônus de Acerto Adicional */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-2 flex items-center gap-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#b8a944] mb-2 flex items-center gap-1.5">
                 <Crosshair className="w-3.5 h-3.5" />
                 Bônus de Acerto Adicional
               </h4>
@@ -178,11 +218,88 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       type="number"
                       value={hitBonuses[key as keyof typeof hitBonuses] || 0}
                       onChange={(e) => handleHitBonusChange(key, Number(e.target.value))}
-                      className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-blue-500"
+                      className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-[#b8a944]"
                     />
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Bônus Condicionais de Acerto */}
+            <div className="pt-2 border-t border-[var(--bordadg)]">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Bônus Condicionais de Acerto
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleAddConditional}
+                  className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Adicionar Condicional</span>
+                </button>
+              </div>
+
+              {conditionals.length === 0 ? (
+                <div className="text-[11px] text-[var(--ctexto2)] italic bg-[var(--fundo3)] p-2.5 rounded-xl border border-dashed border-[var(--bordadg)] text-center">
+                  Nenhum bônus condicional cadastrado. Clique em "Adicionar Condicional" para criar bônus específicos (ex: "durante Deus do Sol" +20 em Esquiva).
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {conditionals.map((cond) => (
+                    <div key={cond.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-[var(--fundo3)] p-2.5 rounded-xl border border-[var(--bordadg)] items-center">
+                      <div className="sm:col-span-4">
+                        <label className="text-[9px] font-bold text-[var(--ctexto2)] uppercase block mb-0.5">Tipo de Ação</label>
+                        <select
+                          value={cond.tipoAcao}
+                          onChange={(e) => handleUpdateConditional(cond.id, { tipoAcao: e.target.value })}
+                          className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                        >
+                          {Object.entries(NOMES_ACOES_ACERTO).map(([key, meta]) => (
+                            <option key={key} value={key}>
+                              {meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '')}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-3">
+                        <label className="text-[9px] font-bold text-[var(--ctexto2)] uppercase block mb-0.5">Bônus</label>
+                        <input
+                          type="number"
+                          value={cond.bonus}
+                          onChange={(e) => handleUpdateConditional(cond.id, { bonus: Number(e.target.value) })}
+                          className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-mono font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="text-[9px] font-bold text-[var(--ctexto2)] uppercase block mb-0.5">Nome da Condição</label>
+                        <input
+                          type="text"
+                          value={cond.nomeCondicao}
+                          placeholder="Ex: durante Deus do Sol"
+                          onChange={(e) => handleUpdateConditional(cond.id, { nomeCondicao: e.target.value })}
+                          className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-1 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveConditional(cond.id)}
+                          className="p-1.5 text-[var(--ctexto2)] hover:text-rose-400 rounded-lg cursor-pointer transition-colors"
+                          title="Remover condicional"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>

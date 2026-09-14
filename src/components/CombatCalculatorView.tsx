@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FichaPersonagem, AtributosPersonagem } from '../types';
+import { FichaPersonagem, AtributosPersonagem, BonusCondicionalAcerto } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
 import { saveSheet } from '../services/characterSheets';
 import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
@@ -96,6 +96,18 @@ interface CombatCalculatorViewProps {
 
 export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets, onUpdateSheet }) => {
   const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto' | 'evolucao'>('dano');
+
+  // Sorted sheets according to user preference in "Minhas Fichas"
+  const sortOrder = (localStorage.getItem('pj_sheets_sort_order') as 'alfabetica' | 'edicao') || 'alfabetica';
+  const sortedSheets = [...sheets].sort((a, b) => {
+    if (sortOrder === 'alfabetica') {
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    } else {
+      const dateA = new Date(a.atualizado_em || a.criado_em || 0).getTime();
+      const dateB = new Date(b.atualizado_em || b.criado_em || 0).getTime();
+      return dateB - dateA;
+    }
+  });
 
   // Selected Character Sheets (Default: Preenchimento Manual)
   const [selectedSheetId, setSelectedSheetId] = useState<string>('');
@@ -245,6 +257,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   });
 
   const [hitResultsText, setHitResultsText] = useState<string>('');
+  const [hitConditionals, setHitConditionals] = useState<BonusCondicionalAcerto[]>([]);
 
   // Sync selected attacker character sheet
   useEffect(() => {
@@ -279,6 +292,13 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           return updated;
         });
       }
+      if (cb.bonusCondicionaisAcerto) {
+        setHitConditionals(cb.bonusCondicionaisAcerto);
+      } else {
+        setHitConditionals([]);
+      }
+    } else {
+      setHitConditionals([]);
     }
 
     // Load inventory weapons
@@ -435,10 +455,10 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       const opt = hitActionOptions[nomeKey];
       if (opt && opt.ignorar) return;
 
-      const bonus = opt ? opt.bonus : 0;
+      const bonusNormal = opt ? opt.bonus : 0;
       const quebra = opt ? opt.quebra : false;
 
-      let total = aplicarTeto(base + bonus, teto, quebra);
+      let total = aplicarTeto(base + bonusNormal, teto, quebra);
       total = clamp(total);
 
       const meta = NOMES_ACOES_ACERTO[nomeKey];
@@ -446,6 +466,20 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
       const f = montarFaixas(nomeExibicao, total, erroCritico(attrErro), extraCrit);
       output += f.textoFormatado + '\n';
+
+      // CONDICIONAIS
+      const condsForAction = hitConditionals.filter((c) => c.tipoAcao === nomeKey);
+      condsForAction.forEach((cond) => {
+        const nomeCondicao = cond.nomeCondicao.trim() || 'Condicional';
+        const bonusCond = cond.bonus || 0;
+
+        let totalCond = aplicarTeto(base + bonusNormal + bonusCond, teto, quebra);
+        totalCond = clamp(totalCond);
+
+        const nomeExibicaoCond = `${nomeExibicao} (${nomeCondicao})`;
+        const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroCritico(attrErro), extraCrit);
+        output += fCond.textoFormatado + '\n';
+      });
     };
 
     // 1. DESARMADO
@@ -523,7 +557,8 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
           convencimento: hitActionOptions.convencimento?.bonus || 0,
           resistencia: hitActionOptions.resistencia?.bonus || 0,
           voz: hitActionOptions.voz?.bonus || 0
-        }
+        },
+        bonusCondicionaisAcerto: hitConditionals
       }
     };
 
@@ -600,7 +635,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
               className="w-full sm:w-64 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 cursor-pointer"
             >
               <option value="">-- Preenchimento Manual --</option>
-              {sheets.map((s) => (
+              {sortedSheets.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nome} (Nível {s.nivel})
                 </option>
@@ -1365,7 +1400,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                   className="bg-[var(--fundo3)] px-2.5 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                 >
                   <option value="">-- Manual --</option>
-                  {sheets.map((s) => (
+                  {sortedSheets.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.nome}
                     </option>
@@ -1858,6 +1893,129 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                 );
               })}
             </div>
+          </div>
+
+          {/* BÔNUS CONDICIONAIS DE ACERTO */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <span>Bônus Condicionais</span>
+                </h3>
+                <p className="text-xs text-[var(--ctexto2)]">
+                  Adicione bônus temporários ou de condições específicas para gerar faixas adicionais no resultado.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const availableKeys = Object.keys(NOMES_ACOES_ACERTO).filter((k) => !hitActionOptions[k]?.ignorar);
+                  const defaultType = availableKeys[0] || 'esquiva';
+                  setHitConditionals((prev) => [
+                    ...prev,
+                    {
+                      id: `cond_${Date.now()}`,
+                      tipoAcao: defaultType,
+                      bonus: 20,
+                      nomeCondicao: 'durante Deus do Sol'
+                    }
+                  ]);
+                }}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shrink-0 self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar Condicional</span>
+              </button>
+            </div>
+
+            {hitConditionals.length === 0 ? (
+              <div className="text-center py-4 border border-dashed border-[var(--bordadg)] rounded-xl text-xs text-[var(--ctexto2)]">
+                Nenhum bônus condicional ativo. Clique em "Adicionar Condicional" para criar faixas de acerto durante efeitos específicos.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {hitConditionals.map((cond) => {
+                  const availableActionKeys = Object.keys(NOMES_ACOES_ACERTO).filter(
+                    (k) => !hitActionOptions[k]?.ignorar || k === cond.tipoAcao
+                  );
+
+                  return (
+                    <div key={cond.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)]">
+                      {/* Tipo de Ação */}
+                      <div className="flex-1 min-w-[160px]">
+                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Ação Afetada:</label>
+                        <select
+                          value={cond.tipoAcao}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHitConditionals((prev) =>
+                              prev.map((item) => (item.id === cond.id ? { ...item, tipoAcao: val } : item))
+                            );
+                          }}
+                          className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                        >
+                          {availableActionKeys.map((key) => {
+                            const meta = NOMES_ACOES_ACERTO[key];
+                            return (
+                              <option key={key} value={key}>
+                                {meta ? meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '') : key}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      {/* Bônus */}
+                      <div className="w-full sm:w-28">
+                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Bônus (+):</label>
+                        <input
+                          type="number"
+                          value={cond.bonus}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setHitConditionals((prev) =>
+                              prev.map((item) => (item.id === cond.id ? { ...item, bonus: val } : item))
+                            );
+                          }}
+                          className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold text-center text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        />
+                      </div>
+
+                      {/* Nome da Condição */}
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-[var(--ctexto2)] block mb-1">Nome da Condição:</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: durante Deus do Sol"
+                          value={cond.nomeCondicao}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHitConditionals((prev) =>
+                              prev.map((item) => (item.id === cond.id ? { ...item, nomeCondicao: val } : item))
+                            );
+                          }}
+                          className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        />
+                      </div>
+
+                      {/* Delete button */}
+                      <div className="flex sm:items-end justify-end pt-1 sm:pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setHitConditionals((prev) => prev.filter((item) => item.id !== cond.id))}
+                          className="p-1.5 text-[var(--ctexto2)] hover:text-rose-400 rounded-lg cursor-pointer transition-colors"
+                          title="Remover condicional"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* TOAST / FEEDBACK NOTIFICATION */}

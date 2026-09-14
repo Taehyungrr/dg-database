@@ -81,6 +81,13 @@ export interface BonusExtraDano {
   descricao: string;
 }
 
+export interface BonusCondicionalAcerto {
+  id: string;
+  nomeCondicao: string;
+  tipoAcao: string;
+  bonus: number;
+}
+
 export interface BonusCombateFicha {
   bonusDanoAtributos?: {
     forca?: number;
@@ -106,6 +113,7 @@ export interface BonusCombateFicha {
     resistencia?: number;
     voz?: number;
   };
+  bonusCondicionaisAcerto?: BonusCondicionalAcerto[];
 }
 
 export interface FichaPersonagem {

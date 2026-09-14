@@ -42,6 +42,18 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
     }
   };
 
+  // Sorted sheets according to user preference in "Minhas Fichas"
+  const sortOrder = (localStorage.getItem('pj_sheets_sort_order') as 'alfabetica' | 'edicao') || 'alfabetica';
+  const sortedSheets = [...sheets].sort((a, b) => {
+    if (sortOrder === 'alfabetica') {
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    } else {
+      const dateA = new Date(a.atualizado_em || a.criado_em || 0).getTime();
+      const dateB = new Date(b.atualizado_em || b.criado_em || 0).getTime();
+      return dateB - dateA;
+    }
+  });
+
   // Evolution Fields
   const [nivelAtual, setNivelAtual] = useState<number | string>(1);
   const [expAtual, setExpAtual] = useState<number | string>(0);
@@ -161,7 +173,7 @@ export const EvolutionView: React.FC<EvolutionViewProps> = ({
                 className="w-full sm:w-64 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] focus:outline-none focus:border-amber-500 cursor-pointer"
               >
                 <option value="">-- Preenchimento Manual --</option>
-                {sheets.map((s) => (
+                {sortedSheets.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nome} (Nível {s.nivel})
                   </option>
