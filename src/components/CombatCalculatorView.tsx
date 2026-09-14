@@ -494,8 +494,27 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       const bonusCrit = w.bonusCritico || 0;
 
       if (nome && numero > 0) {
-        const f = montarFaixas(`Chance de Acerto com ${nome}`, clamp(numero), erroBase, bonusCrit + bonusCritFisico);
+        const nomeExibicao = `Chance de Acerto com ${nome}`;
+        const f = montarFaixas(nomeExibicao, clamp(numero), erroBase, bonusCrit + bonusCritFisico);
         output += f.textoFormatado + '\n';
+
+        // CONDICIONAIS PARA ESTA ARMA
+        const condsForWeapon = hitConditionals.filter((c) => {
+          if (c.tipoAcao === 'todas_armas' || c.tipoAcao === 'arma' || c.tipoAcao === 'armas') return true;
+          if (c.tipoAcao === `arma:${w.id}` || c.tipoAcao === `arma:${nome}`) return true;
+          if (c.tipoAcao === w.id || c.tipoAcao === nome) return true;
+          return false;
+        });
+
+        condsForWeapon.forEach((cond) => {
+          const nomeCondicao = cond.nomeCondicao.trim() || 'Condicional';
+          const bonusCond = cond.bonus || 0;
+
+          let totalCond = clamp(numero + bonusCond);
+          const nomeExibicaoCond = `${nomeExibicao} (${nomeCondicao})`;
+          const fCond = montarFaixas(nomeExibicaoCond, totalCond, erroBase, bonusCrit + bonusCritFisico);
+          output += fCond.textoFormatado + '\n';
+        });
       }
     });
 
@@ -1957,15 +1976,71 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                           }}
                           className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                         >
-                          <option value="todas_defesas">🛡️ Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)</option>
-                          {availableActionKeys.map((key) => {
-                            const meta = NOMES_ACOES_ACERTO[key];
-                            return (
-                              <option key={key} value={key}>
-                                {meta ? meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '') : key}
+                          {(() => {
+                            const validHitWeapons = hitWeapons.filter((w) => w.nome && w.nome.trim() !== '');
+                            const hasDesarmado = availableActionKeys.includes('desarmado');
+                            const hasBloqueio = availableActionKeys.includes('bloqueio');
+                            const items: React.ReactNode[] = [];
+
+                            const weaponOptions = [
+                              <option key="todas_armas" value="todas_armas">
+                                Todas as Armas
                               </option>
-                            );
-                          })}
+                            ];
+                            validHitWeapons.forEach((w) => {
+                              const val = `arma:${w.nome.trim()}`;
+                              weaponOptions.push(
+                                <option key={val} value={val}>
+                                  Arma: {w.nome.trim()}
+                                </option>
+                              );
+                            });
+                            if (cond.tipoAcao.startsWith('arma:') && cond.tipoAcao !== 'todas_armas') {
+                              const weaponNameInCond = cond.tipoAcao.replace('arma:', '');
+                              if (!validHitWeapons.some((w) => w.nome.trim() === weaponNameInCond)) {
+                                weaponOptions.push(
+                                  <option key={cond.tipoAcao} value={cond.tipoAcao}>
+                                    Arma: {weaponNameInCond}
+                                  </option>
+                                );
+                              }
+                            }
+
+                            if (!hasDesarmado) {
+                              items.push(...weaponOptions);
+                            }
+
+                            availableActionKeys.forEach((key) => {
+                              const meta = NOMES_ACOES_ACERTO[key];
+                              items.push(
+                                <option key={key} value={key}>
+                                  {meta ? meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '') : key}
+                                </option>
+                              );
+
+                              if (key === 'desarmado') {
+                                items.push(...weaponOptions);
+                              }
+
+                              if (key === 'bloqueio') {
+                                items.push(
+                                  <option key="todas_defesas" value="todas_defesas">
+                                    Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)
+                                  </option>
+                                );
+                              }
+                            });
+
+                            if (!hasBloqueio) {
+                              items.push(
+                                <option key="todas_defesas" value="todas_defesas">
+                                  Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)
+                                </option>
+                              );
+                            }
+
+                            return items;
+                          })()}
                         </select>
                       </div>
 

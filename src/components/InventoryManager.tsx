@@ -257,12 +257,57 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                           onChange={(e) => handleUpdateConditional(cond.id, { tipoAcao: e.target.value })}
                           className="w-full bg-[var(--fundo1)] px-2 py-1 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                         >
-                          <option value="todas_defesas">🛡️ Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)</option>
-                          {Object.entries(NOMES_ACOES_ACERTO).map(([key, meta]) => (
-                            <option key={key} value={key}>
-                              {meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '')}
-                            </option>
-                          ))}
+                          {(() => {
+                            const invWeapons = (formData.inventario || []).filter((i) => i.tipo === 'arma' && i.nome.trim() !== '');
+                            const items: React.ReactNode[] = [];
+
+                            const weaponOptions = [
+                              <option key="todas_armas" value="todas_armas">
+                                Todas as Armas
+                              </option>
+                            ];
+                            invWeapons.forEach((w) => {
+                              const val = `arma:${w.nome.trim()}`;
+                              weaponOptions.push(
+                                <option key={val} value={val}>
+                                  Arma: {w.nome.trim()}
+                                </option>
+                              );
+                            });
+                            if (cond.tipoAcao.startsWith('arma:') && cond.tipoAcao !== 'todas_armas') {
+                              const weaponNameInCond = cond.tipoAcao.replace('arma:', '');
+                              if (!invWeapons.some((w) => w.nome.trim() === weaponNameInCond)) {
+                                weaponOptions.push(
+                                  <option key={cond.tipoAcao} value={cond.tipoAcao}>
+                                    Arma: {weaponNameInCond}
+                                  </option>
+                                );
+                              }
+                            }
+
+                            Object.entries(NOMES_ACOES_ACERTO).forEach(([key, meta]) => {
+                              const optionEl = (
+                                <option key={key} value={key}>
+                                  {meta.nome.replace('Chance de ', '').replace('Acerto de ', '').replace('Acerto ', '')}
+                                </option>
+                              );
+                              items.push(optionEl);
+
+                              if (key === 'desarmado') {
+                                items.push(...weaponOptions);
+                              }
+
+                              if (key === 'bloqueio') {
+                                items.push(
+                                  <option key="todas_defesas" value="todas_defesas">
+                                    Todas as Defesas (Bloqueio, Esquiva, Contra-Ataque)
+                                  </option>
+                                );
+                              }
+                            });
+
+                            return items;
+                          })()}
                         </select>
                       </div>
 
