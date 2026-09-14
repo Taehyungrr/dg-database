@@ -3,7 +3,6 @@ import { TabType } from '../types';
 import { MinotaurIcon } from './icons/MinotaurIcon';
 import { 
   Database, 
-  TreePine, 
   FileText, 
   Calculator, 
   Sun, 
@@ -58,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] border border-transparent'
               }`}
             >
-              <TreePine className="w-3.5 h-3.5 text-[#b8a944]" />
+              <i className="game-icon game-icon-scroll-unfurled text-[#b8a944] text-sm leading-none" />
               <span>Árvore de Poderes</span>
             </button>
 
@@ -166,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             activeTab === 'arvore' ? 'bg-[var(--fundo3)] text-[#b8a944] font-bold border border-[var(--bordadg)]' : 'text-[var(--ctexto2)]'
           }`}
         >
-          <TreePine className="w-3 h-3 text-[#b8a944]" />
+          <i className="game-icon game-icon-scroll-unfurled text-[#b8a944] text-xs leading-none" />
           <span>Árvore</span>
         </button>
 
