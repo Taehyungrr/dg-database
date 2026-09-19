@@ -384,6 +384,7 @@ export default function App() {
               <div className={(activeTab === 'calculadoras' || activeTab === 'combate' || activeTab === 'evolucao') ? 'block' : 'hidden'}>
                 <CombatCalculatorView
                   sheets={savedSheets}
+                  deuses={deuses}
                   onUpdateSheet={(updatedSheet) => {
                     const newSheets = saveSheet(updatedSheet);
                     setSavedSheets(newSheets);

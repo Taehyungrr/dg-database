@@ -71,6 +71,7 @@ export interface ItemInventario {
     percentBonus: number;
   };
   bonusForja?: number; // FB (Bônus de forja)
+  mitico?: boolean; // Arma Mítica (+20% multiplicador extra)
   descricao?: string;
   bonusAtributoOuEfeito?: string;
 }

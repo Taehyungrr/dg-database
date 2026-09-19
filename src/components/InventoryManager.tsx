@@ -121,10 +121,29 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   };
 
   const handleUpdateItem = (id: string, updates: Partial<ItemInventario>) => {
-    setFormData((prev) => ({
-      ...prev,
-      inventario: (prev.inventario || []).map((item) => (item.id === id ? { ...item, ...updates } : item))
-    }));
+    setFormData((prev) => {
+      const updatedInventory = (prev.inventario || []).map((item) => (item.id === id ? { ...item, ...updates } : item));
+      const hasAnyMitico = updatedInventory.some((i) => i.tipo === 'arma' && i.mitico);
+      const currentExtras = prev.bonus_combate?.bonusDanoExtras || [];
+      let updatedExtras = currentExtras;
+
+      if (hasAnyMitico) {
+        if (!updatedExtras.some((m) => m.id === 'extra_mitico' || m.descricao === 'Arma Mítica')) {
+          updatedExtras = [...updatedExtras, { id: 'extra_mitico', valor: 20, descricao: 'Arma Mítica' }];
+        }
+      } else {
+        updatedExtras = updatedExtras.filter((m) => m.id !== 'extra_mitico' && m.descricao !== 'Arma Mítica');
+      }
+
+      return {
+        ...prev,
+        inventario: updatedInventory,
+        bonus_combate: {
+          ...prev.bonus_combate,
+          bonusDanoExtras: updatedExtras
+        }
+      };
+    });
   };
 
   const handleRemoveItem = (id: string) => {
@@ -387,7 +406,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                   
                   {/* Nome */}
-                  <div className="sm:col-span-4">
+                  <div className="sm:col-span-3">
                     <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Nome da Arma</label>
                     <input
                       type="text"
@@ -430,7 +449,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
                   {/* Bônus de Forja (FB) */}
                   <div className="sm:col-span-2">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Bônus Forja (FB)</label>
+                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Forja (FB)</label>
                     <input
                       type="number"
                       min="0"
@@ -438,6 +457,19 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       onChange={(e) => handleUpdateItem(arma.id, { bonusForja: Number(e.target.value) })}
                       className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
                     />
+                  </div>
+
+                  {/* Mítico */}
+                  <div className="sm:col-span-1 flex flex-col items-center">
+                    <label className="text-[10px] font-bold text-amber-400 uppercase block mb-1">Mítico</label>
+                    <label className="inline-flex items-center justify-center p-1.5 bg-[var(--fundo1)] rounded-lg border border-[var(--bordadg)] hover:border-amber-500/50 cursor-pointer transition-colors w-full h-[30px]" title="Arma Mítica (+20% Multiplicador Extra)">
+                      <input
+                        type="checkbox"
+                        checked={!!arma.mitico}
+                        onChange={(e) => handleUpdateItem(arma.id, { mitico: e.target.checked })}
+                        className="w-3.5 h-3.5 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                      />
+                    </label>
                   </div>
 
                   {/* Delete Button */}

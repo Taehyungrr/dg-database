@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FichaPersonagem, AtributosPersonagem, BonusCondicionalAcerto } from '../types';
+import { FichaPersonagem, AtributosPersonagem, BonusCondicionalAcerto, Deus } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
 import { saveSheet } from '../services/characterSheets';
 import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
@@ -62,6 +62,28 @@ export const ATTR_CONFIG: Record<keyof AtributosPersonagem, {
   espiritualidade: { name: 'Espiritualidade', shortName: 'ESP', icon: Flame, color: 'text-cyan-500 dark:text-cyan-400', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' }
 };
 
+const checkDeityAttributeMatch = (deus: Deus | undefined, targetAttr: string): boolean => {
+  if (!deus || !deus.atributos_principais) return false;
+  const str = deus.atributos_principais.toLowerCase();
+
+  if (targetAttr === 'inteligencia') {
+    return str.includes('intelecto') || str.includes('inteligência') || str.includes('inteligencia');
+  }
+  if (targetAttr === 'natureza') {
+    return str.includes('natureza');
+  }
+  if (targetAttr === 'espiritualidade') {
+    return str.includes('espiritualidade') || str.includes('espiritual');
+  }
+  if (targetAttr === 'magia') {
+    return str.includes('poder mágico') || str.includes('poder magico') || str.includes('mágico') || str.includes('magico') || str.includes('magia');
+  }
+  if (targetAttr === 'carisma') {
+    return str.includes('carisma');
+  }
+  return false;
+};
+
 const ACTION_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   desarmado: BicepsFlexed,
   voz: Heart,
@@ -91,10 +113,12 @@ const AttrBadge: React.FC<{ attrKey: keyof AtributosPersonagem | ''; showName?: 
 
 interface CombatCalculatorViewProps {
   sheets: FichaPersonagem[];
+  deuses?: Deus[];
   onUpdateSheet?: (sheet: FichaPersonagem) => void;
 }
 
-export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets, onUpdateSheet }) => {
+export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ sheets, deuses, onUpdateSheet }) => {
+  const allDeuses = deuses && deuses.length > 0 ? deuses : INITIAL_DEUSES;
   const [activeSubTab, setActiveSubTab] = useState<'dano' | 'acerto' | 'evolucao'>('dano');
 
   // Sorted sheets according to user preference in "Minhas Fichas"
@@ -117,7 +141,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
   // Active God Color from loaded attacker sheet
   const activeAttackerSheet = sheets.find(s => s.id === selectedSheetId);
-  const activeAttackerDeus = activeAttackerSheet ? INITIAL_DEUSES.find(d => d.id === activeAttackerSheet.deus_id) : null;
+  const activeAttackerDeus = activeAttackerSheet ? allDeuses.find(d => d.id === activeAttackerSheet.deus_id) : null;
   const activeGodColor = activeAttackerDeus?.cor_hex;
 
   // =========================================================================
@@ -137,6 +161,53 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
   const [damageType, setDamageType] = useState<'unarmed' | 'melee' | 'ranged' | 'crossbow' | 'energy' | 'especial'>('melee');
   const [selectedWeaponId, setSelectedWeaponId] = useState<string>('');
+  const [isMitico, setIsMitico] = useState<boolean>(false);
+
+  const handleToggleMitico = (checked: boolean) => {
+    setIsMitico(checked);
+    if (checked) {
+      setExtraMultipliers((prev) => {
+        if (prev.some((m) => m.id === 'extra_mitico' || m.descricao === 'Arma Mítica')) {
+          return prev;
+        }
+        return [...prev, { id: 'extra_mitico', valor: 20, descricao: 'Arma Mítica' }];
+      });
+    } else {
+      setExtraMultipliers((prev) =>
+        prev.filter((m) => m.id !== 'extra_mitico' && m.descricao !== 'Arma Mítica')
+      );
+    }
+
+    if (selectedSheetId && selectedWeaponId) {
+      const sheet = sheets.find((s) => s.id === selectedSheetId);
+      if (sheet && sheet.inventario) {
+        const updatedInv = sheet.inventario.map((i) =>
+          i.id === selectedWeaponId ? { ...i, mitico: checked } : i
+        );
+
+        const currentExtras = sheet.bonus_combate?.bonusDanoExtras || [];
+        let updatedExtras = currentExtras;
+        if (checked) {
+          if (!updatedExtras.some((m) => m.id === 'extra_mitico' || m.descricao === 'Arma Mítica')) {
+            updatedExtras = [...updatedExtras, { id: 'extra_mitico', valor: 20, descricao: 'Arma Mítica' }];
+          }
+        } else {
+          updatedExtras = updatedExtras.filter((m) => m.id !== 'extra_mitico' && m.descricao !== 'Arma Mítica');
+        }
+
+        const updatedSheet: FichaPersonagem = {
+          ...sheet,
+          inventario: updatedInv,
+          bonus_combate: {
+            ...sheet.bonus_combate,
+            bonusDanoExtras: updatedExtras
+          }
+        };
+        saveSheet(updatedSheet);
+        if (onUpdateSheet) onUpdateSheet(updatedSheet);
+      }
+    }
+  };
 
   // Especial
   const [especialBase, setEspecialBase] = useState<number>(0);
@@ -272,6 +343,14 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     });
     setAttackerAttrs(clampedAttrs);
 
+    // Read god primary attributes to auto-set hitActionOptions 'ignorar' flag
+    const god = allDeuses.find((d) => d.id === sheet.deus_id);
+    const hasInt = checkDeityAttributeMatch(god, 'inteligencia');
+    const hasNat = checkDeityAttributeMatch(god, 'natureza');
+    const hasEsp = checkDeityAttributeMatch(god, 'espiritualidade');
+    const hasMag = checkDeityAttributeMatch(god, 'magia');
+    const hasCar = checkDeityAttributeMatch(god, 'carisma');
+
     // Load combat bonuses
     const cb = sheet.bonus_combate;
     if (cb) {
@@ -281,23 +360,40 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       if (cb.bonusDanoExtras) {
         setExtraMultipliers(cb.bonusDanoExtras);
       }
-      if (cb.bonusAcerto) {
-        setHitActionOptions((prev) => {
-          const updated = { ...prev };
-          Object.entries(cb.bonusAcerto || {}).forEach(([k, val]) => {
+      setHitActionOptions((prev) => {
+        const updated = { ...prev };
+        if (cb.bonusAcerto) {
+          Object.entries(cb.bonusAcerto).forEach(([k, val]) => {
             if (updated[k]) {
               updated[k] = { ...updated[k], bonus: val || 0 };
             }
           });
-          return updated;
-        });
-      }
+        }
+        if (updated.mental) updated.mental.ignorar = !hasInt;
+        if (updated.elemental) updated.elemental.ignorar = !hasNat;
+        if (updated.espiritual) updated.espiritual.ignorar = !hasEsp;
+        if (updated.magico) updated.magico.ignorar = !hasMag;
+        if (updated.convencimento) updated.convencimento.ignorar = !hasCar;
+
+        return updated;
+      });
+
       if (cb.bonusCondicionaisAcerto) {
         setHitConditionals(cb.bonusCondicionaisAcerto);
       } else {
         setHitConditionals([]);
       }
     } else {
+      setHitActionOptions((prev) => {
+        const updated = { ...prev };
+        if (updated.mental) updated.mental.ignorar = !hasInt;
+        if (updated.elemental) updated.elemental.ignorar = !hasNat;
+        if (updated.espiritual) updated.espiritual.ignorar = !hasEsp;
+        if (updated.magico) updated.magico.ignorar = !hasMag;
+        if (updated.convencimento) updated.convencimento.ignorar = !hasCar;
+
+        return updated;
+      });
       setHitConditionals([]);
     }
 
@@ -319,7 +415,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         const w1 = invWeapons[0];
         if (w1.material) setMat1Key(w1.material);
         if (w1.materialCustom) setCustomMat1(w1.materialCustom);
-        if (w1.bonusForja) setForgeBonus(w1.bonusForja);
+        if (w1.bonusForja) setForgeBonus(w1.bonusForja ?? 0);
+
+        const isW1Mitico = !!w1.mitico;
+        setIsMitico(isW1Mitico);
+        if (isW1Mitico) {
+          setExtraMultipliers((prev) => {
+            if (prev.some((m) => m.id === 'extra_mitico' || m.descricao === 'Arma Mítica')) return prev;
+            return [...prev, { id: 'extra_mitico', valor: 20, descricao: 'Arma Mítica' }];
+          });
+        }
       }
     }
 
@@ -327,7 +432,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     if (sheet.chances_acerto) {
       setHitResultsText(sheet.chances_acerto);
     }
-  }, [selectedSheetId, sheets]);
+  }, [selectedSheetId, sheets, allDeuses]);
 
   // Sync when selecting a specific weapon from sheet
   const handleSelectSheetWeapon = (weaponId: string) => {
@@ -339,7 +444,18 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
     if (weapon.material) setMat1Key(weapon.material);
     if (weapon.materialCustom) setCustomMat1(weapon.materialCustom);
-    if (weapon.bonusForja) setForgeBonus(weapon.bonusForja);
+    if (weapon.bonusForja) setForgeBonus(weapon.bonusForja ?? 0);
+
+    const isWMitico = !!weapon.mitico;
+    setIsMitico(isWMitico);
+    if (isWMitico) {
+      setExtraMultipliers((prev) => {
+        if (prev.some((m) => m.id === 'extra_mitico' || m.descricao === 'Arma Mítica')) return prev;
+        return [...prev, { id: 'extra_mitico', valor: 20, descricao: 'Arma Mítica' }];
+      });
+    } else {
+      setExtraMultipliers((prev) => prev.filter((m) => m.id !== 'extra_mitico' && m.descricao !== 'Arma Mítica'));
+    }
   };
 
   // Sync selected defender character sheet
@@ -1151,16 +1267,32 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             {/* BÔNUS DE FORJA (APENAS DANO ARMADO) & DANO BASE DO PODER (APENAS DANO NÃO ARMADO) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
-                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
-                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Bônus de Forja (FB):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={forgeBonus}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => setForgeBonus(Number(e.target.value))}
-                    className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  />
+                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Bônus de Forja (FB):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={forgeBonus}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setForgeBonus(Number(e.target.value))}
+                      className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                    />
+                  </div>
+                  <div className="pt-4">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer bg-[var(--fundo1)] px-3 py-1.5 rounded-lg border border-[var(--bordadg)] hover:border-amber-500/50 transition-colors" title="Arma Mítica (+20% Multiplicador Extra)">
+                      <input
+                        type="checkbox"
+                        checked={isMitico}
+                        onChange={(e) => handleToggleMitico(e.target.checked)}
+                        className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        Mítico
+                      </span>
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -1285,18 +1417,30 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                 <span>Bônus Extras (Somados ao Multiplicador Final)</span>
               </h4>
               <div className="flex flex-wrap items-center gap-2">
-                {extraMultipliers.map((m) => (
-                  <span key={m.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 text-xs font-bold border border-purple-500/30">
-                    +{m.valor}% {m.descricao && `(${m.descricao})`}
-                    <button
-                      type="button"
-                      onClick={() => setExtraMultipliers((prev) => prev.filter((item) => item.id !== m.id))}
-                      className="hover:text-rose-400 cursor-pointer ml-1"
+                {extraMultipliers.map((m) => {
+                  const isMiticoEntry = m.id === 'extra_mitico' || m.descricao === 'Arma Mítica';
+                  return (
+                    <span
+                      key={m.id}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                        isMiticoEntry
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                      }`}
                     >
-                      ×
-                    </button>
-                  </span>
-                ))}
+                      +{m.valor}% {m.descricao && `(${m.descricao})`}
+                      {!isMiticoEntry && (
+                        <button
+                          type="button"
+                          onClick={() => setExtraMultipliers((prev) => prev.filter((item) => item.id !== m.id))}
+                          className="hover:text-rose-400 cursor-pointer ml-1"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  );
+                })}
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-2">
