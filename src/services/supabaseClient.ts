@@ -195,7 +195,23 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
           return mappedDeus;
         });
 
+        // Ensure Legado is present if missing from DB
+        if (!deusesMapeados.some((d) => d.id === 'legado')) {
+          const legadoDefault = initialDeusMap.get('legado');
+          if (legadoDefault) {
+            deusesMapeados.push(legadoDefault);
+          }
+        } else {
+          const idx = deusesMapeados.findIndex((d) => d.id === 'legado');
+          if (idx !== -1 && initialDeusMap.get('legado')) {
+            deusesMapeados[idx].simbolo = deusesMapeados[idx].simbolo || initialDeusMap.get('legado')!.simbolo;
+            deusesMapeados[idx].icone_css = deusesMapeados[idx].icone_css || initialDeusMap.get('legado')!.icone_css;
+          }
+        }
+
         deusesMapeados.sort((a, b) => {
+          if (a.id === 'legado') return 1;
+          if (b.id === 'legado') return -1;
           if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
             return a.ordem - b.ordem;
           }
@@ -228,7 +244,23 @@ export async function fetchAllDeuses(): Promise<Deus[]> {
     };
   });
 
+  // Ensure Legado is present in mappedLocal
+  if (!mappedLocal.some((d) => d.id === 'legado')) {
+    const legadoDefault = initialDeusMap.get('legado');
+    if (legadoDefault) {
+      mappedLocal.push(legadoDefault);
+    }
+  } else {
+    const idx = mappedLocal.findIndex((d) => d.id === 'legado');
+    if (idx !== -1 && initialDeusMap.get('legado')) {
+      mappedLocal[idx].simbolo = initialDeusMap.get('legado')!.simbolo;
+      mappedLocal[idx].icone_css = initialDeusMap.get('legado')!.icone_css;
+    }
+  }
+
   mappedLocal.sort((a, b) => {
+    if (a.id === 'legado') return 1;
+    if (b.id === 'legado') return -1;
     if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
       return a.ordem - b.ordem;
     }

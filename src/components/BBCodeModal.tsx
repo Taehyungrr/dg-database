@@ -38,8 +38,24 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
 
   if (!isOpen || typeof document === 'undefined') return null;
 
+  const isSheetLegado = activeSheet.deus_id === 'legado';
   const selectedDeus = deuses.find((d) => d.id === activeSheet.deus_id);
-  const godRamos = ramos.filter((r) => r.deus_id === selectedDeus?.id);
+  const leg1 = activeSheet.legado_deus_id_1 || 'poseidon';
+  const leg2 = activeSheet.legado_deus_id_2 || 'atena';
+
+  const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
+  const godRamos = isSheetLegado
+    ? ramos
+        .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
+        .sort((a, b) => {
+          if (a.deus_id !== b.deus_id) {
+            if (a.deus_id === leg1) return -1;
+            if (b.deus_id === leg1) return 1;
+            return a.deus_id.localeCompare(b.deus_id);
+          }
+          return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
+        })
+    : ramos.filter((r) => r.deus_id === selectedDeus?.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
 
@@ -48,7 +64,8 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     activeSheet.poderes_comprados,
     godPoderes,
     godRamos,
-    activeSheet.item_ponto_poder
+    activeSheet.item_ponto_poder,
+    isSheetLegado
   );
 
   const bbcodeText = generateForumBBCode(
@@ -56,7 +73,10 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     selectedDeus,
     godRamos,
     godPoderes,
-    calcResult
+    calcResult,
+    null,
+    undefined,
+    deuses
   );
 
   const handleCopy = () => {
@@ -177,10 +197,17 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
                     .map(([pId, info]) => {
                       const p = godPoderes.find((item) => item.id === pId);
                       const r = godRamos.find((ramo) => ramo.id === p?.ramo_id);
+                      const god = deuses.find((d) => d.id === r?.deus_id);
+                      const godName = isSheetLegado && god ? god.nome_grego_romano : '';
                       let rLabel = 'Tronco';
                       if (r?.tipo === 'ramo1') rLabel = 'Ramo 1';
                       else if (r?.tipo === 'ramo2') rLabel = 'Ramo 2';
                       else if (r?.tipo === 'ramo3') rLabel = 'Ramo 3';
+                      else if (r?.tipo !== 'tronco') rLabel = r?.nome || '';
+
+                      if (godName) {
+                        rLabel = `${rLabel} - ${godName}`;
+                      }
 
                       let lvlText = '';
                       if (info.isFreeLvl1) {
@@ -210,10 +237,16 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
                     const rPowers = godPoderes.filter((p) => p.ramo_id === r.id && (calcResult.powerDetails[p.id]?.effectiveLevel || 0) > 0);
                     if (rPowers.length === 0) return null;
 
+                    const god = deuses.find((d) => d.id === r.deus_id);
+                    const godName = isSheetLegado && god ? god.nome_grego_romano : '';
+                    const rTitle = r.tipo === 'tronco'
+                      ? (godName ? `Tronco (${godName})` : 'Tronco')
+                      : (godName ? `${r.nome.toUpperCase()} (${godName.toUpperCase()})` : r.nome.toUpperCase());
+
                     return (
                       <div key={r.id} className="space-y-3">
                         <div className="font-cinzel text-sm font-bold text-blue-500 pb-1 border-b border-[var(--bordadg)]">
-                          {r.tipo === 'tronco' ? 'Tronco' : r.nome.toUpperCase()}
+                          {rTitle}
                         </div>
                         {rPowers.map((p) => {
                           const eff = calcResult.powerDetails[p.id]?.effectiveLevel || 1;

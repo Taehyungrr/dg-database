@@ -1,4 +1,38 @@
-import { AtributosPersonagem, Poder, Ramo, StatusCalculados } from '../types';
+import { AtributosPersonagem, Poder, Ramo, StatusCalculados, Deus } from '../types';
+import { normalizeSearchText } from './textUtils';
+
+/**
+ * Combines the main attributes of two deities for a Legado character.
+ * e.g., God 1: "Poder Mágico / Intelecto", God 2: "Natureza / Destreza"
+ * Result: "Poder Mágico / Intelecto / Natureza / Destreza"
+ */
+export function getLegadoCombinedAtributos(
+  legado1Id: string | undefined,
+  legado2Id: string | undefined,
+  allDeuses: Deus[]
+): string {
+  const g1 = allDeuses.find((d) => d.id === legado1Id);
+  const g2 = allDeuses.find((d) => d.id === legado2Id);
+
+  const raw1 = g1?.atributos_principais || '';
+  const raw2 = g2?.atributos_principais || '';
+
+  const parts1 = raw1.split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+  const parts2 = raw2.split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+
+  const uniqueParts: string[] = [];
+  const seenLower = new Set<string>();
+
+  for (const item of [...parts1, ...parts2]) {
+    const key = normalizeSearchText(item);
+    if (!seenLower.has(key)) {
+      seenLower.add(key);
+      uniqueParts.push(item);
+    }
+  }
+
+  return uniqueParts.length > 0 ? uniqueParts.join(' / ') : 'Linhagem Dupla';
+}
 
 export interface PowerCostInfo {
   isTronco: boolean;
@@ -15,23 +49,113 @@ export interface PowerCostInfo {
 }
 
 /**
- * Checks if a specific power qualifies for the Free Level 1 Tronco rule.
- * Rule: At levels >= 1, Tronco Power 1 gets free lvl 1
- *       At levels >= 2, Tronco Power 2 gets free lvl 1
- *       At levels >= 3, Tronco Power 3 gets free lvl 1
- *       At levels >= 4, Tronco Power 4 gets free lvl 1
+ * Determines which power IDs qualify for Free Level 1 Tronco status.
+ *
+ * For Normal God:
+ *   - Powers 1, 2, 3, 4 of the single Tronco branch get free Level 1 at character levels >= 1, 2, 3, 4.
+ *
+ * For Legado:
+ *   - Legado has 2 Tronco branches (one per chosen divinity).
+ *   - Unlocks 1 free slot every 2 levels (level 2 -> 1, level 4 -> 2, level 6 -> 3, level 8+ -> 4 max).
+ *   - Constraint: Max 2 powers from Divinity 1's Tronco and Max 2 powers from Divinity 2's Tronco.
+ *   - Selected by user investment (purchased powers take priority), up to 2 per tronco and up to maxFreeSlots total.
  */
+export function getFreeTroncoPowerIds(
+  characterLevel: number,
+  purchasedPowers: Record<string, number>,
+  allPowers: Poder[],
+  allRamos: Ramo[],
+  isLegado: boolean = false
+): Set<string> {
+  const freeSet = new Set<string>();
+
+  if (!isLegado) {
+    // Normal God Logic: Powers 1, 2, 3, 4 of tronco at levels >= 1, 2, 3, 4
+    const troncoRamos = allRamos.filter((r) => r.tipo === 'tronco');
+    const troncoBranchIds = new Set(troncoRamos.map((r) => r.id));
+
+    allPowers.forEach((power) => {
+      if (troncoBranchIds.has(power.ramo_id)) {
+        if (power.numero === 1 && characterLevel >= 1) freeSet.add(power.id);
+        if (power.numero === 2 && characterLevel >= 2) freeSet.add(power.id);
+        if (power.numero === 3 && characterLevel >= 3) freeSet.add(power.id);
+        if (power.numero === 4 && characterLevel >= 4) freeSet.add(power.id);
+      }
+    });
+
+    return freeSet;
+  }
+
+  // Legado Logic:
+  const maxFreeSlots = Math.min(4, Math.floor(characterLevel / 2));
+  if (maxFreeSlots <= 0) return freeSet;
+
+  const troncoRamos = allRamos.filter((r) => r.tipo === 'tronco');
+  if (troncoRamos.length === 0) return freeSet;
+
+  // Group powers by tronco branch id
+  const branchPowersMap = new Map<string, Poder[]>();
+  troncoRamos.forEach((r) => branchPowersMap.set(r.id, []));
+
+  allPowers.forEach((p) => {
+    if (branchPowersMap.has(p.ramo_id)) {
+      branchPowersMap.get(p.ramo_id)!.push(p);
+    }
+  });
+
+  let slotsRemaining = maxFreeSlots;
+  const branchPurchasedAssigned = new Map<string, number>();
+
+  // Pass 1: Assign free slots to powers that the user HAS purchased (up to 2 per tronco branch)
+  branchPowersMap.forEach((powers, branchId) => {
+    powers.sort((a, b) => a.numero - b.numero);
+    let countInBranch = 0;
+    for (const p of powers) {
+      if ((purchasedPowers[p.id] || 0) > 0 && countInBranch < 2 && slotsRemaining > 0) {
+        freeSet.add(p.id);
+        countInBranch++;
+        slotsRemaining--;
+      }
+    }
+    branchPurchasedAssigned.set(branchId, countInBranch);
+  });
+
+  // Pass 2: If there are still free slots remaining, mark unpurchased powers as eligible preview (up to 2 per tronco branch total)
+  if (slotsRemaining > 0) {
+    branchPowersMap.forEach((powers, branchId) => {
+      powers.sort((a, b) => a.numero - b.numero);
+      let currentCount = branchPurchasedAssigned.get(branchId) || 0;
+      for (const p of powers) {
+        if ((purchasedPowers[p.id] || 0) === 0 && currentCount < 2 && slotsRemaining > 0) {
+          freeSet.add(p.id);
+          currentCount++;
+          slotsRemaining--;
+        }
+      }
+    });
+  }
+
+  return freeSet;
+}
+
 export function isPowerEligibleForFreeTroncoLvl1(
   power: Poder,
   ramo: Ramo | undefined,
-  characterLevel: number
+  characterLevel: number,
+  isLegado: boolean = false
 ): boolean {
   if (!ramo || ramo.tipo !== 'tronco') return false;
-  if (power.numero === 1 && characterLevel >= 1) return true;
-  if (power.numero === 2 && characterLevel >= 2) return true;
-  if (power.numero === 3 && characterLevel >= 3) return true;
-  if (power.numero === 4 && characterLevel >= 4) return true;
-  return false;
+
+  if (isLegado) {
+    const maxFreeSlots = Math.min(4, Math.floor(characterLevel / 2));
+    return maxFreeSlots > 0;
+  } else {
+    if (power.numero === 1 && characterLevel >= 1) return true;
+    if (power.numero === 2 && characterLevel >= 2) return true;
+    if (power.numero === 3 && characterLevel >= 3) return true;
+    if (power.numero === 4 && characterLevel >= 4) return true;
+    return false;
+  }
 }
 
 /**
@@ -80,13 +204,17 @@ export function getPowerCostInfo(
   power: Poder,
   ramo: Ramo | undefined,
   characterLevel: number,
-  purchasedLevel: number // 0, 1, 2, or 3
+  purchasedLevel: number, // 0, 1, 2, or 3
+  isLegado: boolean = false,
+  isFreeLvl1Override?: boolean
 ): PowerCostInfo {
   const isTronco = ramo?.tipo === 'tronco';
-  const isFreeLvl1 = isPowerEligibleForFreeTroncoLvl1(power, ramo, characterLevel);
+  const isFreeLvl1 = isFreeLvl1Override ?? isPowerEligibleForFreeTroncoLvl1(power, ramo, characterLevel, isLegado);
   
-  // Effective level is at least 1 if free tronco rule applies
-  const effectiveLevel = isFreeLvl1 ? Math.max(1, purchasedLevel) : purchasedLevel;
+  // Effective level:
+  // For normal gods, free tronco level 1 powers are granted automatically at character levels >= power.numero.
+  // For Legado, NO power is active unless explicitly chosen/purchased by the user (purchasedLevel > 0).
+  const effectiveLevel = (isFreeLvl1 && !isLegado) ? Math.max(1, purchasedLevel) : purchasedLevel;
   const pointsSpentOnThisPower = calculatePointsForPower(effectiveLevel, isFreeLvl1);
   const costToNextLevel = getUpgradeCost(effectiveLevel, isFreeLvl1);
 
@@ -106,7 +234,7 @@ export function getPowerCostInfo(
 }
 
 export interface SheetCalculationResult {
-  totalPointsAvailable: number; // Equals character level (1-40)
+  totalPointsAvailable: number; // Equals character level (1-40 for god, floor(lvl/2) max 25 at lvl 50 for Legado)
   totalPointsSpent: number;
   pointsRemaining: number;
   isOverspent: boolean;
@@ -123,13 +251,20 @@ export function calculateSheetPoints(
   purchasedPowers: Record<string, number>,
   allPowers: Poder[],
   allRamos: Ramo[],
-  hasPowerPointItem: boolean = false
+  hasPowerPointItem: boolean = false,
+  isLegado: boolean = false
 ): SheetCalculationResult {
-  const clampedLevel = Math.min(40, Math.max(1, characterLevel));
-  const totalPointsAvailable = clampedLevel + (hasPowerPointItem ? 1 : 0);
+  const maxLvl = isLegado ? 50 : 40;
+  const clampedLevel = Math.min(maxLvl, Math.max(1, characterLevel));
+  
+  // Normal god gets 1 pt per level (up to lvl 40). Legado gets 1 pt every 2 levels starting at lvl 2 (floor(lvl / 2), up to lvl 50 = 25 pts)
+  const basePoints = isLegado ? Math.floor(clampedLevel / 2) : clampedLevel;
+  const totalPointsAvailable = basePoints + (hasPowerPointItem ? 1 : 0);
   let totalPointsSpent = 0;
   let activePowersCount = 0;
   const powerDetails: Record<string, PowerCostInfo> = {};
+
+  const freeTroncoSet = getFreeTroncoPowerIds(clampedLevel, purchasedPowers, allPowers, allRamos, isLegado);
 
   const ramosMap = new Map<string, Ramo>();
   allRamos.forEach((r) => ramosMap.set(r.id, r));
@@ -137,7 +272,9 @@ export function calculateSheetPoints(
   allPowers.forEach((power) => {
     const ramo = ramosMap.get(power.ramo_id);
     const rawPurchased = purchasedPowers[power.id] || 0;
-    const costInfo = getPowerCostInfo(power, ramo, clampedLevel, rawPurchased);
+    const isFreeLvl1 = freeTroncoSet.has(power.id);
+
+    const costInfo = getPowerCostInfo(power, ramo, clampedLevel, rawPurchased, isLegado, isFreeLvl1);
     powerDetails[power.id] = costInfo;
     totalPointsSpent += costInfo.pointsSpentOnThisPower;
     if (costInfo.effectiveLevel > 0) {
@@ -160,10 +297,11 @@ export function calculateSheetPoints(
 }
 
 /**
- * Calculates attribute points available (earned at even levels from 1 to 40, max 20).
+ * Calculates attribute points available (earned at even levels from 1 to 40, or 50 for Legado, max 20 or 25).
  */
-export function getAttributePointsBudget(characterLevel: number): number {
-  const cappedLevel = Math.min(40, Math.max(1, characterLevel));
+export function getAttributePointsBudget(characterLevel: number, isLegado: boolean = false): number {
+  const maxLvl = isLegado ? 50 : 40;
+  const cappedLevel = Math.min(maxLvl, Math.max(1, characterLevel));
   return Math.floor(cappedLevel / 2);
 }
 

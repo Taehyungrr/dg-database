@@ -8,7 +8,8 @@ import {
   getSpentAttributePoints, 
   normalizeAttributes, 
   calculateCombatStatus,
-  getEffectivePowerType
+  getEffectivePowerType,
+  getLegadoCombinedAtributos
 } from '../utils/calculator';
 import { generateForumBBCode } from '../utils/bbcode';
 import { matchesAnySearchQuery } from '../utils/textUtils';
@@ -90,10 +91,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     onConfirm: () => void;
   } | null>(null);
 
-  // Alphabetically sorted deuses
-  const sortedDeuses = [...deuses].sort((a, b) =>
-    a.nome_grego_romano.localeCompare(b.nome_grego_romano, 'pt-BR')
-  );
+  // Alphabetically sorted deuses, placing Legado at the very end
+  const sortedDeuses = [...deuses].sort((a, b) => {
+    if (a.id === 'legado') return 1;
+    if (b.id === 'legado') return -1;
+    return a.nome_grego_romano.localeCompare(b.nome_grego_romano, 'pt-BR');
+  });
+
+  const nonLegadoDeuses = sortedDeuses.filter((d) => d.id !== 'legado');
 
   useEffect(() => {
     if (isOpen) {
@@ -132,6 +137,10 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     setTimeout(() => setToastMsg(null), 3000);
   };
 
+  const isLegado = formData.deus_id === 'legado';
+  const legado1 = formData.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon';
+  const legado2 = formData.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena';
+
   const selectedDeus = deuses.find((d) => d.id === formData.deus_id) || deuses[0] || {
     id: 'poseidon',
     nome_grego_romano: 'Poseidon / Netuno',
@@ -140,19 +149,22 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     descricao: 'Senhor dos Mares'
   };
 
-  const godColor = selectedDeus.cor_hex || '#3b82f6';
+  const godColor = isLegado ? '#3148BD' : (selectedDeus.cor_hex || '#3b82f6');
   const godIcon = (selectedDeus?.icone_url || selectedDeus?.icone_css || selectedDeus?.simbolo || (selectedDeus as any)?.game_icon || (selectedDeus as any)?.icone || '').trim();
-  const godRamos = ramos.filter((r) => r.deus_id === selectedDeus.id);
+  const godRamos = isLegado
+    ? ramos.filter((r) => r.deus_id === legado1 || r.deus_id === legado2)
+    : ramos.filter((r) => r.deus_id === selectedDeus.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
 
   // Active Data Resolution depending on Mode
   const isPlanningMode = editorMode === 'planejamento';
+  const maxLevel = isLegado ? 50 : 40;
 
   // Evolution Data
   const evolutionAttributes: AtributosPersonagem = normalizeAttributes(formData.atributos);
   const evolutionPowers: Record<string, number> = formData.poderes_comprados || {};
-  const evolutionAttrBudget = getAttributePointsBudget(formData.nivel);
+  const evolutionAttrBudget = getAttributePointsBudget(formData.nivel, isLegado);
   const evolutionAttrSpent = getSpentAttributePoints(evolutionAttributes);
   const evolutionAttrRemaining = evolutionAttrBudget - evolutionAttrSpent;
   const evolutionPowersCalc = calculateSheetPoints(
@@ -160,23 +172,25 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     evolutionPowers,
     godPoderes,
     godRamos,
-    formData.item_ponto_poder
+    formData.item_ponto_poder,
+    isLegado
   );
 
-  // Planning Data (Simulated at Level 40, max 20 attribute points and 40 power points)
+  // Planning Data (Simulated at Level 40 for God, Level 50 for Legado)
   const planningAttributes: AtributosPersonagem = normalizeAttributes(
     formData.planejamento?.atributos_planejados || formData.atributos
   );
   const planningPowers: Record<string, number> = formData.planejamento?.poderes_planejados || { ...evolutionPowers };
-  const planningAttrBudget = 20; // 40 / 2 = 20 pts max
+  const planningAttrBudget = isLegado ? 25 : 20; // 50 / 2 = 25 pts max for Legado, 40 / 2 = 20 for God
   const planningAttrSpent = getSpentAttributePoints(planningAttributes);
   const planningAttrRemaining = planningAttrBudget - planningAttrSpent;
   const planningPowersCalc = calculateSheetPoints(
-    40,
+    maxLevel,
     planningPowers,
     godPoderes,
     godRamos,
-    formData.item_ponto_poder
+    formData.item_ponto_poder,
+    isLegado
   );
 
   // Active references based on current mode
@@ -533,9 +547,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   };
 
   const handleDeusChange = (deusId: string) => {
+    const isTargetLegado = deusId === 'legado';
     setFormData((prev) => ({
       ...prev,
       deus_id: deusId,
+      legado_deus_id_1: isTargetLegado ? (prev.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon') : undefined,
+      legado_deus_id_2: isTargetLegado ? (prev.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena') : undefined,
       poderes_comprados: {}, // Reset power investments when changing deity
       planejamento: {
         poderes_planejados: {},
@@ -574,9 +591,10 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       godPoderes,
       evolutionPowersCalc,
       isNew ? null : sheet,
-      { onlyDelta: bbcodeMode === 'delta' }
+      { onlyDelta: bbcodeMode === 'delta' },
+      deuses
     );
-  }, [formData, selectedDeus, godRamos, godPoderes, evolutionPowersCalc, isNew, sheet, bbcodeMode]);
+  }, [formData, selectedDeus, godRamos, godPoderes, evolutionPowersCalc, isNew, sheet, bbcodeMode, deuses]);
 
   const handleCopyBBCode = () => {
     navigator.clipboard.writeText(bbcodeContent);
@@ -587,6 +605,13 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   // Branch Sorting
   const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
   const sortedGodRamos = [...godRamos].sort((a, b) => {
+    if (isLegado && a.deus_id !== b.deus_id) {
+      if (a.deus_id === legado1) return -1;
+      if (b.deus_id === legado1) return 1;
+      if (a.deus_id === legado2) return -1;
+      if (b.deus_id === legado2) return 1;
+      return a.deus_id.localeCompare(b.deus_id);
+    }
     const oA = branchOrderMap[a.tipo] ?? 99;
     const oB = branchOrderMap[b.tipo] ?? 99;
     return oA - oB;
@@ -1060,6 +1085,51 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                           </option>
                         ))}
                       </select>
+
+                      {/* Seletores Duplos para Legado */}
+                      {formData.deus_id === 'legado' && (
+                        <div className="mt-2.5 p-3 rounded-xl bg-[#3148BD]/10 border border-[#3148BD]/30 space-y-2.5">
+                          <p className="text-[11px] text-[#3148BD] dark:text-blue-300 font-bold flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#3148BD] dark:text-blue-300" />
+                            Selecione as Duas Divindades da Linhagem de Legado:
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
+                                Divindade 1
+                              </label>
+                              <select
+                                value={formData.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon'}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, legado_deus_id_1: e.target.value, poderes_comprados: {} }))}
+                                className="w-full px-2.5 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-lg text-xs font-semibold text-[var(--ctexto1)] focus:outline-none focus:border-[#3148BD] cursor-pointer"
+                              >
+                                {nonLegadoDeuses.map((d) => (
+                                  <option key={d.id} value={d.id} className="bg-[var(--fundo2)] text-[var(--ctexto1)]">
+                                    {d.nome_grego_romano}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
+                                Divindade 2
+                              </label>
+                              <select
+                                value={formData.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena'}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, legado_deus_id_2: e.target.value, poderes_comprados: {} }))}
+                                className="w-full px-2.5 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-lg text-xs font-semibold text-[var(--ctexto1)] focus:outline-none focus:border-[#3148BD] cursor-pointer"
+                              >
+                                {nonLegadoDeuses.map((d) => (
+                                  <option key={d.id} value={d.id} className="bg-[var(--fundo2)] text-[var(--ctexto1)]">
+                                    {d.nome_grego_romano}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Nível Real e Pontos de Atributo Ganhos */}
@@ -1067,7 +1137,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
                         <span>Nível Real (1 a 70)</span>
                         <span className="font-mono text-blue-400 font-bold">
-                          {formData.nivel <= 40 ? `${Math.floor(formData.nivel / 2)}/20 pts de atrib.` : 'Max 20 pts'}
+                          {formData.nivel <= maxLevel ? `${Math.floor(formData.nivel / 2)}/${isLegado ? 25 : 20} pts de atrib.` : `Max ${isLegado ? 25 : 20} pts`}
                         </span>
                       </div>
 
@@ -1231,10 +1301,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       </div>
                     </div>
 
-                    {selectedDeus.atributos_principais && (
+                    {selectedDeus && (
                       <div className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[var(--fundo2)]/90 border border-[var(--bordadg)] text-[var(--ctexto1)] flex items-center justify-between">
                         <span className="text-[var(--ctexto2)] uppercase text-[9px] font-bold">Atributos Principais:</span>
-                        <strong className="text-[var(--ctexto1)] font-mono">{selectedDeus.atributos_principais}</strong>
+                        <strong className="text-[var(--ctexto1)] font-mono">
+                          {isLegado
+                            ? getLegadoCombinedAtributos(formData.legado_deus_id_1, formData.legado_deus_id_2, deuses)
+                            : (selectedDeus.atributos_principais || 'Nenhum')}
+                        </strong>
                       </div>
                     )}
                   </div>
@@ -1514,7 +1588,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       <span className="text-[10px] font-normal text-[var(--ctexto2)]">pts</span>
                     </div>
                     <span className="text-[8px] sm:text-[9px] text-[var(--ctexto2)] opacity-75 hidden sm:block">
-                      {isPlanningMode ? (formData.item_ponto_poder ? '(Meta Nv. 40 + Item)' : '(Meta Nv. 40)') : `(Nv. Real ${Math.min(40, formData.nivel)}${formData.item_ponto_poder ? ' + Item' : ''})`}
+                      {isPlanningMode ? (formData.item_ponto_poder ? `(Meta Nv. ${maxLevel} + Item)` : `(Meta Nv. ${maxLevel})`) : `(Nv. Real ${Math.min(maxLevel, formData.nivel)}${formData.item_ponto_poder ? ' + Item' : ''})`}
                     </span>
                   </div>
 
@@ -1594,14 +1668,18 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                   </button>
 
                   {sortedGodRamos.map((r) => {
-                    const isActive = activeBranchFilter === r.tipo || activeBranchFilter === r.id;
+                    const isActive = activeBranchFilter === r.id || (activeBranchFilter === r.tipo && (!isLegado || r.tipo !== 'tronco'));
                     const count = godPoderes.filter((p) => p.ramo_id === r.id).length;
-                    const label = r.tipo === 'tronco' ? 'Tronco' : r.nome;
+                    const god = deuses.find((d) => d.id === r.deus_id);
+                    const godName = god ? god.nome_grego_romano : '';
+                    const label = isLegado && godName
+                      ? (r.tipo === 'tronco' ? `Tronco (${godName})` : `${r.nome} (${godName})`)
+                      : (r.tipo === 'tronco' ? 'Tronco' : r.nome);
                     return (
                       <button
                         key={r.id}
                         type="button"
-                        onClick={() => setActiveBranchFilter(r.tipo)}
+                        onClick={() => setActiveBranchFilter(r.id)}
                         className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer shrink-0 border flex items-center gap-1 sm:gap-1.5 ${
                           isActive
                             ? 'shadow-sm'
@@ -1613,7 +1691,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                           color: isActive ? godColor : undefined,
                         }}
                       >
-                        <span className="truncate max-w-[120px] sm:max-w-none">{label}</span>
+                        <span className="truncate max-w-[200px] sm:max-w-none">{label}</span>
                         <span className="px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono bg-[var(--fundo1)] text-[var(--ctexto2)]">
                           {count}
                         </span>
@@ -1667,7 +1745,13 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                             className="w-2 h-2 rounded-full"
                             style={{ backgroundColor: godColor }}
                           />
-                          {ramo.tipo === 'tronco' ? 'Tronco' : ramo.nome}
+                          {(() => {
+                            const god = deuses.find((d) => d.id === ramo.deus_id);
+                            const godName = isLegado && god ? god.nome_grego_romano : '';
+                            return isLegado && godName
+                              ? (ramo.tipo === 'tronco' ? `Tronco (${godName})` : `${ramo.nome} (${godName})`)
+                              : (ramo.tipo === 'tronco' ? 'Tronco' : ramo.nome);
+                          })()}
                         </h4>
                         <span className="text-[10px] text-[var(--ctexto2)] font-mono">
                           {branchPowers.length} poderes
@@ -1747,10 +1831,20 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                                       </span>
 
                                       {/* Tronco Level 1 Free Badge when eligible */}
-                                      {isTroncoP1 && (
+                                      {costInfo?.isFreeLvl1 ? (
                                         <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wide uppercase border shrink-0 bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                                          {(isPlanningMode ? 40 : formData.nivel) >= poder.numero ? 'Nível 1 Grátis' : 'Nível 1 (Grátis no Nv. ' + poder.numero + ')'}
+                                          Nível 1 Grátis
                                         </span>
+                                      ) : (
+                                        ramo.tipo === 'tronco' && (
+                                          <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wide uppercase border shrink-0 bg-blue-500/15 text-blue-400 border-blue-500/30">
+                                            {isLegado
+                                              ? 'Tronco'
+                                              : (isPlanningMode ? 40 : formData.nivel) >= poder.numero
+                                              ? 'Tronco'
+                                              : `Nível 1 (Grátis no Nv. ${poder.numero})`}
+                                          </span>
+                                        )
                                       )}
 
                                       {/* Planning Guide Tag in Evolution Mode */}

@@ -35,9 +35,15 @@ export function generateForumBBCode(
   poderes: Poder[],
   calcResult: SheetCalculationResult,
   baseFicha?: FichaPersonagem | null,
-  options?: BBCodeOptions
+  options?: BBCodeOptions,
+  deuses?: Deus[]
 ): string {
+  const isLegado = ficha.deus_id === 'legado';
+  const leg1 = ficha.legado_deus_id_1 || '';
+  const leg2 = ficha.legado_deus_id_2 || '';
+
   // Sort ramos in standard order: tronco, ramo1, ramo2, ramo3
+  // For legados, group by divinity (leg1 then leg2)
   const branchOrder: Record<string, number> = {
     tronco: 0,
     ramo1: 1,
@@ -46,6 +52,13 @@ export function generateForumBBCode(
   };
 
   const sortedRamos = [...ramos].sort((a, b) => {
+    if (isLegado && a.deus_id !== b.deus_id) {
+      if (a.deus_id === leg1) return -1;
+      if (b.deus_id === leg1) return 1;
+      if (a.deus_id === leg2) return -1;
+      if (b.deus_id === leg2) return 1;
+      return a.deus_id.localeCompare(b.deus_id);
+    }
     const ordA = branchOrder[a.tipo] ?? 99;
     const ordB = branchOrder[b.tipo] ?? 99;
     return ordA - ordB;
@@ -59,7 +72,8 @@ export function generateForumBBCode(
       baseFicha.poderes_comprados || {},
       poderes,
       ramos,
-      baseFicha.item_ponto_poder
+      baseFicha.item_ponto_poder,
+      baseFicha.deus_id === 'legado'
     );
   }
 
@@ -70,6 +84,9 @@ export function generateForumBBCode(
     const ramoPowers = poderes
       .filter((p) => p.ramo_id === ramo.id)
       .sort((a, b) => a.numero - b.numero);
+
+    const god = deuses?.find((d) => d.id === ramo.deus_id);
+    const godName = isLegado && god ? god.nome_grego_romano : '';
 
     ramoPowers.forEach((poder) => {
       const currentCostInfo = calcResult.powerDetails[poder.id];
@@ -84,6 +101,10 @@ export function generateForumBBCode(
       else if (ramo.tipo === 'ramo2') ramoLabel = 'Ramo 2';
       else if (ramo.tipo === 'ramo3') ramoLabel = 'Ramo 3';
       else if (ramo.tipo !== 'tronco') ramoLabel = ramo.nome;
+
+      if (godName) {
+        ramoLabel = `${ramoLabel} - ${godName}`;
+      }
 
       if (isDeltaMode && baseCalcResult) {
         const baseCostInfo = baseCalcResult.powerDetails[poder.id];
@@ -169,15 +190,20 @@ export function generateForumBBCode(
     if (activePowers.length === 0) return;
 
     let branchHeader = '';
+    const god = deuses?.find((d) => d.id === ramo.deus_id);
+    const godName = isLegado && god ? god.nome_grego_romano : '';
+
     if (ramo.tipo === 'tronco') {
-      branchHeader = '[h2]Tronco[/h2]';
+      branchHeader = godName ? `[h2]Tronco (${godName})[/h2]` : '[h2]Tronco[/h2]';
     } else {
       let cleanBranchName = ramo.nome
         .replace(/^Ramo\s*\d+\s*:\s*/i, '')
         .replace(/^Tronco\s*:\s*/i, '')
         .trim();
       const ramoNum = ramo.tipo === 'ramo1' ? '1' : ramo.tipo === 'ramo2' ? '2' : ramo.tipo === 'ramo3' ? '3' : `${index}`;
-      branchHeader = `[h2]RAMO ${ramoNum}:  ${cleanBranchName.toUpperCase()}[/h2]`;
+      branchHeader = godName
+        ? `[h2]RAMO ${ramoNum}:  ${cleanBranchName.toUpperCase()} (${godName.toUpperCase()})[/h2]`
+        : `[h2]RAMO ${ramoNum}:  ${cleanBranchName.toUpperCase()}[/h2]`;
     }
 
     const powerBlocks = activePowers.map((poder) => {

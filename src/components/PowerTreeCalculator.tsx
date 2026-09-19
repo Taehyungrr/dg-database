@@ -28,14 +28,16 @@ export const PowerTreeCalculator: React.FC<PowerTreeCalculatorProps> = ({
   poderes,
   onOpenCreateSheetWithDeus
 }) => {
-  // Sort deuses in the exact sequence shown in the selector
+  // Sort deuses in the exact sequence shown in the selector, excluding 'legado' (which is a sheet option, not a standalone power tree)
   const sortedDeuses = React.useMemo(() => {
-    return [...deuses].sort((a, b) => {
-      if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
-        return a.ordem - b.ordem;
-      }
-      return (a.nome_grego_romano || '').localeCompare(b.nome_grego_romano || '', 'pt-BR');
-    });
+    return [...deuses]
+      .filter((d) => d.id !== 'legado')
+      .sort((a, b) => {
+        if (a.ordem !== undefined && b.ordem !== undefined && a.ordem !== b.ordem && a.ordem > 0 && b.ordem > 0) {
+          return a.ordem - b.ordem;
+        }
+        return (a.nome_grego_romano || '').localeCompare(b.nome_grego_romano || '', 'pt-BR');
+      });
   }, [deuses]);
 
   // Selected God ID for viewing - defaults to the very first god in the rendered sequence

@@ -62,9 +62,21 @@ export const ATTR_CONFIG: Record<keyof AtributosPersonagem, {
   espiritualidade: { name: 'Espiritualidade', shortName: 'ESP', icon: Flame, color: 'text-cyan-500 dark:text-cyan-400', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' }
 };
 
-const checkDeityAttributeMatch = (deus: Deus | undefined, targetAttr: string): boolean => {
-  if (!deus || !deus.atributos_principais) return false;
-  const str = deus.atributos_principais.toLowerCase();
+const checkDeityAttributeMatch = (
+  deus: Deus | undefined, 
+  targetAttr: string, 
+  sheet?: FichaPersonagem, 
+  allDeuses?: Deus[]
+): boolean => {
+  if (!deus) return false;
+  let str = (deus.atributos_principais || '').toLowerCase();
+
+  if (sheet?.deus_id === 'legado' && allDeuses) {
+    const g1 = allDeuses.find((d) => d.id === sheet.legado_deus_id_1);
+    const g2 = allDeuses.find((d) => d.id === sheet.legado_deus_id_2);
+    str += ' ' + (g1?.atributos_principais || '') + ' ' + (g2?.atributos_principais || '');
+    str = str.toLowerCase();
+  }
 
   if (targetAttr === 'inteligencia') {
     return str.includes('intelecto') || str.includes('inteligência') || str.includes('inteligencia');
@@ -345,11 +357,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
     // Read god primary attributes to auto-set hitActionOptions 'ignorar' flag
     const god = allDeuses.find((d) => d.id === sheet.deus_id);
-    const hasInt = checkDeityAttributeMatch(god, 'inteligencia');
-    const hasNat = checkDeityAttributeMatch(god, 'natureza');
-    const hasEsp = checkDeityAttributeMatch(god, 'espiritualidade');
-    const hasMag = checkDeityAttributeMatch(god, 'magia');
-    const hasCar = checkDeityAttributeMatch(god, 'carisma');
+    const hasInt = checkDeityAttributeMatch(god, 'inteligencia', sheet, allDeuses);
+    const hasNat = checkDeityAttributeMatch(god, 'natureza', sheet, allDeuses);
+    const hasEsp = checkDeityAttributeMatch(god, 'espiritualidade', sheet, allDeuses);
+    const hasMag = checkDeityAttributeMatch(god, 'magia', sheet, allDeuses);
+    const hasCar = checkDeityAttributeMatch(god, 'carisma', sheet, allDeuses);
 
     // Load combat bonuses
     const cb = sheet.bonus_combate;

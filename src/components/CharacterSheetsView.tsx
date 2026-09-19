@@ -372,8 +372,9 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 items-stretch min-h-[400px]">
           {sortedSheets.map((sheet) => {
+            const isSheetLegado = sheet.deus_id === 'legado';
             const deus = deuses.find((d) => d.id === sheet.deus_id);
-            const godColor = deus?.cor_hex || '#b8a944';
+            const godColor = isSheetLegado ? '#3148BD' : (deus?.cor_hex || '#b8a944');
             const godIcon = (deus?.icone_url || deus?.icone_css || deus?.simbolo || (deus as any)?.game_icon || (deus as any)?.icone || '').trim();
             const isActive = sheet.id === activeSheetId;
             const isConfirmingDelete = deletingSheetId === sheet.id;
@@ -381,7 +382,25 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
             const statusValues = calculateCombatStatus(sheet.nivel, attrs);
 
             // Compute sheet powers accounting for both purchased powers and free Tronco levels
-            const deityRamos = ramos.filter((r) => r.deus_id === sheet.deus_id);
+            const leg1 = sheet.legado_deus_id_1 || 'poseidon';
+            const leg2 = sheet.legado_deus_id_2 || 'atena';
+            const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
+            const deityRamos = isSheetLegado
+              ? ramos
+                  .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
+                  .sort((a, b) => {
+                    if (a.deus_id !== b.deus_id) {
+                      if (a.deus_id === leg1) return -1;
+                      if (b.deus_id === leg1) return 1;
+                      if (a.deus_id === leg2) return -1;
+                      if (b.deus_id === leg2) return 1;
+                      return a.deus_id.localeCompare(b.deus_id);
+                    }
+                    return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
+                  })
+              : [...ramos.filter((r) => r.deus_id === sheet.deus_id)].sort(
+                  (a, b) => (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99)
+                );
             const deityBranchIds = new Set(deityRamos.map((r) => r.id));
             const deityPoderes = poderes.filter((p) => deityBranchIds.has(p.ramo_id));
 
@@ -390,7 +409,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
               sheet.poderes_comprados || {},
               deityPoderes,
               deityRamos,
-              sheet.item_ponto_poder
+              sheet.item_ponto_poder,
+              isSheetLegado
             );
 
             const sheetExp = sheet.exp || 0;
@@ -544,12 +564,19 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                         </div>
 
                         <div className="space-y-1.5">
-                          {ramosWithAcquiredPowers.map(({ ramo, powers: ramoPowersList }) => (
-                            <div key={ramo.id} className="text-[10px] bg-[var(--fundo2)] p-1.5 rounded-lg border border-[var(--bordadg)]">
-                              <div className="font-semibold text-[10px] mb-1 font-mono flex items-center justify-between" style={{ color: godColor }}>
-                                <span className="truncate">{ramo.nome}</span>
-                                <span className="text-[9px] text-[var(--ctexto2)] font-normal shrink-0 ml-1">({ramoPowersList.length})</span>
-                              </div>
+                          {ramosWithAcquiredPowers.map(({ ramo, powers: ramoPowersList }) => {
+                            const god = deuses.find((d) => d.id === ramo.deus_id);
+                            const godName = isSheetLegado && god ? god.nome_grego_romano : '';
+                            const displayBranchName = ramo.tipo === 'tronco'
+                              ? (godName ? `Tronco (${godName})` : 'Tronco')
+                              : (godName ? `${ramo.nome} (${godName})` : ramo.nome);
+
+                            return (
+                              <div key={ramo.id} className="text-[10px] bg-[var(--fundo2)] p-1.5 rounded-lg border border-[var(--bordadg)]">
+                                <div className="font-semibold text-[10px] mb-1 font-mono flex items-center justify-between" style={{ color: godColor }}>
+                                  <span className="truncate" title={displayBranchName}>{displayBranchName}</span>
+                                  <span className="text-[9px] text-[var(--ctexto2)] font-normal shrink-0 ml-1">({ramoPowersList.length})</span>
+                                </div>
                               <div className="flex flex-wrap gap-1">
                                 {ramoPowersList.map(({ power, level, isFreeLvl1 }) => (
                                   <span
@@ -565,7 +592,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                                 ))}
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
                         </div>
                       </div>
                     );

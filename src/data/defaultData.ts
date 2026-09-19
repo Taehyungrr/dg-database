@@ -144,6 +144,18 @@ export const INITIAL_DEUSES: Deus[] = [
     descricao: 'Deus do Vinho, Festas, Loucura e Teatro. Seus filhos induzem euforia, confusão mental desorientadora e manipulam videiras monstruosas.',
     titulo_mitologico: 'O Libertador, Senhor do Delírio',
     dificuldade: 2
+  },
+  {
+    id: 'legado',
+    nome_grego_romano: 'Legado',
+    cor_hex: '#3148BD',
+    imagem_url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop&q=60',
+    simbolo: 'game-icon game-icon-dna2',
+    icone_css: 'game-icon game-icon-dna2',
+    atributos_principais: 'Linhagem Dupla',
+    descricao: 'Herdeiro de duas linhagens divinas distintas. Possui acesso às árvores de dois deuses, ganhando pontos de poder a cada 2 níveis (até 25 pts no Nv. 50).',
+    titulo_mitologico: 'O Descendente de Duas Divindades',
+    dificuldade: 3
   }
 ];
 
