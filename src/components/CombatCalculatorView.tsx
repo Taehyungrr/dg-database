@@ -233,7 +233,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   const [applyBonusToSecond, setApplyBonusToSecond] = useState<boolean>(false);
 
   // Weapon Materials
-  const [mat1Key, setMat1Key] = useState<string>('mundano');
+  const [mat1Key, setMat1Key] = useState<string>('sagrado');
   const [customMat1, setCustomMat1] = useState<{ mat: number; bonus: number; percent: number }>({ mat: 0, bonus: 0, percent: 0 });
   const [applyMat1Bonus, setApplyMat1Bonus] = useState<boolean>(true);
 
@@ -425,7 +425,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         // Pre-select first weapon for damage calculator
         setSelectedWeaponId(invWeapons[0].id);
         const w1 = invWeapons[0];
-        if (w1.material) setMat1Key(LEGACY_MATERIAL_MAP[w1.material] || w1.material);
+        setMat1Key((w1.material && (LEGACY_MATERIAL_MAP[w1.material] || w1.material)) || 'sagrado');
         if (w1.materialCustom) setCustomMat1(w1.materialCustom);
         if (w1.bonusForja) setForgeBonus(w1.bonusForja ?? 0);
 
@@ -454,7 +454,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     const weapon = sheet.inventario.find((i) => i.id === weaponId);
     if (!weapon) return;
 
-    if (weapon.material) setMat1Key(LEGACY_MATERIAL_MAP[weapon.material] || weapon.material);
+    setMat1Key((weapon.material && (LEGACY_MATERIAL_MAP[weapon.material] || weapon.material)) || 'sagrado');
     if (weapon.materialCustom) setCustomMat1(weapon.materialCustom);
     if (weapon.bonusForja) setForgeBonus(weapon.bonusForja ?? 0);
 
