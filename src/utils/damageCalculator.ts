@@ -1,5 +1,5 @@
 import { AtributosPersonagem } from '../types';
-import { MATERIAIS_ARMA, METAIS_CANALIZACAO } from '../data/combatData';
+import { MATERIAIS_ARMA, METAIS_CANALIZACAO, LEGACY_MATERIAL_MAP } from '../data/combatData';
 import { ATTR_NOME_EXIBICAO } from './combatUtils';
 
 export const FULL_TO_SHORT: Record<keyof AtributosPersonagem, string> = {
@@ -209,7 +209,8 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
 
     weaponMats.forEach((matInput, idx) => {
       if (!matInput.materialKey) return;
-      if (matInput.materialKey === 'custom') {
+      const resolvedKey = LEGACY_MATERIAL_MAP[matInput.materialKey] || matInput.materialKey;
+      if (resolvedKey === 'custom') {
         materialsSelected.push({
           id: `custom${idx + 1}`,
           mat: matInput.customMat || 0,
@@ -217,10 +218,10 @@ export function calculateDamage(params: DamageCalculationParams): DamageCalculat
           percent: matInput.customPercent || 0,
           applied: true
         });
-      } else if (MATERIAIS_ARMA[matInput.materialKey]) {
-        const material = MATERIAIS_ARMA[matInput.materialKey];
+      } else if (MATERIAIS_ARMA[resolvedKey]) {
+        const material = MATERIAIS_ARMA[resolvedKey];
         materialsSelected.push({
-          id: matInput.materialKey,
+          id: resolvedKey,
           mat: material.mat,
           matb: material.bonus,
           percent: material.percent || 0,

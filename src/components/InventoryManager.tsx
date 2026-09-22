@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FichaPersonagem, ItemInventario, BonusCondicionalAcerto } from '../types';
-import { MATERIAIS_ARMA, NOMES_ACOES_ACERTO } from '../data/combatData';
+import { MATERIAIS_ARMA, NOMES_ACOES_ACERTO, LEGACY_MATERIAL_MAP } from '../data/combatData';
 import { 
   Swords, 
   Plus, 
@@ -109,7 +109,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       nome: 'Nova Arma',
       tipo: 'arma',
       aptidao: 50,
-      material: 'bronze_celestial',
+      material: 'divino',
       bonusForja: 0,
       descricao: ''
     };
@@ -434,7 +434,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   <div className="sm:col-span-3">
                     <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Material</label>
                     <select
-                      value={arma.material || 'bronze_celestial'}
+                      value={(arma.material && LEGACY_MATERIAL_MAP[arma.material]) || arma.material || 'divino'}
                       onChange={(e) => handleUpdateItem(arma.id, { material: e.target.value })}
                       className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                     >

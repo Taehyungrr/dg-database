@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FichaPersonagem, AtributosPersonagem, BonusCondicionalAcerto, Deus } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
 import { saveSheet } from '../services/characterSheets';
-import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO } from '../data/combatData';
+import { MATERIAIS_ARMA, METAIS_CANALIZACAO, NOMES_ACOES_ACERTO, LEGACY_MATERIAL_MAP } from '../data/combatData';
 import { montarFaixas, ATTR_NOME_EXIBICAO, erroCritico, bonusCriticoFisico, aplicarTeto, progressaoEnergetica, clamp } from '../utils/combatUtils';
 import { calculateDamage, DamageCalculationParams, DamageCalculationResult, WeaponMaterialInput, ChannelingMetalInput } from '../utils/damageCalculator';
 import { EvolutionView } from './EvolutionView';
@@ -233,7 +233,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   const [applyBonusToSecond, setApplyBonusToSecond] = useState<boolean>(false);
 
   // Weapon Materials
-  const [mat1Key, setMat1Key] = useState<string>('bronze_celestial');
+  const [mat1Key, setMat1Key] = useState<string>('mundano');
   const [customMat1, setCustomMat1] = useState<{ mat: number; bonus: number; percent: number }>({ mat: 0, bonus: 0, percent: 0 });
   const [applyMat1Bonus, setApplyMat1Bonus] = useState<boolean>(true);
 
@@ -425,7 +425,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         // Pre-select first weapon for damage calculator
         setSelectedWeaponId(invWeapons[0].id);
         const w1 = invWeapons[0];
-        if (w1.material) setMat1Key(w1.material);
+        if (w1.material) setMat1Key(LEGACY_MATERIAL_MAP[w1.material] || w1.material);
         if (w1.materialCustom) setCustomMat1(w1.materialCustom);
         if (w1.bonusForja) setForgeBonus(w1.bonusForja ?? 0);
 
@@ -454,7 +454,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     const weapon = sheet.inventario.find((i) => i.id === weaponId);
     if (!weapon) return;
 
-    if (weapon.material) setMat1Key(weapon.material);
+    if (weapon.material) setMat1Key(LEGACY_MATERIAL_MAP[weapon.material] || weapon.material);
     if (weapon.materialCustom) setCustomMat1(weapon.materialCustom);
     if (weapon.bonusForja) setForgeBonus(weapon.bonusForja ?? 0);
 
@@ -543,7 +543,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         customMat: customMat1.mat,
         customBonus: customMat1.bonus,
         customPercent: customMat1.percent,
-        applyEffect: mat1Key === 'unico' ? false : applyMat1Bonus
+        applyEffect: false
       });
     }
     if (mat2Key) {
@@ -552,7 +552,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         customMat: customMat2.mat,
         customBonus: customMat2.bonus,
         customPercent: customMat2.percent,
-        applyEffect: mat2Key === 'unico' ? false : applyMat2Bonus
+        applyEffect: false
       });
     }
 
@@ -1108,64 +1108,34 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                     <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
                       <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 1:</label>
                       <select
-                        value={mat1Key}
+                        value={(mat1Key && LEGACY_MATERIAL_MAP[mat1Key]) || mat1Key}
                         onChange={(e) => setMat1Key(e.target.value)}
                         className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
                         <option value="">Nenhum</option>
-                        <option value="unico">Único (MAT: 40)</option>
-                        {Object.values(MATERIAIS_ARMA)
-                          .filter((m) => m.id !== 'unico')
-                          .map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.nome} (MAT: {m.mat})
-                            </option>
-                          ))}
+                        {Object.values(MATERIAIS_ARMA).map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome} (MAT: {m.mat})
+                          </option>
+                        ))}
                       </select>
-
-                      {mat1Key && mat1Key !== 'unico' && (
-                        <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                          <input
-                            type="checkbox"
-                            checked={applyMat1Bonus}
-                            onChange={(e) => setApplyMat1Bonus(e.target.checked)}
-                            className="rounded text-cyan-500 accent-cyan-500"
-                          />
-                          <span>Aplicar efeito/bônus do material?</span>
-                        </label>
-                      )}
                     </div>
 
                     {/* Material 2 */}
                     <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
                       <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 2:</label>
                       <select
-                        value={mat2Key}
+                        value={(mat2Key && LEGACY_MATERIAL_MAP[mat2Key]) || mat2Key}
                         onChange={(e) => setMat2Key(e.target.value)}
                         className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
                         <option value="">Nenhum</option>
-                        <option value="unico">Único (MAT: 40)</option>
-                        {Object.values(MATERIAIS_ARMA)
-                          .filter((m) => m.id !== 'unico')
-                          .map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.nome} (MAT: {m.mat})
-                            </option>
-                          ))}
+                        {Object.values(MATERIAIS_ARMA).map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome} (MAT: {m.mat})
+                          </option>
+                        ))}
                       </select>
-
-                      {mat2Key && mat2Key !== 'unico' && (
-                        <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                          <input
-                            type="checkbox"
-                            checked={applyMat2Bonus}
-                            onChange={(e) => setApplyMat2Bonus(e.target.checked)}
-                            className="rounded text-cyan-500 accent-cyan-500"
-                          />
-                          <span>Aplicar efeito/bônus do material?</span>
-                        </label>
-                      )}
                     </div>
                   </div>
                 </div>

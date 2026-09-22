@@ -18,32 +18,40 @@ export interface ChannelingMetalDefinition {
 }
 
 export const MATERIAIS_ARMA: Record<string, MaterialDefinition> = {
-  unico: { id: 'unico', nome: 'Único', mat: 40, bonus: 0, percent: 0, text: 'Material único de alta qualidade (MAT: 40).', effectType: 'none' },
-  aluminio: { id: 'aluminio', nome: 'Alumínio', mat: 10, bonus: 10, percent: 0, text: '+10 de dano base contra elementais da terra e das florestas.', effectType: 'flat' },
-  ferro_aco: { id: 'ferro_aco', nome: 'Ferro/Aço', mat: 10, bonus: 10, percent: 0, text: '+10 de dano base contra mortais.', effectType: 'flat' },
-  cobre: { id: 'cobre', nome: 'Cobre', mat: 10, bonus: 15, percent: 0, text: '+15 de dano em efeitos e poderes de eletricidade e/ou temperatura usados através do item.', effectType: 'flat' },
-  prata: { id: 'prata', nome: 'Prata', mat: 10, bonus: 10, percent: 0, text: '+10 de dano contra espíritos.', effectType: 'flat' },
-  titanio: { id: 'titanio', nome: 'Titânio', mat: 10, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  ouro_sagrado: { id: 'ouro_sagrado', nome: 'Ouro Sagrado', mat: 20, bonus: 10, percent: 0, text: '+10 de dano base contra seres voadores.', effectType: 'flat' },
-  prata_sagrada: { id: 'prata_sagrada', nome: 'Prata Sagrada', mat: 20, bonus: 10, percent: 0, text: '+10 de dano base contra seres terrestres.', effectType: 'flat' },
-  bronze_sagrado: { id: 'bronze_sagrado', nome: 'Bronze Sagrado', mat: 20, bonus: 10, percent: 0, text: '+10 de dano base contra seres aquáticos.', effectType: 'flat' },
-  ferro_sagrado: { id: 'ferro_sagrado', nome: 'Ferro Sagrado', mat: 20, bonus: 10, percent: 0, text: '+10 de dano base contra seres ctônicos.', effectType: 'flat' },
-  adamantino_sagrado: { id: 'adamantino_sagrado', nome: 'Adamantino', mat: 20, bonus: 0, percent: 10, text: '+10% de dano físico perfurocortante.', effectType: 'percent' },
-  paladio_sagrado: { id: 'paladio_sagrado', nome: 'Paládio Sagrado', mat: 20, bonus: 0, percent: 10, text: '+10% de dano físico contundente.', effectType: 'percent' },
-  mitralina_sagrada: { id: 'mitralina_sagrada', nome: 'Mitralina Sagrada', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  cobalto_sagrado: { id: 'cobalto_sagrado', nome: 'Cobalto Sagrado', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  cedro_sagrado: { id: 'cedro_sagrado', nome: 'Cedro Sagrado', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  obsidiana_sagrada: { id: 'obsidiana_sagrada', nome: 'Obsidiana Sagrada', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  petricita_sagrada: { id: 'petricita_sagrada', nome: 'Petricita Sagrada', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  iridio_sagrado: { id: 'iridio_sagrado', nome: 'Irídio Sagrado', mat: 20, bonus: 0, percent: 0, text: 'Sem efeito especial.', effectType: 'none' },
-  ouro_imperial: { id: 'ouro_imperial', nome: 'Ouro Imperial', mat: 30, bonus: 20, percent: 0, text: '+20 de dano base contra seres voadores.', effectType: 'flat' },
-  bronze_celestial: { id: 'bronze_celestial', nome: 'Bronze Celestial', mat: 30, bonus: 20, percent: 0, text: '+20 de dano base contra seres aquáticos.', effectType: 'flat' },
-  ferro_estigio: { id: 'ferro_estigio', nome: 'Ferro Estígio', mat: 30, bonus: 20, percent: 0, text: '+20 de dano base contra seres ctônicos.', effectType: 'flat' },
-  aco_osseo: { id: 'aco_osseo', nome: 'Aço Ósseo', mat: 30, bonus: 20, percent: 0, text: '+20 de dano base contra monstros terrestres.', effectType: 'flat' },
-  prata_lunar: { id: 'prata_lunar', nome: 'Prata Lunar', mat: 30, bonus: 15, percent: 0, text: '+15 de dano base contra qualquer monstro.', effectType: 'flat' },
-  verdino_mortal: { id: 'verdino_mortal', nome: 'Verdino Mortal', mat: 30, bonus: 15, percent: 0, text: '+15 de dano venenoso por golpe perfurocortante. Consegue absorver pelo período de um tópico qualquer tipo de veneno que for jogado em sua parte metálica, que é acoplado ao veneno natural do metal. Só pode haver um veneno ativo por vez.', effectType: 'flat' },
-  asphodelium: { id: 'asphodelium', nome: 'Asphodelium', mat: 40, bonus: 0, percent: 0, text: 'Quebra de espírito — cada golpe bem sucedido com a arma gera acúmulos que reagem com o sofrimento alheio, sinta o outro dor ou não, acumulando energia e garantindo um acerto crítico garantido a cada três acertos.', effectType: 'flat' },
-  macarium: { id: 'macarium', nome: 'Macarium', mat: 40, bonus: 0, percent: 30, text: 'Danos elementais com origem na arma causam +30% de dano.', effectType: 'percent' }
+  mundano: { id: 'mundano', nome: 'Mundano', mat: 10, bonus: 0, percent: 0, text: 'Material comum/mundano (MAT: 10).', effectType: 'none' },
+  sagrado: { id: 'sagrado', nome: 'Sagrado', mat: 20, bonus: 0, percent: 0, text: 'Material sagrado (MAT: 20).', effectType: 'none' },
+  divino: { id: 'divino', nome: 'Divino', mat: 30, bonus: 0, percent: 0, text: 'Material divino (MAT: 30).', effectType: 'none' },
+  unico: { id: 'unico', nome: 'Único', mat: 40, bonus: 0, percent: 0, text: 'Material único de alta qualidade (MAT: 40).', effectType: 'none' }
+};
+
+export const LEGACY_MATERIAL_MAP: Record<string, string> = {
+  aluminio: 'mundano',
+  ferro_aco: 'mundano',
+  cobre: 'mundano',
+  prata: 'mundano',
+  titanio: 'mundano',
+  ouro_sagrado: 'sagrado',
+  prata_sagrada: 'sagrado',
+  bronze_sagrado: 'sagrado',
+  ferro_sagrado: 'sagrado',
+  adamantino_sagrado: 'sagrado',
+  paladio_sagrado: 'sagrado',
+  mitralina_sagrada: 'sagrado',
+  cobalto_sagrado: 'sagrado',
+  cedro_sagrado: 'sagrado',
+  obsidiana_sagrada: 'sagrado',
+  petricita_sagrada: 'sagrado',
+  iridio_sagrado: 'sagrado',
+  ouro_imperial: 'divino',
+  bronze_celestial: 'divino',
+  ferro_estigio: 'divino',
+  aco_osseo: 'divino',
+  prata_lunar: 'divino',
+  verdino_mortal: 'divino',
+  asphodelium: 'unico',
+  macarium: 'unico',
+  unico: 'unico',
+  custom: 'unico'
 };
 
 export const METAIS_CANALIZACAO: Record<string, ChannelingMetalDefinition> = {
