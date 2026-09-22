@@ -40,7 +40,8 @@ import {
   ShieldAlert,
   Save,
   Copy,
-  BookmarkCheck
+  BookmarkCheck,
+  Info
 } from 'lucide-react';
 
 export const ATTR_CONFIG: Record<keyof AtributosPersonagem, {
@@ -860,6 +861,19 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             </button>
           )}
         </div>
+
+        {/* Small Notice / Instruction under the selector in the title area */}
+        {(activeSubTab === 'dano' || activeSubTab === 'acerto') && (
+          <div
+            id="instruction-atributos-calculadora"
+            className="flex items-start gap-1.5 text-[11px] text-[var(--ctexto2)] leading-relaxed px-1"
+          >
+            <Info className="w-3.5 h-3.5 text-amber-400/90 shrink-0 mt-0.5" />
+            <span>
+              A calculadora leva em consideração automaticamente qualquer valor ou bônus provenientes dos atributos, sendo necessário adicionar apenas valores que sejam de poderes ou itens.
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
