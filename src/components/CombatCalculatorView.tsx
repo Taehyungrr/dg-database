@@ -536,30 +536,37 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
 
   // Damage Calculation Trigger
   const handleCalculateDamage = () => {
+    const isWeaponType = damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow';
+    const isChannelingType = damageType === 'energy' || damageType === 'especial';
+
     const materialsInput: WeaponMaterialInput[] = [];
-    if (mat1Key) {
-      materialsInput.push({
-        materialKey: mat1Key,
-        customMat: customMat1.mat,
-        customBonus: customMat1.bonus,
-        customPercent: customMat1.percent,
-        applyEffect: false
-      });
-    }
-    if (mat2Key) {
-      materialsInput.push({
-        materialKey: mat2Key,
-        customMat: customMat2.mat,
-        customBonus: customMat2.bonus,
-        customPercent: customMat2.percent,
-        applyEffect: false
-      });
+    if (isWeaponType) {
+      if (mat1Key) {
+        materialsInput.push({
+          materialKey: mat1Key,
+          customMat: customMat1.mat,
+          customBonus: customMat1.bonus,
+          customPercent: customMat1.percent,
+          applyEffect: false
+        });
+      }
+      if (mat2Key) {
+        materialsInput.push({
+          materialKey: mat2Key,
+          customMat: customMat2.mat,
+          customBonus: customMat2.bonus,
+          customPercent: customMat2.percent,
+          applyEffect: false
+        });
+      }
     }
 
-    // Channeling metals for energy damage (máximo 2)
+    // Channeling metals for energy / especial damage (máximo 2)
     const channelingInput: ChannelingMetalInput[] = [];
-    if (chan1Key) channelingInput.push({ metalKey: chan1Key, applyEffect: applyChan1 });
-    if (chan2Key) channelingInput.push({ metalKey: chan2Key, applyEffect: applyChan2 });
+    if (isChannelingType) {
+      if (chan1Key) channelingInput.push({ metalKey: chan1Key, applyEffect: applyChan1 });
+      if (chan2Key) channelingInput.push({ metalKey: chan2Key, applyEffect: applyChan2 });
+    }
 
     const params: DamageCalculationParams = {
       attackerAttributes: attackerAttrs,
@@ -567,16 +574,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       especialBase,
       especialAttributeKey: especialAttr,
       attributeSub: {
-        firstAttr: firstAttrSub,
-        applyBonusFirst: applyBonusToFirst,
-        secondAttr: secondAttrSub,
-        applyBonusSecond: applyBonusToSecond
+        firstAttr: isWeaponType ? firstAttrSub : '',
+        applyBonusFirst: isWeaponType ? applyBonusToFirst : false,
+        secondAttr: isWeaponType ? secondAttrSub : '',
+        applyBonusSecond: isWeaponType ? applyBonusToSecond : false
       },
       weaponMaterials: materialsInput,
       channelingMetals: channelingInput,
-      forgeBonus,
+      forgeBonus: isWeaponType ? forgeBonus : 0,
       energyAttributeKey: energyAttr,
-      abilityDB,
+      abilityDB: damageType === 'energy' ? abilityDB : 0,
       customVar: {
         type: customVarType,
         attributeKey: customVarAttr,
@@ -1313,49 +1320,6 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                       <span>Aplicar efeito?</span>
                     </label>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Combate Desarmado */}
-            {damageType === 'unarmed' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[var(--bordadg)]/50">
-                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-1">
-                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder (opcional):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={abilityDB}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => setAbilityDB(Number(e.target.value))}
-                    className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  />
-                </div>
-                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
-                  <label className="text-xs font-bold text-[var(--ctexto1)] uppercase block">
-                    Metal de Canalização:
-                  </label>
-                  <select
-                    value={chan1Key}
-                    onChange={(e) => setChan1Key(e.target.value)}
-                    className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
-                  >
-                    <option value="">Nenhum</option>
-                    {Object.values(METAIS_CANALIZACAO).map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome} (+{m.percent}%)
-                      </option>
-                    ))}
-                  </select>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-0.5">
-                    <input
-                      type="checkbox"
-                      checked={applyChan1}
-                      onChange={(e) => setApplyChan1(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Aplicar efeito?</span>
-                  </label>
                 </div>
               </div>
             )}
