@@ -543,7 +543,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         customMat: customMat1.mat,
         customBonus: customMat1.bonus,
         customPercent: customMat1.percent,
-        applyEffect: applyMat1Bonus
+        applyEffect: mat1Key === 'unico' ? false : applyMat1Bonus
       });
     }
     if (mat2Key) {
@@ -552,7 +552,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
         customMat: customMat2.mat,
         customBonus: customMat2.bonus,
         customPercent: customMat2.percent,
-        applyEffect: applyMat2Bonus
+        applyEffect: mat2Key === 'unico' ? false : applyMat2Bonus
       });
     }
 
@@ -1113,55 +1113,27 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                         className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
                         <option value="">Nenhum</option>
-                        <option value="custom">Outro (Personalizado)</option>
-                        {Object.values(MATERIAIS_ARMA).map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nome} (MAT: {m.mat})
-                          </option>
-                        ))}
+                        <option value="unico">Único (MAT: 40)</option>
+                        {Object.values(MATERIAIS_ARMA)
+                          .filter((m) => m.id !== 'unico')
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.nome} (MAT: {m.mat})
+                            </option>
+                          ))}
                       </select>
 
-                      {mat1Key === 'custom' && (
-                        <div className="grid grid-cols-3 gap-1.5 pt-1">
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
-                            <input
-                              type="number"
-                              value={customMat1.mat}
-                              onChange={(e) => setCustomMat1((p) => ({ ...p, mat: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
-                            <input
-                              type="number"
-                              value={customMat1.bonus}
-                              onChange={(e) => setCustomMat1((p) => ({ ...p, bonus: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
-                            <input
-                              type="number"
-                              value={customMat1.percent}
-                              onChange={(e) => setCustomMat1((p) => ({ ...p, percent: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                        </div>
+                      {mat1Key && mat1Key !== 'unico' && (
+                        <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
+                          <input
+                            type="checkbox"
+                            checked={applyMat1Bonus}
+                            onChange={(e) => setApplyMat1Bonus(e.target.checked)}
+                            className="rounded text-cyan-500 accent-cyan-500"
+                          />
+                          <span>Aplicar efeito/bônus do material?</span>
+                        </label>
                       )}
-
-                      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                        <input
-                          type="checkbox"
-                          checked={applyMat1Bonus}
-                          onChange={(e) => setApplyMat1Bonus(e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Aplicar efeito/bônus do material?</span>
-                      </label>
                     </div>
 
                     {/* Material 2 */}
@@ -1173,55 +1145,27 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                         className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
                         <option value="">Nenhum</option>
-                        <option value="custom">Outro (Personalizado)</option>
-                        {Object.values(MATERIAIS_ARMA).map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nome} (MAT: {m.mat})
-                          </option>
-                        ))}
+                        <option value="unico">Único (MAT: 40)</option>
+                        {Object.values(MATERIAIS_ARMA)
+                          .filter((m) => m.id !== 'unico')
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.nome} (MAT: {m.mat})
+                            </option>
+                          ))}
                       </select>
 
-                      {mat2Key === 'custom' && (
-                        <div className="grid grid-cols-3 gap-1.5 pt-1">
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
-                            <input
-                              type="number"
-                              value={customMat2.mat}
-                              onChange={(e) => setCustomMat2((p) => ({ ...p, mat: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
-                            <input
-                              type="number"
-                              value={customMat2.bonus}
-                              onChange={(e) => setCustomMat2((p) => ({ ...p, bonus: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
-                            <input
-                              type="number"
-                              value={customMat2.percent}
-                              onChange={(e) => setCustomMat2((p) => ({ ...p, percent: Number(e.target.value) }))}
-                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                            />
-                          </div>
-                        </div>
+                      {mat2Key && mat2Key !== 'unico' && (
+                        <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
+                          <input
+                            type="checkbox"
+                            checked={applyMat2Bonus}
+                            onChange={(e) => setApplyMat2Bonus(e.target.checked)}
+                            className="rounded text-cyan-500 accent-cyan-500"
+                          />
+                          <span>Aplicar efeito/bônus do material?</span>
+                        </label>
                       )}
-
-                      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                        <input
-                          type="checkbox"
-                          checked={applyMat2Bonus}
-                          onChange={(e) => setApplyMat2Bonus(e.target.checked)}
-                          className="rounded"
-                        />
-                        <span>Aplicar efeito/bônus do material?</span>
-                      </label>
                     </div>
                   </div>
                 </div>

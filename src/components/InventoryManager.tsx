@@ -438,7 +438,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       onChange={(e) => handleUpdateItem(arma.id, { material: e.target.value })}
                       className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                     >
-                      <option value="custom">Outro (Personalizado)</option>
                       {Object.values(MATERIAIS_ARMA).map((mat) => (
                         <option key={mat.id} value={mat.id}>
                           {mat.nome} (MAT: {mat.mat})

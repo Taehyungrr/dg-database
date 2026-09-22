@@ -18,6 +18,7 @@ export interface ChannelingMetalDefinition {
 }
 
 export const MATERIAIS_ARMA: Record<string, MaterialDefinition> = {
+  unico: { id: 'unico', nome: 'Único', mat: 40, bonus: 0, percent: 0, text: 'Material único de alta qualidade (MAT: 40).', effectType: 'none' },
   aluminio: { id: 'aluminio', nome: 'Alumínio', mat: 10, bonus: 10, percent: 0, text: '+10 de dano base contra elementais da terra e das florestas.', effectType: 'flat' },
   ferro_aco: { id: 'ferro_aco', nome: 'Ferro/Aço', mat: 10, bonus: 10, percent: 0, text: '+10 de dano base contra mortais.', effectType: 'flat' },
   cobre: { id: 'cobre', nome: 'Cobre', mat: 10, bonus: 15, percent: 0, text: '+15 de dano em efeitos e poderes de eletricidade e/ou temperatura usados através do item.', effectType: 'flat' },
