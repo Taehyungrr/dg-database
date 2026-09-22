@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabType } from '../types';
 import { MinotaurIcon } from './icons/MinotaurIcon';
 import { 
@@ -7,8 +7,10 @@ import {
   Calculator, 
   Sun, 
   Moon, 
-  RefreshCw
+  RefreshCw,
+  ShieldAlert
 } from 'lucide-react';
+import { BraveTroubleshootModal, checkIsBrave } from './BraveTroubleshootModal';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -33,6 +35,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   setIsDarkMode,
   hideThemeToggle = false
 }) => {
+  const [isBrave, setIsBrave] = useState<boolean>(false);
+  const [isBraveModalOpen, setIsBraveModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    checkIsBrave().then((res) => setIsBrave(res));
+  }, []);
   return (
     <header className="sticky top-0 z-40 bg-[var(--fundo2)]/95 backdrop-blur-md border-b border-[var(--bordadg)] transition-colors duration-200 py-1.5 sm:py-2">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -138,6 +146,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
+            {/* Botão Solucionar Brave (aparece SÓ para quem usa navegador Brave) */}
+            {isBrave && (
+              <button
+                type="button"
+                id="btn-solucionar-brave-nav"
+                onClick={() => setIsBraveModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-orange-500/15 hover:bg-orange-500/25 text-orange-400 border border-orange-500/40 shadow-sm transition-all cursor-pointer"
+                title="Dicas e soluções para o navegador Brave (Brave Shields)"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                <span>Solucionar Brave</span>
+              </button>
+            )}
+
             {/* Dark / Light Mode Toggle (Hidden when controlled externally by parent page data-theme) */}
             {!hideThemeToggle && (
               <button
@@ -203,6 +225,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Calculadoras</span>
         </button>
       </div>
+
+      {/* Brave Troubleshooting Modal */}
+      <BraveTroubleshootModal
+        isOpen={isBraveModalOpen}
+        onClose={() => setIsBraveModalOpen(false)}
+      />
     </header>
   );
 };

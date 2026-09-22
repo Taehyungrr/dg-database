@@ -1,21 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Deus, FichaPersonagem, Poder, Ramo } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
-import { 
-  createNewSheet, 
-  saveSheet, 
-  deleteSheet, 
-  markExportDone, 
-  hasUnexportedChanges, 
-  getLastExportTime,
-  checkStorageDiagnostics,
-  requestPersistentStorage,
-  StorageDiagnostics
-} from '../services/characterSheets';
+import { createNewSheet, saveSheet, deleteSheet, markExportDone, hasUnexportedChanges, getLastExportTime } from '../services/characterSheets';
 import { normalizeAttributes, calculateCombatStatus, calculateSheetPoints } from '../utils/calculator';
 import { CharacterSheetEditorModal } from './CharacterSheetEditorModal';
-import { StorageTroubleshootingModal } from './StorageTroubleshootingModal';
 import { GameIcon } from './GameIcon';
+import { BraveTroubleshootModal, checkIsBrave } from './BraveTroubleshootModal';
 import { 
   FileText, 
   Plus, 
@@ -37,10 +27,7 @@ import {
   SortAsc,
   Clock,
   ArrowUpDown,
-  ShieldAlert,
-  AlertTriangle,
-  HelpCircle,
-  X
+  ShieldAlert
 } from 'lucide-react';
 
 interface CharacterSheetsViewProps {
@@ -69,35 +56,6 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [deletingSheetId, setDeletingSheetId] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Storage Diagnostics & Brave Troubleshooting State
-  const [storageDiag, setStorageDiag] = useState<StorageDiagnostics | null>(null);
-  const [showStorageModal, setShowStorageModal] = useState<boolean>(false);
-  const [dismissedBraveBanner, setDismissedBraveBanner] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem('pj_dismissed_brave_banner') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const loadDiagnostics = React.useCallback(async () => {
-    const diag = await checkStorageDiagnostics();
-    setStorageDiag(diag);
-  }, []);
-
-  React.useEffect(() => {
-    loadDiagnostics();
-  }, [loadDiagnostics]);
-
-  const handleDismissBraveBanner = () => {
-    setDismissedBraveBanner(true);
-    try {
-      sessionStorage.setItem('pj_dismissed_brave_banner', 'true');
-    } catch {
-      // ignore
-    }
-  };
 
   // Sorting mode state ('alfabetica' | 'edicao') persisted in localStorage
   const SORT_STORAGE_KEY = 'pj_sheets_sort_order';
@@ -148,6 +106,12 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
     return null;
   });
   const [isNewSheetModal, setIsNewSheetModal] = useState<boolean>(!!initialNewSheetDeusId);
+  const [isBrave, setIsBrave] = useState<boolean>(false);
+  const [isBraveModalOpen, setIsBraveModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    checkIsBrave().then((res) => setIsBrave(res));
+  }, []);
 
   React.useEffect(() => {
     if (initialNewSheetDeusId) {
@@ -342,86 +306,21 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
             <span>Importar</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowStorageModal(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[var(--fundo3)] hover:bg-[var(--fundo4)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] transition-colors cursor-pointer"
-            title="Diagnóstico de armazenamento e instruções de configuração para o navegador Brave"
-          >
-            <ShieldAlert className="w-3.5 h-3.5 text-[#b8a944]" />
-            <span className="hidden sm:inline">Dica Brave / Cache</span>
-            <span className="sm:hidden">Ajuda</span>
-          </button>
+          {/* Botão Solucionar Brave (aparece SÓ para quem usa navegador Brave) */}
+          {isBrave && (
+            <button
+              type="button"
+              id="btn-sheets-solucionar-brave"
+              onClick={() => setIsBraveModalOpen(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-orange-500/15 hover:bg-orange-500/25 text-orange-400 border border-orange-500/40 shadow-sm transition-all cursor-pointer"
+              title="Dicas e soluções para o navegador Brave (Brave Shields)"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+              <span>Solucionar Brave</span>
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Critical Storage Alert Banner */}
-      {storageDiag && !storageDiag.isAvailable && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-red-500/20 text-red-500 shrink-0 mt-0.5 sm:mt-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-red-500 flex items-center gap-2">
-                Armazenamento Local Desativado ou Bloqueado
-              </h3>
-              <p className="text-xs text-[var(--ctexto2)] mt-0.5 leading-relaxed">
-                O navegador está bloqueando a gravação de dados locais (localStorage). As fichas criadas serão perdidas ao recarregar ou fechar a página.
-                {storageDiag.isBrave ? ' Detectamos o navegador Brave: desative a opção "Esquecer-me ao fechar este site" nas configurações do escudo.' : ''}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowStorageModal(true)}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-all cursor-pointer"
-            >
-              Como resolver
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Brave / Ephemeral Storage Advisory Banner */}
-      {storageDiag && storageDiag.isAvailable && (storageDiag.isBrave || storageDiag.isPrivateOrEphemeral) && !dismissedBraveBanner && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-500 shrink-0 mt-0.5 sm:mt-0">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                {storageDiag.isBrave ? 'Aviso para usuários do navegador Brave' : 'Armazenamento temporário detectado'}
-              </h3>
-              <p className="text-xs text-[var(--ctexto2)] mt-0.5 leading-relaxed">
-                {storageDiag.isBrave
-                  ? 'O Brave possui proteções que podem apagar o cache e suas fichas ao fechar a aba ou navegador. Verifique suas configurações para evitar perda de dados.'
-                  : 'Seu navegador pode estar configurado para descartar dados locais ao encerrar a sessão. Recomendamos fazer backup periódico em arquivo JSON.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowStorageModal(true)}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span>Como Configurar</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDismissBraveBanner}
-              className="p-1.5 rounded-xl text-[var(--ctexto2)] hover:text-[var(--ctexto1)] hover:bg-[var(--fundo3)] transition-colors cursor-pointer"
-              title="Fechar este aviso"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Bar de Controles e Ordenação (Fora do header, alinhado à direita) */}
       <div className="flex items-center justify-between flex-wrap gap-2 px-1">
@@ -802,13 +701,11 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
         />
       )}
 
-      {/* Storage & Brave Troubleshooting Modal */}
-      <StorageTroubleshootingModal
-        isOpen={showStorageModal}
-        onClose={() => setShowStorageModal(false)}
-        storageDiag={storageDiag}
-        onRefreshDiag={loadDiagnostics}
-        onPersistRequest={requestPersistentStorage}
+      {/* Brave Troubleshooting Modal */}
+      <BraveTroubleshootModal
+        isOpen={isBraveModalOpen}
+        onClose={() => setIsBraveModalOpen(false)}
+        onExportBackup={handleExportJson}
       />
 
     </div>

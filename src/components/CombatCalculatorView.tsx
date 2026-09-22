@@ -241,12 +241,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   const [customMat2, setCustomMat2] = useState<{ mat: number; bonus: number; percent: number }>({ mat: 0, bonus: 0, percent: 0 });
   const [applyMat2Bonus, setApplyMat2Bonus] = useState<boolean>(false);
 
-  // Channeling Metals
+  // Channeling Metals for Dano Energético (máximo 2 conforme original)
   const [chan1Key, setChan1Key] = useState<string>('');
-  const [applyChan1, setApplyChan1] = useState<boolean>(false);
-
+  const [applyChan1, setApplyChan1] = useState<boolean>(true);
   const [chan2Key, setChan2Key] = useState<string>('');
-  const [applyChan2, setApplyChan2] = useState<boolean>(false);
+  const [applyChan2, setApplyChan2] = useState<boolean>(true);
 
   // Forge Bonus & Ability DB
   const [forgeBonus, setForgeBonus] = useState<number>(0);
@@ -277,7 +276,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
   const [newExtraDesc, setNewExtraDesc] = useState<string>('');
 
   // Critical Options
-  const [enableCritical, setEnableCritical] = useState<boolean>(true);
+  const [enableCritical, setEnableCritical] = useState<boolean>(false);
   const [criticalBonus, setCriticalBonus] = useState<number>(0);
 
   // Conversion
@@ -484,6 +483,57 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
     }
   }, [selectedDefenderSheetId, sheets]);
 
+  // Helper to add extra multiplier from either input or text format "40 (Bênção de Macária)"
+  const handleAddExtraMultiplier = () => {
+    let val = newExtraVal;
+    let desc = newExtraDesc.trim();
+
+    if (val === 0 && desc) {
+      const match = desc.match(/^([+-]?\d+)\s*(?:\((.*)\)|(.*))?$/);
+      if (match) {
+        val = Number(match[1]);
+        desc = (match[2] || match[3] || '').trim();
+      }
+    }
+
+    if (val !== 0) {
+      setExtraMultipliers((prev) => [
+        ...prev,
+        { id: `ext_${Date.now()}`, valor: val, descricao: desc }
+      ]);
+      setNewExtraVal(0);
+      setNewExtraDesc('');
+    }
+  };
+
+  // Helper to add defense bonus/malus from either input or text format "20 (Escudo)"
+  const handleAddDefenseBonus = () => {
+    let val = newDefVal;
+    let desc = newDefDesc.trim();
+
+    if (val === 0 && desc) {
+      const match = desc.match(/^([+-]?\d+)\s*(?:\((.*)\)|(.*))?$/);
+      if (match) {
+        val = Number(match[1]);
+        desc = (match[2] || match[3] || '').trim();
+      }
+    }
+
+    if (val !== 0) {
+      setDefenseBonuses((prev) => [
+        ...prev,
+        {
+          id: `def_${Date.now()}`,
+          valor: val,
+          descricao: desc,
+          alvo: enableConversion ? newDefTarget : 'ambos'
+        }
+      ]);
+      setNewDefVal(0);
+      setNewDefDesc('');
+    }
+  };
+
   // Damage Calculation Trigger
   const handleCalculateDamage = () => {
     const materialsInput: WeaponMaterialInput[] = [];
@@ -506,6 +556,7 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       });
     }
 
+    // Channeling metals for energy damage (máximo 2)
     const channelingInput: ChannelingMetalInput[] = [];
     if (chan1Key) channelingInput.push({ metalKey: chan1Key, applyEffect: applyChan1 });
     if (chan2Key) channelingInput.push({ metalKey: chan2Key, applyEffect: applyChan2 });
@@ -881,11 +932,11 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
       {/* ========================================================================= */}
       <div className={activeSubTab === 'dano' ? 'space-y-6' : 'hidden'}>
           
-          {/* ATRIBUTOS */}
+          {/* 1. ATRIBUTOS DO ATACANTE */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
             <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-400" />
-              <span>Atributos</span>
+              <span>Atributos do atacante</span>
             </h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
               {(Object.keys(attackerAttrs) as Array<keyof AtributosPersonagem>).map((attrKey) => {
@@ -920,26 +971,25 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
             </div>
           </div>
 
-          {/* MODALIDADE DE DANO & ARMA DA FICHA */}
+          {/* 2. ESCOLHA A MODALIDADE DE DANO */}
           <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
               <div>
                 <label className="text-xs font-bold text-[var(--ctexto1)] flex items-center gap-1.5 mb-1.5">
                   <Swords className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Modalidade de Dano:</span>
+                  <span>Escolha a modalidade de dano:</span>
                 </label>
                 <select
                   value={damageType}
                   onChange={(e) => setDamageType(e.target.value as any)}
                   className="w-full bg-[var(--fundo3)] px-3 py-2 rounded-xl text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                 >
-                  <option value="unarmed">Combate Desarmado</option>
+                  <option value="unarmed">Combate desarmado</option>
                   <option value="melee">Armas Corpo-a-corpo</option>
                   <option value="ranged">Armas à Distância</option>
                   <option value="crossbow">Bestas e Armas de Fogo</option>
                   <option value="energy">Dano Energético</option>
-                  <option value="especial">Especial (Base + Atributo/2)</option>
+                  <option value="especial">Especial (Base+atributo/2)</option>
                 </select>
               </div>
 
@@ -966,365 +1016,398 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                   </select>
                 </div>
               )}
-
             </div>
 
-            {/* ESPECIAL SECTION */}
-            {damageType === 'especial' && (
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-                <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Configuração de Dano Especial</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Valor Base:</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={especialBase}
-                      onChange={(e) => setEspecialBase(Number(e.target.value))}
-                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Atributo (dividido por 2):</label>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={especialAttr}
-                        onChange={(e) => setEspecialAttr(e.target.value as keyof AtributosPersonagem)}
-                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                      >
-                        {Object.keys(attackerAttrs).map((k) => (
-                          <option key={k} value={k}>
-                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                          </option>
-                        ))}
-                      </select>
-                      <AttrBadge attrKey={especialAttr} showName={false} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* DANO ENERGÉTICO ATTR */}
-            {damageType === 'energy' && (
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
-                <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Atributo Correspondente ao Dano Energético:</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={energyAttr}
-                    onChange={(e) => setEnergyAttr(e.target.value as keyof AtributosPersonagem)}
-                    className="w-full sm:w-64 bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  >
-                    <option value="natureza">Natureza</option>
-                    <option value="carisma">Carisma</option>
-                    <option value="inteligencia">Inteligência</option>
-                    <option value="espiritualidade">Espiritualidade</option>
-                    <option value="magia">Magia</option>
-                  </select>
-                  <AttrBadge attrKey={energyAttr} />
-                </div>
-                <p className="text-[11px] text-[var(--ctexto2)] italic">
-                  * Chance de crítico: 10% por ponto no atributo (máx 50%).
-                </p>
-              </div>
-            )}
-
-            {/* SUBSTITUIR ATRIBUTOS? (APENAS DANO ARMADO) */}
+            {/* Configurações específicas para Armas (Melee, Ranged, Crossbow) */}
             {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-                <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Substituir Atributos de Ataque?</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Primeiro Atributo (Principal):</label>
-                    <div className="flex items-center gap-2">
+              <div className="space-y-4 pt-1">
+                {/* 1. Substituir Atributos? */}
+                <div className="bg-purple-950/20 rounded-xl p-4 border border-purple-600/50 space-y-3">
+                  <h4 className="text-xs font-bold text-purple-300 uppercase flex items-center gap-1.5 font-cinzel">
+                    <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Substituir Atributos?</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Primeiro Atributo */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-[var(--ctexto1)] block">
+                        Substituir {damageType === 'melee' ? 'Força' : 'Destreza'} por:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={firstAttrSub}
+                          onChange={(e) => setFirstAttrSub(e.target.value as any)}
+                          className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        >
+                          <option value="">Não substituir</option>
+                          {Object.keys(attackerAttrs).map((k) => (
+                            <option key={k} value={k}>
+                              {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                            </option>
+                          ))}
+                        </select>
+                        {firstAttrSub && <AttrBadge attrKey={firstAttrSub} showName={false} />}
+                      </div>
+                      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={applyBonusToFirst}
+                          onChange={(e) => setApplyBonusToFirst(e.target.checked)}
+                          className="rounded text-purple-500 accent-purple-500"
+                        />
+                        <span>Aplicar bônus percentual?</span>
+                      </label>
+                    </div>
+
+                    {/* Segundo Atributo */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-[var(--ctexto1)] block">
+                        {damageType === 'crossbow'
+                          ? 'Segundo atributo (não aplicável):'
+                          : `Substituir ${damageType === 'melee' ? 'Destreza/2' : 'Força/2'} por:`}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          disabled={damageType === 'crossbow'}
+                          value={damageType === 'crossbow' ? '' : secondAttrSub}
+                          onChange={(e) => setSecondAttrSub(e.target.value as any)}
+                          className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] disabled:opacity-40"
+                        >
+                          <option value="">Não substituir</option>
+                          {Object.keys(attackerAttrs).map((k) => (
+                            <option key={k} value={k}>
+                              {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                            </option>
+                          ))}
+                        </select>
+                        {secondAttrSub && damageType !== 'crossbow' && <AttrBadge attrKey={secondAttrSub} showName={false} />}
+                      </div>
+                      <label className={`inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] ${damageType === 'crossbow' ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        <input
+                          type="checkbox"
+                          disabled={damageType === 'crossbow'}
+                          checked={damageType === 'crossbow' ? false : applyBonusToSecond}
+                          onChange={(e) => setApplyBonusToSecond(e.target.checked)}
+                          className="rounded text-purple-500 accent-purple-500"
+                        />
+                        <span>Aplicar bônus percentual?</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-[var(--ctexto2)] space-y-0.5 pt-1 border-t border-purple-500/20">
+                    <p>• O primeiro atributo substitui o atributo principal (Força em corpo-a-corpo, Destreza em distância).</p>
+                    <p>• O segundo atributo substitui o atributo secundário (Destreza/2 em corpo-a-corpo, Força/2 em distância).</p>
+                  </div>
+                </div>
+
+                {/* Materiais da Arma (máximo 2) */}
+                <div className="bg-cyan-950/20 p-4 rounded-xl border border-cyan-600/50 space-y-3">
+                  <h4 className="text-xs font-bold text-cyan-300 uppercase font-cinzel">Materiais da Arma (máximo 2)</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Material 1 */}
+                    <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
+                      <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 1:</label>
                       <select
-                        value={firstAttrSub}
-                        onChange={(e) => setFirstAttrSub(e.target.value as any)}
-                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        value={mat1Key}
+                        onChange={(e) => setMat1Key(e.target.value)}
+                        className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
-                        <option value="">Não substituir</option>
-                        {Object.keys(attackerAttrs).map((k) => (
-                          <option key={k} value={k}>
-                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                        <option value="">Nenhum</option>
+                        <option value="custom">Outro (Personalizado)</option>
+                        {Object.values(MATERIAIS_ARMA).map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome} (MAT: {m.mat})
                           </option>
                         ))}
                       </select>
-                      {firstAttrSub && <AttrBadge attrKey={firstAttrSub} showName={false} />}
-                    </div>
-                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={applyBonusToFirst}
-                        onChange={(e) => setApplyBonusToFirst(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span>Aplicar bônus percentual?</span>
-                    </label>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Segundo Atributo (Secundário/2):</label>
-                    <div className="flex items-center gap-2">
+                      {mat1Key === 'custom' && (
+                        <div className="grid grid-cols-3 gap-1.5 pt-1">
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
+                            <input
+                              type="number"
+                              value={customMat1.mat}
+                              onChange={(e) => setCustomMat1((p) => ({ ...p, mat: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
+                            <input
+                              type="number"
+                              value={customMat1.bonus}
+                              onChange={(e) => setCustomMat1((p) => ({ ...p, bonus: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
+                            <input
+                              type="number"
+                              value={customMat1.percent}
+                              onChange={(e) => setCustomMat1((p) => ({ ...p, percent: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
+                        <input
+                          type="checkbox"
+                          checked={applyMat1Bonus}
+                          onChange={(e) => setApplyMat1Bonus(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span>Aplicar efeito/bônus do material?</span>
+                      </label>
+                    </div>
+
+                    {/* Material 2 */}
+                    <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
+                      <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 2:</label>
                       <select
-                        value={secondAttrSub}
-                        onChange={(e) => setSecondAttrSub(e.target.value as any)}
-                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        value={mat2Key}
+                        onChange={(e) => setMat2Key(e.target.value)}
+                        className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       >
-                        <option value="">Não substituir</option>
-                        {Object.keys(attackerAttrs).map((k) => (
-                          <option key={k} value={k}>
-                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                        <option value="">Nenhum</option>
+                        <option value="custom">Outro (Personalizado)</option>
+                        {Object.values(MATERIAIS_ARMA).map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome} (MAT: {m.mat})
                           </option>
                         ))}
                       </select>
-                      {secondAttrSub && <AttrBadge attrKey={secondAttrSub} showName={false} />}
+
+                      {mat2Key === 'custom' && (
+                        <div className="grid grid-cols-3 gap-1.5 pt-1">
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
+                            <input
+                              type="number"
+                              value={customMat2.mat}
+                              onChange={(e) => setCustomMat2((p) => ({ ...p, mat: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
+                            <input
+                              type="number"
+                              value={customMat2.bonus}
+                              onChange={(e) => setCustomMat2((p) => ({ ...p, bonus: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
+                            <input
+                              type="number"
+                              value={customMat2.percent}
+                              onChange={(e) => setCustomMat2((p) => ({ ...p, percent: Number(e.target.value) }))}
+                              className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
+                        <input
+                          type="checkbox"
+                          checked={applyMat2Bonus}
+                          onChange={(e) => setApplyMat2Bonus(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span>Aplicar efeito/bônus do material?</span>
+                      </label>
                     </div>
-                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
+                  </div>
+                </div>
+
+                {/* 3. Bônus de Forja (FB) */}
+                <div className="bg-amber-950/20 rounded-xl p-4 border border-amber-700/50 space-y-2">
+                  <h4 className="text-xs font-bold text-amber-300 uppercase font-cinzel">Bônus de Forja (FB)</h4>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="w-full sm:w-auto flex-1 flex items-center gap-3">
+                      <label className="text-xs font-bold text-[var(--ctexto1)] whitespace-nowrap">Valor do bônus:</label>
                       <input
-                        type="checkbox"
-                        checked={applyBonusToSecond}
-                        onChange={(e) => setApplyBonusToSecond(e.target.checked)}
-                        className="rounded"
+                        type="number"
+                        min="0"
+                        value={forgeBonus}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => setForgeBonus(Number(e.target.value))}
+                        className="w-full sm:w-40 bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
                       />
-                      <span>Aplicar bônus percentual?</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* MATERIAIS DA ARMA (MÁX 2) */}
-            {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-                <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase">Materiais da Arma (máximo 2)</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
-                  {/* Material 1 */}
-                  <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 1:</label>
-                    <select
-                      value={mat1Key}
-                      onChange={(e) => setMat1Key(e.target.value)}
-                      className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    >
-                      <option value="">Nenhum</option>
-                      <option value="custom">Outro (Personalizado)</option>
-                      {Object.values(MATERIAIS_ARMA).map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.nome} (MAT: {m.mat})
-                        </option>
-                      ))}
-                    </select>
-
-                    {mat1Key === 'custom' && (
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
-                          <input
-                            type="number"
-                            value={customMat1.mat}
-                            onChange={(e) => setCustomMat1((p) => ({ ...p, mat: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
-                          <input
-                            type="number"
-                            value={customMat1.bonus}
-                            onChange={(e) => setCustomMat1((p) => ({ ...p, bonus: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
-                          <input
-                            type="number"
-                            value={customMat1.percent}
-                            onChange={(e) => setCustomMat1((p) => ({ ...p, percent: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                      <input
-                        type="checkbox"
-                        checked={applyMat1Bonus}
-                        onChange={(e) => setApplyMat1Bonus(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span>Aplicar efeito/bônus do material?</span>
-                    </label>
-                  </div>
-
-                  {/* Material 2 */}
-                  <div className="space-y-2 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Material 2:</label>
-                    <select
-                      value={mat2Key}
-                      onChange={(e) => setMat2Key(e.target.value)}
-                      className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    >
-                      <option value="">Nenhum</option>
-                      <option value="custom">Outro (Personalizado)</option>
-                      {Object.values(MATERIAIS_ARMA).map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.nome} (MAT: {m.mat})
-                        </option>
-                      ))}
-                    </select>
-
-                    {mat2Key === 'custom' && (
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">MAT:</label>
-                          <input
-                            type="number"
-                            value={customMat2.mat}
-                            onChange={(e) => setCustomMat2((p) => ({ ...p, mat: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">Bônus:</label>
-                          <input
-                            type="number"
-                            value={customMat2.bonus}
-                            onChange={(e) => setCustomMat2((p) => ({ ...p, bonus: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-[var(--ctexto2)] block">% Bônus:</label>
-                          <input
-                            type="number"
-                            value={customMat2.percent}
-                            onChange={(e) => setCustomMat2((p) => ({ ...p, percent: Number(e.target.value) }))}
-                            className="w-full bg-[var(--fundo2)] px-1.5 py-1 rounded text-xs"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-1">
-                      <input
-                        type="checkbox"
-                        checked={applyMat2Bonus}
-                        onChange={(e) => setApplyMat2Bonus(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span>Aplicar efeito/bônus do material?</span>
-                    </label>
-                  </div>
-
-                </div>
-              </div>
-            )}
-
-            {/* METAIS DE CANALIZAÇÃO */}
-            <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-              <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase">Metais de Canalização (máximo 2)</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                <div className="space-y-1.5 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
-                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Metal de Canalização 1:</label>
-                  <select
-                    value={chan1Key}
-                    onChange={(e) => setChan1Key(e.target.value)}
-                    className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  >
-                    <option value="">Nenhum</option>
-                    {Object.values(METAIS_CANALIZACAO).map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome} (+{m.percent}%)
-                      </option>
-                    ))}
-                  </select>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={applyChan1}
-                      onChange={(e) => setApplyChan1(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Aplicar efeito?</span>
-                  </label>
-                </div>
-
-                <div className="space-y-1.5 bg-[var(--fundo1)] p-2.5 rounded-xl border border-[var(--bordadg)]">
-                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Metal de Canalização 2:</label>
-                  <select
-                    value={chan2Key}
-                    onChange={(e) => setChan2Key(e.target.value)}
-                    className="w-full bg-[var(--fundo2)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  >
-                    <option value="">Nenhum</option>
-                    {Object.values(METAIS_CANALIZACAO).map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome} (+{m.percent}%)
-                      </option>
-                    ))}
-                  </select>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={applyChan2}
-                      onChange={(e) => setApplyChan2(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Aplicar efeito?</span>
-                  </label>
-                </div>
-
-              </div>
-            </div>
-
-            {/* BÔNUS DE FORJA (APENAS DANO ARMADO) & DANO BASE DO PODER (APENAS DANO NÃO ARMADO) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(damageType === 'melee' || damageType === 'ranged' || damageType === 'crossbow') && (
-                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] flex items-center justify-between gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Bônus de Forja (FB):</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={forgeBonus}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => setForgeBonus(Number(e.target.value))}
-                      className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    />
-                  </div>
-                  <div className="pt-4">
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer bg-[var(--fundo1)] px-3 py-1.5 rounded-lg border border-[var(--bordadg)] hover:border-amber-500/50 transition-colors" title="Arma Mítica (+20% Multiplicador Extra)">
+                    </div>
+                    <label className="inline-flex items-center gap-2 cursor-pointer bg-[var(--fundo1)] px-4 py-2 rounded-xl border border-[var(--bordadg)] hover:border-amber-500/50 transition-colors w-full sm:w-auto justify-center" title="Arma Mítica (+20% Multiplicador Extra)">
                       <input
                         type="checkbox"
                         checked={isMitico}
                         onChange={(e) => handleToggleMitico(e.target.checked)}
                         className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
                       />
-                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                         Mítico
                       </span>
                     </label>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {damageType !== 'melee' && damageType !== 'ranged' && damageType !== 'crossbow' && (
-                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)]">
-                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder:</label>
+            {/* Configurações específicas para Dano Energético */}
+            {damageType === 'energy' && (
+              <div className="space-y-4 pt-3 border-t border-[var(--bordadg)]/50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Atributo correspondente */}
+                  <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
+                    <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Atributo Correspondente:</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={energyAttr}
+                        onChange={(e) => setEnergyAttr(e.target.value as keyof AtributosPersonagem)}
+                        className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                      >
+                        <option value="natureza">Natureza</option>
+                        <option value="carisma">Carisma</option>
+                        <option value="inteligencia">Inteligência</option>
+                        <option value="espiritualidade">Espiritualidade</option>
+                        <option value="magia">Magia</option>
+                      </select>
+                      <AttrBadge attrKey={energyAttr} />
+                    </div>
+                    <p className="text-[10px] text-[var(--ctexto2)] italic">
+                      * Crítico: 10% por ponto no atributo (máx 50%).
+                    </p>
+                  </div>
+
+                  {/* Metal de Canalização (apenas 1 campo) */}
+                  <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
+                    <label className="text-xs font-bold text-[var(--ctexto1)] uppercase block">
+                      Metal de Canalização:
+                    </label>
+                    <select
+                      value={chan1Key}
+                      onChange={(e) => setChan1Key(e.target.value)}
+                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                    >
+                      <option value="">Nenhum</option>
+                      {Object.values(METAIS_CANALIZACAO).map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.nome} (+{m.percent}%)
+                        </option>
+                      ))}
+                    </select>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={applyChan1}
+                        onChange={(e) => setApplyChan1(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span>Aplicar efeito?</span>
+                    </label>
+                  </div>
+
+                  {/* Dano Base do Poder */}
+                  <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-1">
+                    <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder:</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={abilityDB}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setAbilityDB(Number(e.target.value))}
+                      className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Configurações específicas para Especial */}
+            {damageType === 'especial' && (
+              <div className="space-y-4 pt-3 border-t border-[var(--bordadg)]/50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Config Especial */}
+                  <div className="sm:col-span-2 bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
+                    <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Configuração de Dano Especial</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Valor Base:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={especialBase}
+                          onChange={(e) => setEspecialBase(Number(e.target.value))}
+                          className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">Atributo (dividido por 2):</label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={especialAttr}
+                            onChange={(e) => setEspecialAttr(e.target.value as keyof AtributosPersonagem)}
+                            className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                          >
+                            {Object.keys(attackerAttrs).map((k) => (
+                              <option key={k} value={k}>
+                                {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                              </option>
+                            ))}
+                          </select>
+                          <AttrBadge attrKey={especialAttr} showName={false} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Metal de Canalização (apenas 1 campo) */}
+                  <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
+                    <label className="text-xs font-bold text-[var(--ctexto1)] uppercase block">
+                      Metal de Canalização:
+                    </label>
+                    <select
+                      value={chan1Key}
+                      onChange={(e) => setChan1Key(e.target.value)}
+                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                    >
+                      <option value="">Nenhum</option>
+                      {Object.values(METAIS_CANALIZACAO).map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.nome} (+{m.percent}%)
+                        </option>
+                      ))}
+                    </select>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={applyChan1}
+                        onChange={(e) => setApplyChan1(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span>Aplicar efeito?</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Combate Desarmado */}
+            {damageType === 'unarmed' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[var(--bordadg)]/50">
+                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-1">
+                  <label className="text-xs font-bold text-[var(--ctexto1)] block mb-1">Dano Base do Poder (opcional):</label>
                   <input
                     type="number"
                     min="0"
@@ -1334,114 +1417,147 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                     className="w-full bg-[var(--fundo1)] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
                   />
                 </div>
+                <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
+                  <label className="text-xs font-bold text-[var(--ctexto1)] uppercase block">
+                    Metal de Canalização:
+                  </label>
+                  <select
+                    value={chan1Key}
+                    onChange={(e) => setChan1Key(e.target.value)}
+                    className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                  >
+                    <option value="">Nenhum</option>
+                    {Object.values(METAIS_CANALIZACAO).map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome} (+{m.percent}%)
+                      </option>
+                    ))}
+                  </select>
+                  <label className="inline-flex items-center gap-1.5 text-xs text-[var(--ctexto2)] cursor-pointer pt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={applyChan1}
+                      onChange={(e) => setApplyChan1(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>Aplicar efeito?</span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. VARIÁVEL PERSONALIZADA */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-400" />
+              <span>Variável personalizada</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Tipo:</label>
+                <select
+                  value={customVarType}
+                  onChange={(e) => setCustomVarType(e.target.value as any)}
+                  className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                >
+                  <option value="none">Nenhum</option>
+                  <option value="flat">Número fixo</option>
+                  <option value="attribute">Atributo</option>
+                  <option value="halfAttribute">Metade de atributo</option>
+                </select>
+              </div>
+
+              {(customVarType === 'attribute' || customVarType === 'halfAttribute') && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Escolha o Atributo:</label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={customVarAttr}
+                      onChange={(e) => setCustomVarAttr(e.target.value as keyof AtributosPersonagem)}
+                      className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                    >
+                      {Object.keys(attackerAttrs).map((k) => (
+                        <option key={k} value={k}>
+                          {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                        </option>
+                      ))}
+                    </select>
+                    <AttrBadge attrKey={customVarAttr} showName={false} />
+                  </div>
+                </div>
+              )}
+
+              {customVarType === 'flat' && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Valor Fixo:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={customVarFlat}
+                    onChange={(e) => setCustomVarFlat(Number(e.target.value))}
+                    className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  />
+                </div>
               )}
             </div>
+            <div className="text-[11px] text-[var(--ctexto2)] space-y-0.5 pt-1">
+              <p>* Para opções de Atributo ou Metade, o bônus percentual do atributo é aplicado automaticamente.</p>
+              <p>* Este valor é somado ao dano base (antes de multiplicadores extras e crítico).</p>
+            </div>
+          </div>
 
-            {/* VARIÁVEL PERSONALIZADA */}
-            <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-              <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Variável Personalizada</span>
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Tipo:</label>
-                  <select
-                    value={customVarType}
-                    onChange={(e) => setCustomVarType(e.target.value as any)}
-                    className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  >
-                    <option value="none">Nenhum</option>
-                    <option value="flat">Número fixo</option>
-                    <option value="attribute">Atributo</option>
-                    <option value="halfAttribute">Metade de atributo</option>
-                  </select>
-                </div>
-
-                {(customVarType === 'attribute' || customVarType === 'halfAttribute') && (
-                  <div>
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Escolha o Atributo:</label>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={customVarAttr}
-                        onChange={(e) => setCustomVarAttr(e.target.value as keyof AtributosPersonagem)}
-                        className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                      >
-                        {Object.keys(attackerAttrs).map((k) => (
-                          <option key={k} value={k}>
-                            {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                          </option>
-                        ))}
-                      </select>
-                      <AttrBadge attrKey={customVarAttr} showName={false} />
+          {/* 4. BÔNUS DE ATRIBUTO */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+              <Percent className="w-4 h-4 text-emerald-400" />
+              <span>Bônus de atributo</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {[
+                'forca',
+                'destreza',
+                'inteligencia',
+                'natureza',
+                'carisma',
+                'espiritualidade',
+                'magia'
+              ].map((key) => {
+                const attrKey = key as keyof AtributosPersonagem;
+                const cfg = ATTR_CONFIG[attrKey];
+                const IconComp = cfg.icon;
+                return (
+                  <div key={key} className={`p-2 rounded-xl border text-center space-y-1 ${cfg.bgColor} ${cfg.borderColor}`}>
+                    <div className="flex items-center justify-center gap-1">
+                      <IconComp className={`w-3 h-3 ${cfg.color} shrink-0`} />
+                      <label className={`text-[9px] font-bold uppercase truncate ${cfg.color}`}>{cfg.name}:</label>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={attrBonuses[attrKey] || 0}
+                        onChange={(e) =>
+                          setAttrBonuses((prev) => ({ ...prev, [attrKey]: Number(e.target.value) }))
+                        }
+                        className="w-full bg-[var(--fundo1)] px-1.5 py-0.5 rounded text-xs font-mono font-bold text-center text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                      />
+                      <span className="text-xs font-bold text-[var(--ctexto2)]">%</span>
                     </div>
                   </div>
-                )}
-
-                {customVarType === 'flat' && (
-                  <div>
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Valor Fixo:</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={customVarFlat}
-                      onChange={(e) => setCustomVarFlat(Number(e.target.value))}
-                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    />
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* BÔNUS DE DANO DOS ATRIBUTOS (%) */}
-            <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
-              <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
-                <Percent className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Bônus de dano dos atributos (%)</span>
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                {[
-                  'forca',
-                  'destreza',
-                  'inteligencia',
-                  'natureza',
-                  'carisma',
-                  'espiritualidade',
-                  'magia'
-                ].map((key) => {
-                  const attrKey = key as keyof AtributosPersonagem;
-                  const cfg = ATTR_CONFIG[attrKey];
-                  const IconComp = cfg.icon;
-                  return (
-                    <div key={key} className={`p-2 rounded-xl border text-center space-y-1 ${cfg.bgColor} ${cfg.borderColor}`}>
-                      <div className="flex items-center justify-center gap-1">
-                        <IconComp className={`w-3 h-3 ${cfg.color} shrink-0`} />
-                        <label className={`text-[9px] font-bold uppercase truncate ${cfg.color}`}>{cfg.name}:</label>
-                      </div>
-                      <div className="flex items-center justify-center gap-1">
-                        <input
-                          type="number"
-                          min="0"
-                          value={attrBonuses[attrKey] || 0}
-                          onChange={(e) =>
-                            setAttrBonuses((prev) => ({ ...prev, [attrKey]: Number(e.target.value) }))
-                          }
-                          className="w-full bg-[var(--fundo1)] px-1.5 py-0.5 rounded text-xs font-mono font-bold text-center text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                        />
-                        <span className="text-xs font-bold text-[var(--ctexto2)]">%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* BÔNUS EXTRAS (MULTIPLICADORES) */}
-            <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-3">
-              <h4 className="text-xs font-bold text-[var(--ctexto1)] uppercase flex items-center gap-1.5">
-                <Plus className="w-3.5 h-3.5 text-purple-400" />
-                <span>Bônus Extras (Somados ao Multiplicador Final)</span>
-              </h4>
+          {/* 5. BÔNUS EXTRAS */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+              <Plus className="w-4 h-4 text-purple-400" />
+              <span>Bônus extras</span>
+            </h3>
+            
+            {extraMultipliers.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 {extraMultipliers.map((m) => {
                   const isMiticoEntry = m.id === 'extra_mitico' || m.descricao === 'Arma Mítica';
@@ -1468,99 +1584,115 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                   );
                 })}
               </div>
+            )}
 
-              <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <input
+                type="number"
+                placeholder="Valor %"
+                value={newExtraVal || ''}
+                onChange={(e) => setNewExtraVal(Number(e.target.value))}
+                className="w-full sm:w-28 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+              />
+              <input
+                type="text"
+                placeholder="Exemplo: 40 (Bênção de Macária)"
+                value={newExtraDesc}
+                onChange={(e) => setNewExtraDesc(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddExtraMultiplier();
+                  }
+                }}
+                className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+              />
+              <button
+                type="button"
+                onClick={handleAddExtraMultiplier}
+                className="w-full sm:w-auto px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-colors"
+              >
+                Adicionar
+              </button>
+            </div>
+            <p className="text-[11px] text-[var(--ctexto2)]">
+              Cada bônus é SOMADO ao multiplicador final. Use formato 'valor (descrição)' para identificar os bônus caso deseje.
+            </p>
+          </div>
+
+          {/* 6. MOSTRAR DANO CRÍTICO? */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <label className="inline-flex items-center gap-2 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
                 <input
-                  type="number"
-                  placeholder="Valor %"
-                  value={newExtraVal || ''}
-                  onChange={(e) => setNewExtraVal(Number(e.target.value))}
-                  className="w-full sm:w-28 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                  type="checkbox"
+                  checked={enableCritical}
+                  onChange={(e) => setEnableCritical(e.target.checked)}
+                  className="rounded text-amber-500 accent-amber-500"
                 />
-                <input
-                  type="text"
-                  placeholder="Descrição (ex: 40 (Bênção de Macária))"
-                  value={newExtraDesc}
-                  onChange={(e) => setNewExtraDesc(e.target.value)}
-                  className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newExtraVal > 0) {
-                      setExtraMultipliers((prev) => [
-                        ...prev,
-                        { id: `ext_${Date.now()}`, valor: newExtraVal, descricao: newExtraDesc }
-                      ]);
-                      setNewExtraVal(0);
-                      setNewExtraDesc('');
-                    }
-                  }}
-                  className="w-full sm:w-auto px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold cursor-pointer"
-                >
-                  Adicionar
-                </button>
-              </div>
+                <span>Mostrar dano crítico?</span>
+              </label>
+              <span className="text-[11px] text-[var(--ctexto2)] italic">
+                (Manter desmarcado para um log mais limpo)
+              </span>
             </div>
 
-            {/* CRÍTICO & CONVERSÃO */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Crítico */}
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableCritical}
-                    onChange={(e) => setEnableCritical(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span>Mostrar dano crítico?</span>
+            {enableCritical && (
+              <div className="pt-2 border-t border-[var(--bordadg)]/50">
+                <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">
+                  Bônus de Crítico Adicional (%):
                 </label>
-
-                {enableCritical && (
-                  <div className="pt-2 border-t border-[var(--bordadg)]">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Bônus de Crítico Adicional (%):</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={criticalBonus}
-                      onChange={(e) => setCriticalBonus(Number(e.target.value))}
-                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                    />
-                  </div>
-                )}
+                <input
+                  type="number"
+                  min="0"
+                  value={criticalBonus}
+                  onChange={(e) => setCriticalBonus(Number(e.target.value))}
+                  className="w-full sm:w-64 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                />
               </div>
+            )}
+          </div>
 
-              {/* Conversão de Dano */}
-              <div className="bg-[var(--fundo3)] p-3.5 rounded-xl border border-[var(--bordadg)] space-y-2">
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableConversion}
-                    onChange={(e) => setEnableConversion(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span>Converter Dano (Defesa do Defensor)?</span>
-                </label>
+          {/* 7. CONVERTER DANO? */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)]">
+                Converter dano?
+              </h3>
+              <label className="inline-flex items-center gap-2 text-xs font-normal text-[var(--ctexto1)] cursor-pointer">
+                <span className="text-[var(--ctexto2)] font-semibold">Ativar conversão:</span>
+                <input
+                  type="checkbox"
+                  checked={enableConversion}
+                  onChange={(e) => setEnableConversion(e.target.checked)}
+                  className="rounded text-emerald-500 accent-emerald-500"
+                />
+              </label>
+            </div>
 
-                {enableConversion && (
-                  <div className="space-y-2 pt-2 border-t border-[var(--bordadg)]">
+            {enableConversion && (
+              <div className="space-y-3 pt-2 border-t border-[var(--bordadg)]/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Tipo de conversão:</label>
                     <select
                       value={conversionType}
                       onChange={(e) => setConversionType(e.target.value as any)}
-                      className="w-full bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-[var(--ctexto1)]"
+                      className="w-full bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                     >
-                      <option value="single">Único Atributo</option>
-                      <option value="split">Dividido entre Dois Atributos</option>
+                      <option value="single">Único atributo</option>
+                      <option value="split">Dividido entre dois atributos</option>
                     </select>
+                  </div>
 
-                    {conversionType === 'single' ? (
+                  {conversionType === 'single' ? (
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block mb-1">Atributo de defesa:</label>
                       <div className="flex items-center gap-2">
                         <select
                           value={conversionAttr}
                           onChange={(e) => setConversionAttr(e.target.value as keyof AtributosPersonagem)}
-                          className="flex-1 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-[var(--ctexto1)]"
+                          className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
                         >
                           {Object.keys(attackerAttrs).map((k) => (
                             <option key={k} value={k}>
@@ -1569,92 +1701,106 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                           ))}
                         </select>
                         <AttrBadge attrKey={conversionAttr} showName={false} />
-                        <input
-                          type="number"
-                          value={conversionPercent}
-                          onChange={(e) => setConversionPercent(Number(e.target.value))}
-                          className="w-16 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
-                        />
-                        <span className="text-xs font-bold">%</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={splitAttr1}
-                            onChange={(e) => setSplitAttr1(e.target.value as keyof AtributosPersonagem)}
-                            className="flex-1 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-[var(--ctexto1)]"
-                          >
-                            {Object.keys(attackerAttrs).map((k) => (
-                              <option key={k} value={k}>
-                                {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                              </option>
-                            ))}
-                          </select>
-                          <AttrBadge attrKey={splitAttr1} showName={false} />
+                        <div className="flex items-center gap-1">
                           <input
                             type="number"
-                            value={splitPercent1}
-                            onChange={(e) => setSplitPercent1(Number(e.target.value))}
-                            className="w-16 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
+                            value={conversionPercent}
+                            onChange={(e) => setConversionPercent(Number(e.target.value))}
+                            className="w-16 bg-[var(--fundo1)] px-2 py-1.5 rounded-lg text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
                           />
-                          <span className="text-xs font-bold">%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={splitAttr2}
-                            onChange={(e) => setSplitAttr2(e.target.value as keyof AtributosPersonagem)}
-                            className="flex-1 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-[var(--ctexto1)]"
-                          >
-                            {Object.keys(attackerAttrs).map((k) => (
-                              <option key={k} value={k}>
-                                {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
-                              </option>
-                            ))}
-                          </select>
-                          <AttrBadge attrKey={splitAttr2} showName={false} />
-                          <input
-                            type="number"
-                            value={splitPercent2}
-                            onChange={(e) => setSplitPercent2(Number(e.target.value))}
-                            className="w-16 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
-                          />
-                          <span className="text-xs font-bold">%</span>
+                          <span className="text-xs font-bold text-[var(--ctexto2)]">%</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 sm:col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">1º Atributo:</label>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={splitAttr1}
+                              onChange={(e) => setSplitAttr1(e.target.value as keyof AtributosPersonagem)}
+                              className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                            >
+                              {Object.keys(attackerAttrs).map((k) => (
+                                <option key={k} value={k}>
+                                  {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                                </option>
+                              ))}
+                            </select>
+                            <AttrBadge attrKey={splitAttr1} showName={false} />
+                            <input
+                              type="number"
+                              value={splitPercent1}
+                              onChange={(e) => setSplitPercent1(Number(e.target.value))}
+                              className="w-16 bg-[var(--fundo1)] px-2 py-1.5 rounded-lg text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
+                            />
+                            <span className="text-xs font-bold text-[var(--ctexto2)]">%</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase block">2º Atributo:</label>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={splitAttr2}
+                              onChange={(e) => setSplitAttr2(e.target.value as keyof AtributosPersonagem)}
+                              className="flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                            >
+                              {Object.keys(attackerAttrs).map((k) => (
+                                <option key={k} value={k}>
+                                  {ATTR_NOME_EXIBICAO[k as keyof AtributosPersonagem]}
+                                </option>
+                              ))}
+                            </select>
+                            <AttrBadge attrKey={splitAttr2} showName={false} />
+                            <input
+                              type="number"
+                              value={splitPercent2}
+                              onChange={(e) => setSplitPercent2(Number(e.target.value))}
+                              className="w-16 bg-[var(--fundo1)] px-2 py-1.5 rounded-lg text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
+                            />
+                            <span className="text-xs font-bold text-[var(--ctexto2)]">%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[11px] text-[var(--ctexto2)]">
+                  O dano será calculado normalmente, mas a defesa usará o(s) atributo(s) selecionado(s) ao invés do padrão.
+                </p>
               </div>
-
-            </div>
-
+            )}
           </div>
 
-          {/* ATRIBUTOS DO DEFENSOR & DEFESA */}
-          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-4">
+          {/* 8. ATRIBUTOS DO DEFENSOR */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
                 <Shield className="w-4 h-4 text-blue-400" />
-                <span>Atributos do Defensor</span>
+                <span>Atributos do defensor</span>
               </h3>
 
               {/* Defender sheet selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[var(--ctexto2)]">Carregar Ficha Defensor:</span>
-                <select
-                  value={selectedDefenderSheetId}
-                  onChange={(e) => setSelectedDefenderSheetId(e.target.value)}
-                  className="bg-[var(--fundo3)] px-2.5 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
-                >
-                  <option value="">-- Manual --</option>
-                  {sortedSheets.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {sortedSheets.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[var(--ctexto2)]">Carregar Ficha Defensor:</span>
+                  <select
+                    value={selectedDefenderSheetId}
+                    onChange={(e) => setSelectedDefenderSheetId(e.target.value)}
+                    className="bg-[var(--fundo3)] px-2.5 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
+                  >
+                    <option value="">-- Manual --</option>
+                    {sortedSheets.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1690,19 +1836,16 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                 }
               )}
             </div>
+          </div>
 
-            {/* BÔNUS / ÔNUS DE DEFESA */}
-            <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2.5">
-              <div className="space-y-0.5">
-                <label className="text-xs font-bold text-[var(--ctexto1)] flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Bônus / Ônus de Defesa (% de Redução ou Penalidade):</span>
-                </label>
-                <p className="text-[10px] text-[var(--ctexto2)]">
-                  Insira valores positivos (ex: 20) para bônus de defesa ou negativos (ex: -20) para ônus/fraqueza de resistência.
-                </p>
-              </div>
+          {/* 9. BÔNUS DE DEFESA */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-blue-400" />
+              <span>Bônus de defesa</span>
+            </h3>
 
+            {defenseBonuses.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {defenseBonuses.map((b) => {
                   const isBonus = b.valor > 0;
@@ -1748,142 +1891,143 @@ export const CombatCalculatorView: React.FC<CombatCalculatorViewProps> = ({ shee
                   );
                 })}
               </div>
+            )}
 
-              <div className="space-y-2 pt-1 border-t border-[var(--bordadg)]/50">
-                {enableConversion && (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase shrink-0">
-                      Aplicar Modificador em:
-                    </label>
-                    <select
-                      value={newDefTarget}
-                      onChange={(e) => setNewDefTarget(e.target.value as 'ambos' | 'attr1' | 'attr2')}
-                      className="bg-[var(--fundo1)] px-2.5 py-1 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
-                    >
-                      <option value="ambos">Ambos os Atributos Defensivos</option>
-                      {conversionType === 'single' ? (
-                        <>
-                          <option value="attr1">
-                            Apenas no Atributo Convertido ({ATTR_CONFIG[conversionAttr]?.name || 'Atributo'} - {conversionPercent}%)
-                          </option>
-                          <option value="attr2">
-                            Apenas em Constituição ({100 - conversionPercent}%)
-                          </option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="attr1">
-                            Apenas no 1º Atributo ({ATTR_CONFIG[splitAttr1]?.name || '1º Atributo'} - {splitPercent1}%)
-                          </option>
-                          <option value="attr2">
-                            Apenas no 2º Atributo ({ATTR_CONFIG[splitAttr2]?.name || '2º Atributo'} - {splitPercent2}%)
-                          </option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Ex: 20 ou -20"
-                    value={newDefVal || ''}
-                    onChange={(e) => setNewDefVal(Number(e.target.value))}
-                    className="w-full sm:w-32 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Descrição (ex: -20% de Resistência, Escudo Mágico)"
-                    value={newDefDesc}
-                    onChange={(e) => setNewDefDesc(e.target.value)}
-                    className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newDefVal !== 0) {
-                        setDefenseBonuses((prev) => [
-                          ...prev,
-                          {
-                            id: `def_${Date.now()}`,
-                            valor: newDefVal,
-                            descricao: newDefDesc,
-                            alvo: enableConversion ? newDefTarget : 'ambos'
-                          }
-                        ]);
-                        setNewDefVal(0);
-                        setNewDefDesc('');
-                      }
-                    }}
-                    className="w-full sm:w-auto px-3 py-1.5 bg-[#b8a944] hover:bg-[#a39438] text-white rounded-lg text-xs font-bold cursor-pointer shrink-0"
+            <div className="space-y-2">
+              {enableConversion && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <label className="text-[10px] font-bold text-[var(--ctexto2)] uppercase shrink-0">
+                    Aplicar Modificador em:
+                  </label>
+                  <select
+                    value={newDefTarget}
+                    onChange={(e) => setNewDefTarget(e.target.value as 'ambos' | 'attr1' | 'attr2')}
+                    className="bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)] cursor-pointer"
                   >
-                    Adicionar Modificador
-                  </button>
+                    <option value="ambos">Ambos os Atributos Defensivos</option>
+                    {conversionType === 'single' ? (
+                      <>
+                        <option value="attr1">
+                          Apenas no Atributo Convertido ({ATTR_CONFIG[conversionAttr]?.name || 'Atributo'} - {conversionPercent}%)
+                        </option>
+                        <option value="attr2">
+                          Apenas em Constituição ({100 - conversionPercent}%)
+                        </option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="attr1">
+                          Apenas no 1º Atributo ({ATTR_CONFIG[splitAttr1]?.name || '1º Atributo'} - {splitPercent1}%)
+                        </option>
+                        <option value="attr2">
+                          Apenas no 2º Atributo ({ATTR_CONFIG[splitAttr2]?.name || '2º Atributo'} - {splitPercent2}%)
+                        </option>
+                      </>
+                    )}
+                  </select>
                 </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="Ex: 20 ou -20"
+                  value={newDefVal || ''}
+                  onChange={(e) => setNewDefVal(Number(e.target.value))}
+                  className="w-full sm:w-32 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                />
+                <input
+                  type="text"
+                  placeholder="Ex: 20 (Escudo mágico), 30 (Peitoral divino)"
+                  value={newDefDesc}
+                  onChange={(e) => setNewDefDesc(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddDefenseBonus();
+                    }
+                  }}
+                  className="w-full flex-1 bg-[var(--fundo1)] px-2.5 py-1.5 rounded-lg text-xs text-[var(--ctexto1)] border border-[var(--bordadg)]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddDefenseBonus}
+                  className="w-full sm:w-auto px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-colors shrink-0"
+                >
+                  Adicionar
+                </button>
               </div>
             </div>
+            <p className="text-[11px] text-[var(--ctexto2)]">
+              Bônus percentuais que reduzem o dano final. Use formato 'valor (descrição)' para identificar os bônus caso deseje. Os valores são SOMADOS antes de aplicar a redução.
+            </p>
+          </div>
 
-            {/* EFEITOS EXTRAS (Vampirismo, Dano em Área, Dano Verdadeiro) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-1.5">
+          {/* 10. EFEITOS EXTRAS */}
+          <div className="bg-[var(--fundo2)] rounded-2xl p-4 sm:p-5 border border-[var(--bordadg)] space-y-3">
+            <h3 className="font-cinzel text-sm font-bold text-[var(--ctexto1)] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>Efeitos extras</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2">
                 <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
-                  <input type="checkbox" checked={vampirismo} onChange={(e) => setVampirismo(e.target.checked)} className="rounded" />
+                  <input type="checkbox" checked={vampirismo} onChange={(e) => setVampirismo(e.target.checked)} className="rounded text-emerald-500 accent-emerald-500" />
                   <Heart className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Vampirismo</span>
+                  <span>Vampirismo:</span>
                 </label>
                 {vampirismo && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pt-1">
                     <input
                       type="number"
                       value={vampirismoPercent}
                       onChange={(e) => setVampirismoPercent(Number(e.target.value))}
-                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
+                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
                     />
                     <span className="text-xs font-bold text-[var(--ctexto2)]">% Cura</span>
                   </div>
                 )}
               </div>
 
-              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-1.5">
+              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2">
                 <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
-                  <input type="checkbox" checked={areaDamage} onChange={(e) => setAreaDamage(e.target.checked)} className="rounded" />
+                  <input type="checkbox" checked={areaDamage} onChange={(e) => setAreaDamage(e.target.checked)} className="rounded text-purple-500 accent-purple-500" />
                   <Activity className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Dano em Área</span>
+                  <span>Dano em área:</span>
                 </label>
                 {areaDamage && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pt-1">
                     <input
                       type="number"
                       value={areaDamagePercent}
                       onChange={(e) => setAreaDamagePercent(Number(e.target.value))}
-                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
+                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
                     />
                     <span className="text-xs font-bold text-[var(--ctexto2)]">% Dano</span>
                   </div>
                 )}
               </div>
 
-              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-1.5">
+              <div className="bg-[var(--fundo3)] p-3 rounded-xl border border-[var(--bordadg)] space-y-2">
                 <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ctexto1)] cursor-pointer">
-                  <input type="checkbox" checked={trueDamage} onChange={(e) => setTrueDamage(e.target.checked)} className="rounded" />
+                  <input type="checkbox" checked={trueDamage} onChange={(e) => setTrueDamage(e.target.checked)} className="rounded text-rose-500 accent-rose-500" />
                   <Flame className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Dano Verdadeiro</span>
+                  <span>Dano verdadeiro:</span>
                 </label>
                 {trueDamage && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pt-1">
                     <input
                       type="number"
                       value={trueDamagePercent}
                       onChange={(e) => setTrueDamagePercent(Number(e.target.value))}
-                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold"
+                      className="w-20 bg-[var(--fundo1)] px-2 py-1 rounded text-xs text-center font-mono font-bold border border-[var(--bordadg)]"
                     />
                     <span className="text-xs font-bold text-[var(--ctexto2)]">% Ignora</span>
                   </div>
                 )}
               </div>
             </div>
-
           </div>
 
           {/* CALCULATE DAMAGE BUTTON */}
