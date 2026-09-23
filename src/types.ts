@@ -143,6 +143,7 @@ export interface FichaPersonagem {
 export interface SupabaseConfig {
   url: string;
   anonKey: string;
+  publishableKey?: string;
   isConnected: boolean;
   lastTested?: string;
 }

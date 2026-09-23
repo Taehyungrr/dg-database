@@ -19,15 +19,20 @@ let supabaseInstance: SupabaseClient | null = null;
 
 /**
  * Gets Supabase configuration from environment variables or saved cache
+ * Supports both modern Supabase Publishable Key (sb_pub_... / pk_...) and legacy Anon Key
  */
 export function getSavedSupabaseConfig(): SupabaseConfig {
   const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-  const envKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
+  const envKey = 
+    (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 
+    '';
 
   if (envUrl && envKey) {
     return {
       url: envUrl,
       anonKey: envKey,
+      publishableKey: envKey,
       isConnected: true,
       lastTested: new Date().toISOString()
     };
@@ -37,8 +42,13 @@ export function getSavedSupabaseConfig(): SupabaseConfig {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.url && parsed.anonKey) {
-        return parsed;
+      const key = parsed?.publishableKey || parsed?.anonKey;
+      if (parsed && parsed.url && key) {
+        return {
+          ...parsed,
+          anonKey: key,
+          publishableKey: key
+        };
       }
     }
   } catch (e) {
@@ -48,6 +58,7 @@ export function getSavedSupabaseConfig(): SupabaseConfig {
   return {
     url: '',
     anonKey: '',
+    publishableKey: '',
     isConnected: false
   };
 }
@@ -58,9 +69,10 @@ export function getSavedSupabaseConfig(): SupabaseConfig {
 export function getSupabaseClient(): SupabaseClient | null {
   if (!supabaseInstance) {
     const config = getSavedSupabaseConfig();
-    if (config.url && config.anonKey) {
+    const clientKey = config.publishableKey || config.anonKey;
+    if (config.url && clientKey) {
       try {
-        supabaseInstance = createClient(config.url, config.anonKey);
+        supabaseInstance = createClient(config.url, clientKey);
       } catch (e) {
         console.error('Falha ao inicializar cliente Supabase:', e);
         supabaseInstance = null;
@@ -73,11 +85,14 @@ export function getSupabaseClient(): SupabaseClient | null {
 /**
  * Saves Supabase config to local storage and re-initializes client
  */
-export function saveSupabaseConfig(url: string, anonKey: string): SupabaseConfig {
+export function saveSupabaseConfig(url: string, keyOrAnon: string): SupabaseConfig {
+  const cleanKey = keyOrAnon.trim();
+  const cleanUrl = url.trim();
   const config: SupabaseConfig = {
-    url: url.trim(),
-    anonKey: anonKey.trim(),
-    isConnected: Boolean(url.trim() && anonKey.trim()),
+    url: cleanUrl,
+    anonKey: cleanKey,
+    publishableKey: cleanKey,
+    isConnected: Boolean(cleanUrl && cleanKey),
     lastTested: new Date().toISOString()
   };
   try {
@@ -86,9 +101,9 @@ export function saveSupabaseConfig(url: string, anonKey: string): SupabaseConfig
     console.error('Erro ao salvar config no localStorage:', e);
   }
   supabaseInstance = null;
-  if (config.url && config.anonKey) {
+  if (config.url && cleanKey) {
     try {
-      supabaseInstance = createClient(config.url, config.anonKey);
+      supabaseInstance = createClient(config.url, cleanKey);
     } catch (e) {
       console.error('Falha ao instanciar Supabase:', e);
     }
