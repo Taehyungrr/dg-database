@@ -406,20 +406,27 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
             // Compute sheet powers accounting for both purchased powers and free Tronco levels
             const leg1 = sheet.legado_deus_id_1 || 'poseidon';
             const leg2 = sheet.legado_deus_id_2 || 'atena';
+            const g1 = deuses.find((d) => d.id === leg1);
+            const g2 = deuses.find((d) => d.id === leg2);
+            const isDeusSemideus = isSheetLegado && sheet.legado_tipo === 'deus_semideus';
             const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
             const deityRamos = isSheetLegado
-              ? ramos
-                  .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
-                  .sort((a, b) => {
-                    if (a.deus_id !== b.deus_id) {
-                      if (a.deus_id === leg1) return -1;
-                      if (b.deus_id === leg1) return 1;
-                      if (a.deus_id === leg2) return -1;
-                      if (b.deus_id === leg2) return 1;
-                      return a.deus_id.localeCompare(b.deus_id);
-                    }
-                    return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
-                  })
+              ? (isDeusSemideus
+                  ? ramos
+                      .filter((r) => r.deus_id === leg1)
+                      .sort((a, b) => (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99))
+                  : ramos
+                      .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
+                      .sort((a, b) => {
+                        if (a.deus_id !== b.deus_id) {
+                          if (a.deus_id === leg1) return -1;
+                          if (b.deus_id === leg1) return 1;
+                          if (a.deus_id === leg2) return -1;
+                          if (b.deus_id === leg2) return 1;
+                          return a.deus_id.localeCompare(b.deus_id);
+                        }
+                        return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
+                      }))
               : [...ramos.filter((r) => r.deus_id === sheet.deus_id)].sort(
                   (a, b) => (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99)
                 );
@@ -432,7 +439,10 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
               deityPoderes,
               deityRamos,
               sheet.item_ponto_poder,
-              isSheetLegado
+              isSheetLegado,
+              sheet.legado_tipo,
+              leg1,
+              leg2
             );
 
             const sheetExp = sheet.exp || 0;
@@ -468,7 +478,13 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                     {godIcon && (
                       <GameIcon icon={godIcon} className="text-xs shrink-0" style={{ color: godColor }} />
                     )}
-                    <span>{deus?.nome_grego_romano || 'Olimpiano'}</span>
+                    <span>
+                      {isSheetLegado
+                        ? (isDeusSemideus
+                            ? `Legado (${g1?.nome_grego_romano || 'Principal'} / Eco: ${g2?.nome_grego_romano || 'Eco'})`
+                            : `Legado (${g1?.nome_grego_romano || 'Div 1'} + ${g2?.nome_grego_romano || 'Div 2'})`)
+                        : (deus?.nome_grego_romano || 'Olimpiano')}
+                    </span>
                   </div>
 
                   {/* EXP Progress Bar Integrada com Nível */}
@@ -588,7 +604,8 @@ export const CharacterSheetsView: React.FC<CharacterSheetsViewProps> = ({
                         <div className="space-y-1.5">
                           {ramosWithAcquiredPowers.map(({ ramo, powers: ramoPowersList }) => {
                             const god = deuses.find((d) => d.id === ramo.deus_id);
-                            const godName = isSheetLegado && god ? god.nome_grego_romano : '';
+                            const isDoubleLegado = isSheetLegado && sheet.legado_tipo !== 'deus_semideus';
+                            const godName = isDoubleLegado && god ? god.nome_grego_romano : '';
                             const displayBranchName = ramo.tipo === 'tronco'
                               ? (godName ? `Tronco (${godName})` : 'Tronco')
                               : (godName ? `${ramo.nome} (${godName})` : ramo.nome);

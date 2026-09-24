@@ -1,17 +1,23 @@
-import { AtributosPersonagem, Poder, Ramo, StatusCalculados, Deus } from '../types';
+import { AtributosPersonagem, Poder, Ramo, StatusCalculados, Deus, LegadoTipo } from '../types';
 import { normalizeSearchText } from './textUtils';
 
 /**
  * Combines the main attributes of two deities for a Legado character.
  * e.g., God 1: "Poder Mágico / Intelecto", God 2: "Natureza / Destreza"
  * Result: "Poder Mágico / Intelecto / Natureza / Destreza"
+ * For "Deus + Semideus", returns only the main attributes of God 1 (Divindade Principal).
  */
 export function getLegadoCombinedAtributos(
   legado1Id: string | undefined,
   legado2Id: string | undefined,
-  allDeuses: Deus[]
+  allDeuses: Deus[],
+  legadoTipo: LegadoTipo = 'semideus_semideus'
 ): string {
   const g1 = allDeuses.find((d) => d.id === legado1Id);
+  if (legadoTipo === 'deus_semideus') {
+    return g1?.atributos_principais || 'Linhagem Divina';
+  }
+
   const g2 = allDeuses.find((d) => d.id === legado2Id);
 
   const raw1 = g1?.atributos_principais || '';
@@ -51,13 +57,12 @@ export interface PowerCostInfo {
 /**
  * Determines which power IDs qualify for Free Level 1 Tronco status.
  *
- * For Normal God:
+ * For Normal God & "Deus + Semideus":
  *   - Powers 1, 2, 3, 4 of the single Tronco branch get free Level 1 at character levels >= 1, 2, 3, 4.
  *
- * For Legado:
+ * For "Semideus + Semideus":
  *   - Legado has 2 Tronco branches (one per chosen divinity).
- *   - Unlocks 1 free slot every 2 levels (level 2 -> 1, level 4 -> 2, level 6 -> 3, level 8+ -> 4 max).
- *   - Constraint: Max 2 powers from Divinity 1's Tronco and Max 2 powers from Divinity 2's Tronco.
+ *   - Unlocks 1 free slot per level up to level 4 (max 4 slots total, max 2 per god's tronco).
  *   - Selected by user investment (purchased powers take priority), up to 2 per tronco and up to maxFreeSlots total.
  */
 export function getFreeTroncoPowerIds(
@@ -65,12 +70,13 @@ export function getFreeTroncoPowerIds(
   purchasedPowers: Record<string, number>,
   allPowers: Poder[],
   allRamos: Ramo[],
-  isLegado: boolean = false
+  isLegado: boolean = false,
+  legadoTipo: LegadoTipo = 'semideus_semideus'
 ): Set<string> {
   const freeSet = new Set<string>();
 
-  if (!isLegado) {
-    // Normal God Logic: Powers 1, 2, 3, 4 of tronco at levels >= 1, 2, 3, 4
+  if (!isLegado || legadoTipo === 'deus_semideus') {
+    // Normal God / Deus + Semideus Logic: Powers 1, 2, 3, 4 of tronco at levels >= 1, 2, 3, 4
     const troncoRamos = allRamos.filter((r) => r.tipo === 'tronco');
     const troncoBranchIds = new Set(troncoRamos.map((r) => r.id));
 
@@ -86,8 +92,8 @@ export function getFreeTroncoPowerIds(
     return freeSet;
   }
 
-  // Legado Logic:
-  const maxFreeSlots = Math.min(4, Math.floor(characterLevel / 2));
+  // Semideus + Semideus Logic:
+  const maxFreeSlots = Math.min(4, Math.max(0, characterLevel));
   if (maxFreeSlots <= 0) return freeSet;
 
   const troncoRamos = allRamos.filter((r) => r.tipo === 'tronco');
@@ -142,12 +148,13 @@ export function isPowerEligibleForFreeTroncoLvl1(
   power: Poder,
   ramo: Ramo | undefined,
   characterLevel: number,
-  isLegado: boolean = false
+  isLegado: boolean = false,
+  legadoTipo: LegadoTipo = 'semideus_semideus'
 ): boolean {
   if (!ramo || ramo.tipo !== 'tronco') return false;
 
-  if (isLegado) {
-    const maxFreeSlots = Math.min(4, Math.floor(characterLevel / 2));
+  if (isLegado && legadoTipo === 'semideus_semideus') {
+    const maxFreeSlots = Math.min(4, Math.max(0, characterLevel));
     return maxFreeSlots > 0;
   } else {
     if (power.numero === 1 && characterLevel >= 1) return true;
@@ -206,15 +213,17 @@ export function getPowerCostInfo(
   characterLevel: number,
   purchasedLevel: number, // 0, 1, 2, or 3
   isLegado: boolean = false,
-  isFreeLvl1Override?: boolean
+  isFreeLvl1Override?: boolean,
+  legadoTipo: LegadoTipo = 'semideus_semideus'
 ): PowerCostInfo {
   const isTronco = ramo?.tipo === 'tronco';
-  const isFreeLvl1 = isFreeLvl1Override ?? isPowerEligibleForFreeTroncoLvl1(power, ramo, characterLevel, isLegado);
+  const isFreeLvl1 = isFreeLvl1Override ?? isPowerEligibleForFreeTroncoLvl1(power, ramo, characterLevel, isLegado, legadoTipo);
   
   // Effective level:
-  // For normal gods, free tronco level 1 powers are granted automatically at character levels >= power.numero.
-  // For Legado, NO power is active unless explicitly chosen/purchased by the user (purchasedLevel > 0).
-  const effectiveLevel = (isFreeLvl1 && !isLegado) ? Math.max(1, purchasedLevel) : purchasedLevel;
+  // For normal gods and Deus + Semideus, free tronco level 1 powers are granted automatically at character levels >= power.numero.
+  // For Semideus + Semideus, NO power is active unless explicitly chosen/purchased by the user (purchasedLevel > 0).
+  const isDoubleLegado = isLegado && legadoTipo === 'semideus_semideus';
+  const effectiveLevel = (isFreeLvl1 && !isDoubleLegado) ? Math.max(1, purchasedLevel) : purchasedLevel;
   const pointsSpentOnThisPower = calculatePointsForPower(effectiveLevel, isFreeLvl1);
   const costToNextLevel = getUpgradeCost(effectiveLevel, isFreeLvl1);
 
@@ -234,13 +243,17 @@ export function getPowerCostInfo(
 }
 
 export interface SheetCalculationResult {
-  totalPointsAvailable: number; // Equals character level (1-40 for god, floor(lvl/2) max 25 at lvl 50 for Legado)
+  totalPointsAvailable: number; // Equals character level (1-40, max 40 pts, +1 with power item)
   totalPointsSpent: number;
   pointsRemaining: number;
   isOverspent: boolean;
   isOverLimit: boolean;
   poderesCount: number;
   powerDetails: Record<string, PowerCostInfo>;
+  god1PointsSpent?: number;
+  god2PointsSpent?: number;
+  god1OverLimit?: boolean;
+  god2OverLimit?: boolean;
 }
 
 /**
@@ -252,55 +265,77 @@ export function calculateSheetPoints(
   allPowers: Poder[],
   allRamos: Ramo[],
   hasPowerPointItem: boolean = false,
-  isLegado: boolean = false
+  isLegado: boolean = false,
+  legadoTipo: LegadoTipo = 'semideus_semideus',
+  legado1Id?: string,
+  legado2Id?: string
 ): SheetCalculationResult {
-  const maxLvl = isLegado ? 50 : 40;
+  const maxLvl = 40;
   const clampedLevel = Math.min(maxLvl, Math.max(1, characterLevel));
   
-  // Normal god gets 1 pt per level (up to lvl 40). Legado gets 1 pt every 2 levels starting at lvl 2 (floor(lvl / 2), up to lvl 50 = 25 pts)
-  const basePoints = isLegado ? Math.floor(clampedLevel / 2) : clampedLevel;
+  // Both normal god and legados (Semideus + Semideus or Deus + Semideus) gain 1 pt per level (1 to 40)
+  const basePoints = clampedLevel;
   const totalPointsAvailable = basePoints + (hasPowerPointItem ? 1 : 0);
   let totalPointsSpent = 0;
   let activePowersCount = 0;
   const powerDetails: Record<string, PowerCostInfo> = {};
 
-  const freeTroncoSet = getFreeTroncoPowerIds(clampedLevel, purchasedPowers, allPowers, allRamos, isLegado);
+  const freeTroncoSet = getFreeTroncoPowerIds(clampedLevel, purchasedPowers, allPowers, allRamos, isLegado, legadoTipo);
 
   const ramosMap = new Map<string, Ramo>();
   allRamos.forEach((r) => ramosMap.set(r.id, r));
+
+  let god1PointsSpent = 0;
+  let god2PointsSpent = 0;
 
   allPowers.forEach((power) => {
     const ramo = ramosMap.get(power.ramo_id);
     const rawPurchased = purchasedPowers[power.id] || 0;
     const isFreeLvl1 = freeTroncoSet.has(power.id);
 
-    const costInfo = getPowerCostInfo(power, ramo, clampedLevel, rawPurchased, isLegado, isFreeLvl1);
+    const costInfo = getPowerCostInfo(power, ramo, clampedLevel, rawPurchased, isLegado, isFreeLvl1, legadoTipo);
     powerDetails[power.id] = costInfo;
     totalPointsSpent += costInfo.pointsSpentOnThisPower;
     if (costInfo.effectiveLevel > 0) {
       activePowersCount += 1;
     }
+
+    if (isLegado && legadoTipo === 'semideus_semideus' && ramo) {
+      if (legado1Id && ramo.deus_id === legado1Id) {
+        god1PointsSpent += costInfo.pointsSpentOnThisPower;
+      } else if (legado2Id && ramo.deus_id === legado2Id) {
+        god2PointsSpent += costInfo.pointsSpentOnThisPower;
+      }
+    }
   });
 
   const pointsRemaining = totalPointsAvailable - totalPointsSpent;
   const isOverspent = pointsRemaining < 0;
+  const isSemideusSemideus = isLegado && legadoTipo === 'semideus_semideus';
+  const god1OverLimit = isSemideusSemideus ? god1PointsSpent > 20 : false;
+  const god2OverLimit = isSemideusSemideus ? god2PointsSpent > 20 : false;
+  const isOverLimit = isOverspent || god1OverLimit || god2OverLimit;
 
   return {
     totalPointsAvailable,
     totalPointsSpent,
     pointsRemaining,
     isOverspent,
-    isOverLimit: isOverspent,
+    isOverLimit,
     poderesCount: activePowersCount,
-    powerDetails
+    powerDetails,
+    god1PointsSpent,
+    god2PointsSpent,
+    god1OverLimit,
+    god2OverLimit
   };
 }
 
 /**
- * Calculates attribute points available (earned at even levels from 1 to 40, or 50 for Legado, max 20 or 25).
+ * Calculates attribute points available (earned at even levels from 1 to 40, max 20).
  */
-export function getAttributePointsBudget(characterLevel: number, isLegado: boolean = false): number {
-  const maxLvl = isLegado ? 50 : 40;
+export function getAttributePointsBudget(characterLevel: number, _isLegado: boolean = false): number {
+  const maxLvl = 40;
   const cappedLevel = Math.min(maxLvl, Math.max(1, characterLevel));
   return Math.floor(cappedLevel / 2);
 }

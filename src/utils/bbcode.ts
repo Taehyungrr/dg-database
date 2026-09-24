@@ -73,7 +73,10 @@ export function generateForumBBCode(
       poderes,
       ramos,
       baseFicha.item_ponto_poder,
-      baseFicha.deus_id === 'legado'
+      baseFicha.deus_id === 'legado',
+      baseFicha.legado_tipo,
+      baseFicha.legado_deus_id_1,
+      baseFicha.legado_deus_id_2
     );
   }
 
@@ -191,7 +194,8 @@ export function generateForumBBCode(
 
     let branchHeader = '';
     const god = deuses?.find((d) => d.id === ramo.deus_id);
-    const godName = isLegado && god ? god.nome_grego_romano : '';
+    const isDoubleLegado = isLegado && ficha.legado_tipo !== 'deus_semideus';
+    const godName = isDoubleLegado && god ? god.nome_grego_romano : '';
 
     if (ramo.tipo === 'tronco') {
       branchHeader = godName ? `[h2]Tronco (${godName})[/h2]` : '[h2]Tronco[/h2]';

@@ -74,9 +74,13 @@ const checkDeityAttributeMatch = (
 
   if (sheet?.deus_id === 'legado' && allDeuses) {
     const g1 = allDeuses.find((d) => d.id === sheet.legado_deus_id_1);
-    const g2 = allDeuses.find((d) => d.id === sheet.legado_deus_id_2);
-    str += ' ' + (g1?.atributos_principais || '') + ' ' + (g2?.atributos_principais || '');
-    str = str.toLowerCase();
+    if (sheet.legado_tipo === 'deus_semideus') {
+      str = (g1?.atributos_principais || '').toLowerCase();
+    } else {
+      const g2 = allDeuses.find((d) => d.id === sheet.legado_deus_id_2);
+      str += ' ' + (g1?.atributos_principais || '') + ' ' + (g2?.atributos_principais || '');
+      str = str.toLowerCase();
+    }
   }
 
   if (targetAttr === 'inteligencia') {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Deus, Ramo, Poder, FichaPersonagem, AtributosPersonagem } from '../types';
+import { Deus, Ramo, Poder, FichaPersonagem, AtributosPersonagem, LegadoTipo } from '../types';
 import { INITIAL_DEUSES } from '../data/defaultData';
 import { 
   calculateSheetPoints, 
@@ -44,7 +44,8 @@ import {
   CheckCircle2,
   User,
   BicepsFlexed,
-  Package
+  Package,
+  GitBranch
 } from 'lucide-react';
 
 interface CharacterSheetEditorModalProps {
@@ -91,6 +92,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     onConfirm: () => void;
   } | null>(null);
 
+  const [branchConflictModal, setBranchConflictModal] = useState<{
+    open: boolean;
+    godName: string;
+    newBranchName: string;
+    previousBranchName: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   // Alphabetically sorted deuses, placing Legado at the very end
   const sortedDeuses = [...deuses].sort((a, b) => {
     if (a.id === 'legado') return 1;
@@ -123,6 +132,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       setCopiedBBCode(false);
       setSuggestPlanningModal(null);
       setPlanConflictModal(null);
+      setBranchConflictModal(null);
 
       return () => {
         document.body.style.overflow = originalOverflow;
@@ -138,8 +148,15 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   };
 
   const isLegado = formData.deus_id === 'legado';
+  const legadoTipo: LegadoTipo = formData.legado_tipo || 'semideus_semideus';
+  const isSemideusSemideus = isLegado && legadoTipo === 'semideus_semideus';
+  const isDeusSemideus = isLegado && legadoTipo === 'deus_semideus';
+
   const legado1 = formData.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon';
   const legado2 = formData.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena';
+
+  const god1Obj = deuses.find((d) => d.id === legado1);
+  const god2Obj = deuses.find((d) => d.id === legado2);
 
   const selectedDeus = deuses.find((d) => d.id === formData.deus_id) || deuses[0] || {
     id: 'poseidon',
@@ -151,46 +168,135 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
   const godColor = isLegado ? '#3148BD' : (selectedDeus.cor_hex || '#3b82f6');
   const godIcon = (selectedDeus?.icone_url || selectedDeus?.icone_css || selectedDeus?.simbolo || (selectedDeus as any)?.game_icon || (selectedDeus as any)?.icone || '').trim();
-  const godRamos = isLegado
-    ? ramos.filter((r) => r.deus_id === legado1 || r.deus_id === legado2)
+
+  // All eligible candidate branches for the character
+  // For Deus + Semideus: strictly Divindade Principal (legado1)
+  // For Semideus + Semideus: branches of both gods
+  const allGodRamos = isLegado
+    ? (isDeusSemideus
+        ? ramos.filter((r) => r.deus_id === legado1)
+        : ramos.filter((r) => r.deus_id === legado1 || r.deus_id === legado2))
     : ramos.filter((r) => r.deus_id === selectedDeus.id);
-  const godBranchIds = new Set(godRamos.map((r) => r.id));
-  const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
+  const allGodBranchIds = new Set(allGodRamos.map((r) => r.id));
+  const allGodPoderes = poderes.filter((p) => allGodBranchIds.has(p.ramo_id));
 
   // Active Data Resolution depending on Mode
   const isPlanningMode = editorMode === 'planejamento';
-  const maxLevel = isLegado ? 50 : 40;
+  const maxLevel = 40; // All characters cap power point gains at level 40
 
   // Evolution Data
   const evolutionAttributes: AtributosPersonagem = normalizeAttributes(formData.atributos);
   const evolutionPowers: Record<string, number> = formData.poderes_comprados || {};
-  const evolutionAttrBudget = getAttributePointsBudget(formData.nivel, isLegado);
+  const evolutionAttrBudget = getAttributePointsBudget(formData.nivel);
   const evolutionAttrSpent = getSpentAttributePoints(evolutionAttributes);
   const evolutionAttrRemaining = evolutionAttrBudget - evolutionAttrSpent;
   const evolutionPowersCalc = calculateSheetPoints(
     formData.nivel,
     evolutionPowers,
-    godPoderes,
-    godRamos,
+    allGodPoderes,
+    allGodRamos,
     formData.item_ponto_poder,
-    isLegado
+    isLegado,
+    legadoTipo,
+    legado1,
+    legado2
   );
 
-  // Planning Data (Simulated at Level 40 for God, Level 50 for Legado)
+  // Planning Data (Simulated at Level 40)
   const planningAttributes: AtributosPersonagem = normalizeAttributes(
     formData.planejamento?.atributos_planejados || formData.atributos
   );
-  const planningPowers: Record<string, number> = formData.planejamento?.poderes_planejados || { ...evolutionPowers };
-  const planningAttrBudget = isLegado ? 25 : 20; // 50 / 2 = 25 pts max for Legado, 40 / 2 = 20 for God
+  const rawPlanningPowers: Record<string, number> = formData.planejamento?.poderes_planejados || { ...evolutionPowers };
+
+  // Semideus + Semideus: Determine chosen non-tronco branches
+  // Evolution branch choice ALWAYS takes precedence over planning!
+  const chosenPlannedBranchGod1 = useMemo(() => {
+    if (!isSemideusSemideus) return null;
+    const nonTroncoRamos = allGodRamos.filter((r) => r.deus_id === legado1 && r.tipo !== 'tronco');
+    // Prioritize branch that has powers in evolution
+    for (const r of nonTroncoRamos) {
+      const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+      if (branchPowers.some((p) => (evolutionPowers[p.id] || 0) > 0)) {
+        return r;
+      }
+    }
+    // Fall back to branch in planning
+    for (const r of nonTroncoRamos) {
+      const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+      if (branchPowers.some((p) => (rawPlanningPowers[p.id] || 0) > 0)) {
+        return r;
+      }
+    }
+    return null;
+  }, [isSemideusSemideus, allGodRamos, legado1, poderes, evolutionPowers, rawPlanningPowers]);
+
+  const chosenPlannedBranchGod2 = useMemo(() => {
+    if (!isSemideusSemideus) return null;
+    const nonTroncoRamos = allGodRamos.filter((r) => r.deus_id === legado2 && r.tipo !== 'tronco');
+    // Prioritize branch that has powers in evolution
+    for (const r of nonTroncoRamos) {
+      const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+      if (branchPowers.some((p) => (evolutionPowers[p.id] || 0) > 0)) {
+        return r;
+      }
+    }
+    // Fall back to branch in planning
+    for (const r of nonTroncoRamos) {
+      const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+      if (branchPowers.some((p) => (rawPlanningPowers[p.id] || 0) > 0)) {
+        return r;
+      }
+    }
+    return null;
+  }, [isSemideusSemideus, allGodRamos, legado2, poderes, evolutionPowers, rawPlanningPowers]);
+
+  // Clean planningPowers so that any stray powers from non-active branches are never counted in calculations
+  const planningPowers: Record<string, number> = useMemo(() => {
+    if (!isSemideusSemideus) return rawPlanningPowers;
+    const sanitized = { ...rawPlanningPowers };
+
+    if (chosenPlannedBranchGod1) {
+      const otherBranchIds1 = new Set(
+        allGodRamos
+          .filter((r) => r.deus_id === legado1 && r.tipo !== 'tronco' && r.id !== chosenPlannedBranchGod1.id)
+          .map((r) => r.id)
+      );
+      poderes.forEach((p) => {
+        if (otherBranchIds1.has(p.ramo_id)) {
+          delete sanitized[p.id];
+        }
+      });
+    }
+
+    if (chosenPlannedBranchGod2) {
+      const otherBranchIds2 = new Set(
+        allGodRamos
+          .filter((r) => r.deus_id === legado2 && r.tipo !== 'tronco' && r.id !== chosenPlannedBranchGod2.id)
+          .map((r) => r.id)
+      );
+      poderes.forEach((p) => {
+        if (otherBranchIds2.has(p.ramo_id)) {
+          delete sanitized[p.id];
+        }
+      });
+    }
+
+    return sanitized;
+  }, [isSemideusSemideus, rawPlanningPowers, chosenPlannedBranchGod1, chosenPlannedBranchGod2, allGodRamos, legado1, legado2, poderes]);
+
+  const planningAttrBudget = 20; // 40 / 2 = 20 pts max
   const planningAttrSpent = getSpentAttributePoints(planningAttributes);
   const planningAttrRemaining = planningAttrBudget - planningAttrSpent;
   const planningPowersCalc = calculateSheetPoints(
     maxLevel,
     planningPowers,
-    godPoderes,
-    godRamos,
+    allGodPoderes,
+    allGodRamos,
     formData.item_ponto_poder,
-    isLegado
+    isLegado,
+    legadoTipo,
+    legado1,
+    legado2
   );
 
   // Active references based on current mode
@@ -199,6 +305,58 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   const attributePointsSpent = isPlanningMode ? planningAttrSpent : evolutionAttrSpent;
   const attributePointsRemaining = isPlanningMode ? planningAttrRemaining : evolutionAttrRemaining;
   const calcResult = isPlanningMode ? planningPowersCalc : evolutionPowersCalc;
+  const activePowers = isPlanningMode ? planningPowers : evolutionPowers;
+
+  // Semideus + Semideus branch locking and hiding:
+  // In Evolution mode: only lock to a branch if a branch has active powers in evolution. (Allows picking any branch freely!)
+  // In Planning mode: locks to evolution branch if present, otherwise to planned branch.
+  const chosenRamoGod1 = useMemo(() => {
+    if (!isSemideusSemideus) return null;
+    if (!isPlanningMode) {
+      const nonTroncoRamos = allGodRamos.filter((r) => r.deus_id === legado1 && r.tipo !== 'tronco');
+      for (const r of nonTroncoRamos) {
+        const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+        if (branchPowers.some((p) => (evolutionPowers[p.id] || 0) > 0)) {
+          return r;
+        }
+      }
+      return null;
+    }
+    return chosenPlannedBranchGod1;
+  }, [isSemideusSemideus, isPlanningMode, allGodRamos, legado1, poderes, evolutionPowers, chosenPlannedBranchGod1]);
+
+  const chosenRamoGod2 = useMemo(() => {
+    if (!isSemideusSemideus) return null;
+    if (!isPlanningMode) {
+      const nonTroncoRamos = allGodRamos.filter((r) => r.deus_id === legado2 && r.tipo !== 'tronco');
+      for (const r of nonTroncoRamos) {
+        const branchPowers = poderes.filter((p) => p.ramo_id === r.id);
+        if (branchPowers.some((p) => (evolutionPowers[p.id] || 0) > 0)) {
+          return r;
+        }
+      }
+      return null;
+    }
+    return chosenPlannedBranchGod2;
+  }, [isSemideusSemideus, isPlanningMode, allGodRamos, legado2, poderes, evolutionPowers, chosenPlannedBranchGod2]);
+
+  // Visible branches for the UI (hides non-chosen branches when a branch is selected in Semideus + Semideus)
+  const visibleGodRamos = useMemo(() => {
+    if (!isSemideusSemideus) return allGodRamos;
+    return allGodRamos.filter((r) => {
+      if (r.tipo === 'tronco') return true; // Keep both troncos always
+      if (r.deus_id === legado1) {
+        return !chosenRamoGod1 || r.id === chosenRamoGod1.id;
+      }
+      if (r.deus_id === legado2) {
+        return !chosenRamoGod2 || r.id === chosenRamoGod2.id;
+      }
+      return true;
+    });
+  }, [isSemideusSemideus, allGodRamos, legado1, legado2, chosenRamoGod1, chosenRamoGod2]);
+
+  const godBranchIds = useMemo(() => new Set(visibleGodRamos.map((r) => r.id)), [visibleGodRamos]);
+  const godPoderes = useMemo(() => poderes.filter((p) => godBranchIds.has(p.ramo_id)), [poderes, godBranchIds]);
 
   // Combat Status Calculations (Vida, Mana, Vigor) - calculated based on character's actual level & current active attributes
   const statusLevel = isPlanningMode ? 40 : formData.nivel;
@@ -415,6 +573,26 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         }
 
         const updatedPlanPowers = { ...(prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }) };
+
+        // For Semideus + Semideus: if investing in a non-tronco branch in evolution,
+        // automatically purge any powers belonging to other non-tronco branches of that god from planning!
+        if (isSemideusSemideus && targetLevel > 0) {
+          const powerObj = allGodPoderes.find((p) => p.id === poderId);
+          const ramoObj = allGodRamos.find((r) => r.id === powerObj?.ramo_id);
+          if (ramoObj && ramoObj.tipo !== 'tronco') {
+            const otherBranchIdsOfThisGod = new Set(
+              allGodRamos
+                .filter((r) => r.deus_id === ramoObj.deus_id && r.tipo !== 'tronco' && r.id !== ramoObj.id)
+                .map((r) => r.id)
+            );
+            poderes.forEach((p) => {
+              if (otherBranchIdsOfThisGod.has(p.ramo_id)) {
+                delete updatedPlanPowers[p.id];
+              }
+            });
+          }
+        }
+
         if (targetLevel > (updatedPlanPowers[poderId] || 0)) {
           updatedPlanPowers[poderId] = targetLevel;
         }
@@ -442,30 +620,78 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       return;
     }
 
+    // Power and branch identification
+    const targetPower = allGodPoderes.find((p) => p.id === poderId);
+    const targetRamo = allGodRamos.find((r) => r.id === targetPower?.ramo_id);
+
+    // Rule 1: For Semideus + Semideus, only 1 non-tronco branch per god is allowed
+    if (isSemideusSemideus && targetRamo && targetRamo.tipo !== 'tronco') {
+      if (targetRamo.deus_id === legado1 && chosenRamoGod1 && chosenRamoGod1.id !== targetRamo.id) {
+        showToast(`Você já escolheu o ramo "${chosenRamoGod1.nome}" para ${god1Obj?.nome_grego_romano || 'Divindade 1'}. Cada divindade só pode ter 1 ramo ativo além do Tronco.`);
+        return;
+      }
+      if (targetRamo.deus_id === legado2 && chosenRamoGod2 && chosenRamoGod2.id !== targetRamo.id) {
+        showToast(`Você já escolheu o ramo "${chosenRamoGod2.nome}" para ${god2Obj?.nome_grego_romano || 'Divindade 2'}. Cada divindade só pode ter 1 ramo ativo além do Tronco.`);
+        return;
+      }
+    }
+
     // Increasing level check
     const testPurchased = { ...activePowers };
     testPurchased[poderId] = targetLevel;
 
+    // Rule 2: For Semideus + Semideus, max 20 points per god
+    if (isSemideusSemideus && targetRamo) {
+      const testPerGodResult = calculateSheetPoints(
+        isPlanningMode ? 40 : formData.nivel,
+        testPurchased,
+        allGodPoderes,
+        allGodRamos,
+        formData.item_ponto_poder,
+        isLegado,
+        legadoTipo,
+        legado1,
+        legado2
+      );
+
+      const targetGodId = targetRamo.deus_id;
+      const targetGodName = targetGodId === legado1
+        ? (god1Obj?.nome_grego_romano || 'Divindade 1')
+        : (god2Obj?.nome_grego_romano || 'Divindade 2');
+      const targetGodSpent = targetGodId === legado1
+        ? (testPerGodResult.god1PointsSpent || 0)
+        : (testPerGodResult.god2PointsSpent || 0);
+
+      if (targetGodSpent > 20) {
+        showToast(`Limite de 20 pontos de poder gastos em ${targetGodName} atingido! (${targetGodSpent}/20 pts)`);
+        return;
+      }
+    }
+
     const testResult = calculateSheetPoints(
       isPlanningMode ? 40 : formData.nivel,
       testPurchased,
-      godPoderes,
-      godRamos,
-      formData.item_ponto_poder
+      allGodPoderes,
+      allGodRamos,
+      formData.item_ponto_poder,
+      isLegado,
+      legadoTipo,
+      legado1,
+      legado2
     );
 
     if (testResult.pointsRemaining < 0) {
       if (!isPlanningMode) {
         // Trigger Suggest Planning Mode Popup instead of simple block!
-        const powerObj = godPoderes.find((p) => p.id === poderId);
+        const powerObj = allGodPoderes.find((p) => p.id === poderId);
         setSuggestPlanningModal({
           open: true,
           reason: `Você não possui pontos de poder suficientes no seu nível atual (Nível ${formData.nivel}) para adquirir o Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}".`,
           pendingAction: () => {
             setEditorMode('planejamento');
             const testPlan = { ...planningPowers, [poderId]: targetLevel };
-            const testPlanResult = calculateSheetPoints(40, testPlan, godPoderes, godRamos, formData.item_ponto_poder);
-            if (testPlanResult.pointsRemaining >= 0) {
+            const testPlanResult = calculateSheetPoints(40, testPlan, allGodPoderes, allGodRamos, formData.item_ponto_poder, isLegado, legadoTipo, legado1, legado2);
+            if (testPlanResult.pointsRemaining >= 0 && (!isSemideusSemideus || (!testPlanResult.god1OverLimit && !testPlanResult.god2OverLimit))) {
               applyPowerChange(poderId, targetLevel, true);
               showToast(`Entrou no Modo Planejamento e adicionou Nível ${targetLevel} de "${powerObj?.nome || 'Poder'}"!`);
             } else {
@@ -480,6 +706,71 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
       }
     }
 
+    // Branch divergence check: In Evolution Mode, if a different branch was chosen in planning
+    if (!isPlanningMode && isSemideusSemideus && targetRamo && targetRamo.tipo !== 'tronco') {
+      const targetGodId = targetRamo.deus_id;
+      const targetGodName = targetGodId === legado1
+        ? (god1Obj?.nome_grego_romano || 'Divindade 1')
+        : (god2Obj?.nome_grego_romano || 'Divindade 2');
+
+      const otherPlannedBranch = allGodRamos.find((r) =>
+        r.deus_id === targetGodId &&
+        r.tipo !== 'tronco' &&
+        r.id !== targetRamo.id &&
+        poderes.some((p) => p.ramo_id === r.id && (formData.planejamento?.poderes_planejados?.[p.id] || 0) > 0)
+      );
+
+      const hasEvolutionInTargetBranch = poderes
+        .filter((p) => p.ramo_id === targetRamo.id)
+        .some((p) => (evolutionPowers[p.id] || 0) > 0);
+
+      if (otherPlannedBranch && !hasEvolutionInTargetBranch) {
+        setBranchConflictModal({
+          open: true,
+          godName: targetGodName,
+          newBranchName: targetRamo.nome,
+          previousBranchName: otherPlannedBranch.nome,
+          onConfirm: () => {
+            // Apply change to evolution and clean other branches of this god from planning
+            setFormData((prev) => {
+              const updatedEvol = { ...(prev.poderes_comprados || {}) };
+              updatedEvol[poderId] = targetLevel;
+
+              const updatedPlan = { ...(prev.planejamento?.poderes_planejados || { ...(prev.poderes_comprados || {}) }) };
+              const otherBranchIdsOfThisGod = new Set(
+                allGodRamos
+                  .filter((r) => r.deus_id === targetGodId && r.tipo !== 'tronco' && r.id !== targetRamo.id)
+                  .map((r) => r.id)
+              );
+              poderes.forEach((p) => {
+                if (otherBranchIdsOfThisGod.has(p.ramo_id)) {
+                  delete updatedPlan[p.id];
+                }
+              });
+
+              if (targetLevel > (updatedPlan[poderId] || 0)) {
+                updatedPlan[poderId] = targetLevel;
+              }
+
+              return {
+                ...prev,
+                poderes_comprados: updatedEvol,
+                planejamento: {
+                  ...prev.planejamento,
+                  poderes_planejados: updatedPlan,
+                  atributos_planejados: prev.planejamento?.atributos_planejados || { ...normalizeAttributes(prev.atributos) }
+                }
+              };
+            });
+
+            setBranchConflictModal(null);
+            showToast(`Ramo "${targetRamo.nome}" selecionado na evolução. O planejamento anterior foi atualizado.`);
+          }
+        });
+        return;
+      }
+    }
+
     // If in Evolution Mode and an active power planning exists, check if combining evolution + planned powers exceeds limit
     if (!isPlanningMode && hasActivePowerPlanning) {
       const mergedPlanPowers: Record<string, number> = {
@@ -487,9 +778,9 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         [poderId]: Math.max(planningPowers[poderId] || 0, targetLevel)
       };
 
-      const testMerged = calculateSheetPoints(40, mergedPlanPowers, godPoderes, godRamos, formData.item_ponto_poder);
+      const testMerged = calculateSheetPoints(40, mergedPlanPowers, allGodPoderes, allGodRamos, formData.item_ponto_poder, isLegado, legadoTipo, legado1, legado2);
       if (testMerged.pointsRemaining < 0) {
-        const powerObj = godPoderes.find((p) => p.id === poderId);
+        const powerObj = allGodPoderes.find((p) => p.id === poderId);
         setPlanConflictModal({
           open: true,
           title: 'Limite do Planejamento Excedido',
@@ -551,6 +842,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     setFormData((prev) => ({
       ...prev,
       deus_id: deusId,
+      legado_tipo: isTargetLegado ? (prev.legado_tipo || 'semideus_semideus') : undefined,
       legado_deus_id_1: isTargetLegado ? (prev.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon') : undefined,
       legado_deus_id_2: isTargetLegado ? (prev.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena') : undefined,
       poderes_comprados: {}, // Reset power investments when changing deity
@@ -587,14 +879,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
     return generateForumBBCode(
       formData,
       selectedDeus,
-      godRamos,
+      visibleGodRamos,
       godPoderes,
       evolutionPowersCalc,
       isNew ? null : sheet,
       { onlyDelta: bbcodeMode === 'delta' },
       deuses
     );
-  }, [formData, selectedDeus, godRamos, godPoderes, evolutionPowersCalc, isNew, sheet, bbcodeMode, deuses]);
+  }, [formData, selectedDeus, visibleGodRamos, godPoderes, evolutionPowersCalc, isNew, sheet, bbcodeMode, deuses]);
 
   const handleCopyBBCode = () => {
     navigator.clipboard.writeText(bbcodeContent);
@@ -604,7 +896,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
   // Branch Sorting
   const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
-  const sortedGodRamos = [...godRamos].sort((a, b) => {
+  const sortedGodRamos = [...visibleGodRamos].sort((a, b) => {
     if (isLegado && a.deus_id !== b.deus_id) {
       if (a.deus_id === legado1) return -1;
       if (b.deus_id === legado1) return 1;
@@ -620,6 +912,18 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
   const displayedRamos = activeBranchFilter === 'all'
     ? sortedGodRamos
     : sortedGodRamos.filter((r) => r.tipo === activeBranchFilter || r.id === activeBranchFilter);
+
+  // Automatically keep branch filter valid if active filter branch gets hidden
+  useEffect(() => {
+    if (activeBranchFilter !== 'all') {
+      const stillVisible = visibleGodRamos.some(
+        (r) => r.id === activeBranchFilter || r.tipo === activeBranchFilter
+      );
+      if (!stillVisible) {
+        setActiveBranchFilter('all');
+      }
+    }
+  }, [visibleGodRamos, activeBranchFilter]);
 
   // 9 RPG Attributes Definitions with Dot Color Styling (Max 5 points)
   const attributeDefinitions: {
@@ -848,6 +1152,51 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
         )}
 
         {/* ========================================================================= */}
+        {/* POP-UP: CONFIRMAÇÃO DE DIVERGÊNCIA DE RAMO COM O PLANEJAMENTO              */}
+        {/* ========================================================================= */}
+        {branchConflictModal?.open && (
+          <div className="fixed inset-0 z-[125] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-[var(--fundo2)] border border-amber-500/50 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+                <GitBranch className="w-6 h-6" />
+              </div>
+
+              <div className="text-center space-y-2">
+                <h3 className="font-cinzel text-base font-bold text-[var(--ctexto1)]">
+                  Ramo Diferente do Planejado
+                </h3>
+                <p className="text-xs text-[var(--ctexto2)] leading-relaxed">
+                  O ramo escolhido na evolução (<strong className="text-amber-400 font-semibold">{branchConflictModal.newBranchName}</strong>) é diferente do ramo atualmente definido no planejamento (<strong className="text-[var(--ctexto1)] font-semibold">{branchConflictModal.previousBranchName}</strong>) para <strong>{branchConflictModal.godName}</strong>.
+                </p>
+                <div className="p-3 bg-[var(--fundo1)] rounded-xl border border-[var(--bordadg)] text-xs text-[var(--ctexto1)] text-left">
+                  <p className="text-[11px] text-[var(--ctexto2)] leading-relaxed">
+                    No sistema de Semideus + Semideus, cada divindade pode ter apenas <strong>1 ramo ativo</strong> além do Tronco. Priorizar a evolução irá limpar os poderes do ramo anterior no planejamento e registrar o novo ramo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setBranchConflictModal(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold bg-[var(--fundo3)] hover:bg-[var(--fundo4)] text-[var(--ctexto2)] hover:text-[var(--ctexto1)] border border-[var(--bordadg)] transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={branchConflictModal.onConfirm}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Substituir e Limpar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* MODAL HEADER: CLEAN, UNIFIED WIDESCREEN TOP BAR                           */}
         {/* ========================================================================= */}
         <div 
@@ -857,14 +1206,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
           {/* Left: Character Identity and Level */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div 
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 font-cinzel font-bold text-xs sm:text-base border"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-md shrink-0 border overflow-hidden p-0"
               style={{ 
                 backgroundColor: `${godColor}20`,
                 borderColor: `${godColor}80`
               }}
             >
               {godIcon ? (
-                <GameIcon icon={godIcon} className="text-lg sm:text-xl" style={{ color: godColor }} />
+                <GameIcon icon={godIcon} className="text-[20px] sm:text-[25px] leading-none" style={{ color: godColor }} />
               ) : (
                 <Swords className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: godColor }} />
               )}
@@ -1089,14 +1438,47 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       {/* Seletores Duplos para Legado */}
                       {formData.deus_id === 'legado' && (
                         <div className="mt-2.5 p-3 rounded-xl bg-[#3148BD]/10 border border-[#3148BD]/30 space-y-2.5">
+                          {/* Segundo Seletor: Modalidade de Legado */}
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
+                              Modalidade de Legado
+                            </label>
+                            <select
+                              value={formData.legado_tipo || 'semideus_semideus'}
+                              onChange={(e) => {
+                                const newTipo = e.target.value as LegadoTipo;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  legado_tipo: newTipo,
+                                  poderes_comprados: {},
+                                  planejamento: {
+                                    poderes_planejados: {},
+                                    atributos_planejados: prev.planejamento?.atributos_planejados || { ...prev.atributos }
+                                  }
+                                }));
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-[var(--fundo1)] border border-[var(--bordadg)] rounded-lg text-xs font-semibold text-[var(--ctexto1)] focus:outline-none focus:border-[#3148BD] cursor-pointer"
+                            >
+                              <option value="semideus_semideus" className="bg-[var(--fundo2)] text-[var(--ctexto1)]">
+                                Semideus + Semideus
+                              </option>
+                              <option value="deus_semideus" className="bg-[var(--fundo2)] text-[var(--ctexto1)]">
+                                Deus + Semideus
+                              </option>
+                            </select>
+                          </div>
+
                           <p className="text-[11px] text-[#3148BD] dark:text-blue-300 font-bold flex items-center gap-1">
                             <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#3148BD] dark:text-blue-300" />
-                            Selecione as Duas Divindades da Linhagem de Legado:
+                            {formData.legado_tipo === 'deus_semideus'
+                              ? 'Selecione a Divindade Principal e o Eco:'
+                              : 'Selecione as Duas Divindades da Linhagem de Legado:'}
                           </p>
+
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <div className="space-y-1">
                               <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
-                                Divindade 1
+                                {formData.legado_tipo === 'deus_semideus' ? 'Divindade Principal' : 'Divindade 1'}
                               </label>
                               <select
                                 value={formData.legado_deus_id_1 || nonLegadoDeuses[0]?.id || 'poseidon'}
@@ -1113,7 +1495,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
 
                             <div className="space-y-1">
                               <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
-                                Divindade 2
+                                {formData.legado_tipo === 'deus_semideus' ? 'Eco' : 'Divindade 2'}
                               </label>
                               <select
                                 value={formData.legado_deus_id_2 || nonLegadoDeuses[1]?.id || 'atena'}
@@ -1128,6 +1510,12 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                               </select>
                             </div>
                           </div>
+
+                          <p className="text-[10px] text-[var(--ctexto2)] italic">
+                            {formData.legado_tipo === 'deus_semideus'
+                              ? 'Na modalidade Deus + Semideus, o personagem acessa os poderes da Divindade Principal sem restrições (40 pontos livres). O Eco confere a linhagem de legado.'
+                              : 'Na modalidade Semideus + Semideus, ganha 1 ponto de poder todo nível (1 a 40), com limite de 20 pontos e no máximo 1 ramo escolhido por divindade.'}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1137,7 +1525,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                       <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--ctexto2)]">
                         <span>Nível Real (1 a 70)</span>
                         <span className="font-mono text-blue-400 font-bold">
-                          {formData.nivel <= maxLevel ? `${Math.floor(formData.nivel / 2)}/${isLegado ? 25 : 20} pts de atrib.` : `Max ${isLegado ? 25 : 20} pts`}
+                          {formData.nivel <= maxLevel ? `${Math.floor(formData.nivel / 2)}/20 pts de atrib.` : `Max 20 pts`}
                         </span>
                       </div>
 
@@ -1274,14 +1662,14 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                   >
                     <div className="flex items-center gap-3">
                       <div 
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 border shadow-md"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-md overflow-hidden p-0"
                         style={{ 
                           backgroundColor: `${godColor}25`,
                           borderColor: godColor 
                         }}
                       >
                         {godIcon ? (
-                          <GameIcon icon={godIcon} className="text-xl" style={{ color: godColor }} />
+                          <GameIcon icon={godIcon} className="text-[25px] leading-none" style={{ color: godColor }} />
                         ) : (
                           <Swords className="w-5 h-5" style={{ color: godColor }} />
                         )}
@@ -1306,7 +1694,7 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                         <span className="text-[var(--ctexto2)] uppercase text-[9px] font-bold">Atributos Principais:</span>
                         <strong className="text-[var(--ctexto1)] font-mono">
                           {isLegado
-                            ? getLegadoCombinedAtributos(formData.legado_deus_id_1, formData.legado_deus_id_2, deuses)
+                            ? getLegadoCombinedAtributos(formData.legado_deus_id_1, formData.legado_deus_id_2, deuses, formData.legado_tipo)
                             : (selectedDeus.atributos_principais || 'Nenhum')}
                         </strong>
                       </div>
@@ -1647,6 +2035,55 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                 </div>
               </div>
 
+              {/* Per-God Tracker for Semideus + Semideus */}
+              {isSemideusSemideus && (
+                <div className="p-2.5 sm:p-3 rounded-xl bg-[var(--fundo2)] border border-[#3148BD]/30 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#3148BD] dark:text-blue-300">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      Divisão por Divindade (Máx. 20 pts cada • 1 ramo por divindade)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+                    <div className="p-2 rounded-lg bg-[var(--fundo1)] border border-[var(--bordadg)]">
+                      <div className="flex items-center justify-between font-mono text-xs">
+                        <span className="font-bold truncate text-[var(--ctexto1)]">{god1Obj?.nome_grego_romano || 'Divindade 1'}</span>
+                        <span className={`font-black ${(calcResult.god1PointsSpent || 0) > 20 ? 'text-rose-500' : 'text-[#3148BD] dark:text-blue-400'}`}>
+                          {calcResult.god1PointsSpent || 0}/20 <span className="text-[10px] font-normal text-[var(--ctexto2)]">pts</span>
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-[var(--ctexto2)] mt-1 flex items-center justify-between">
+                        <span>Ramo escolhido:</span>
+                        <span className={`font-semibold ${chosenRamoGod1 ? 'text-[var(--ctexto1)]' : 'text-amber-500'}`}>
+                          {chosenRamoGod1 ? chosenRamoGod1.nome : 'Nenhum (livre)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-[var(--fundo1)] border border-[var(--bordadg)]">
+                      <div className="flex items-center justify-between font-mono text-xs">
+                        <span className="font-bold truncate text-[var(--ctexto1)]">{god2Obj?.nome_grego_romano || 'Divindade 2'}</span>
+                        <span className={`font-black ${(calcResult.god2PointsSpent || 0) > 20 ? 'text-rose-500' : 'text-[#3148BD] dark:text-blue-400'}`}>
+                          {calcResult.god2PointsSpent || 0}/20 <span className="text-[10px] font-normal text-[var(--ctexto2)]">pts</span>
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-[var(--ctexto2)] mt-1 flex items-center justify-between">
+                        <span>Ramo escolhido:</span>
+                        <span className={`font-semibold ${chosenRamoGod2 ? 'text-[var(--ctexto1)]' : 'text-amber-500'}`}>
+                          {chosenRamoGod2 ? chosenRamoGod2.nome : 'Nenhum (livre)'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(chosenRamoGod1 || chosenRamoGod2) && (
+                    <p className="text-[10px] text-[var(--ctexto2)] italic">
+                      💡 Os demais ramos foram ocultados para esta divindade. Zere os pontos do ramo ativo caso queira selecionar outro ramo.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Branch Filter Tabs and Search Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pb-2 border-b border-[var(--bordadg)]">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1668,11 +2105,11 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                   </button>
 
                   {sortedGodRamos.map((r) => {
-                    const isActive = activeBranchFilter === r.id || (activeBranchFilter === r.tipo && (!isLegado || r.tipo !== 'tronco'));
+                    const isActive = activeBranchFilter === r.id || (activeBranchFilter === r.tipo && (!isSemideusSemideus || r.tipo !== 'tronco'));
                     const count = godPoderes.filter((p) => p.ramo_id === r.id).length;
                     const god = deuses.find((d) => d.id === r.deus_id);
-                    const godName = god ? god.nome_grego_romano : '';
-                    const label = isLegado && godName
+                    const godName = isSemideusSemideus && god ? god.nome_grego_romano : '';
+                    const label = isSemideusSemideus && godName
                       ? (r.tipo === 'tronco' ? `Tronco (${godName})` : `${r.nome} (${godName})`)
                       : (r.tipo === 'tronco' ? 'Tronco' : r.nome);
                     return (
@@ -1747,8 +2184,8 @@ export const CharacterSheetEditorModal: React.FC<CharacterSheetEditorModalProps>
                           />
                           {(() => {
                             const god = deuses.find((d) => d.id === ramo.deus_id);
-                            const godName = isLegado && god ? god.nome_grego_romano : '';
-                            return isLegado && godName
+                            const godName = isSemideusSemideus && god ? god.nome_grego_romano : '';
+                            return isSemideusSemideus && godName
                               ? (ramo.tipo === 'tronco' ? `Tronco (${godName})` : `${ramo.nome} (${godName})`)
                               : (ramo.tipo === 'tronco' ? 'Tronco' : ramo.nome);
                           })()}

@@ -39,22 +39,27 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
   if (!isOpen || typeof document === 'undefined') return null;
 
   const isSheetLegado = activeSheet.deus_id === 'legado';
+  const legadoTipo = activeSheet.legado_tipo || 'semideus_semideus';
   const selectedDeus = deuses.find((d) => d.id === activeSheet.deus_id);
   const leg1 = activeSheet.legado_deus_id_1 || 'poseidon';
   const leg2 = activeSheet.legado_deus_id_2 || 'atena';
 
   const branchOrderMap: Record<string, number> = { tronco: 0, ramo1: 1, ramo2: 2, ramo3: 3 };
   const godRamos = isSheetLegado
-    ? ramos
-        .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
-        .sort((a, b) => {
-          if (a.deus_id !== b.deus_id) {
-            if (a.deus_id === leg1) return -1;
-            if (b.deus_id === leg1) return 1;
-            return a.deus_id.localeCompare(b.deus_id);
-          }
-          return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
-        })
+    ? (legadoTipo === 'deus_semideus'
+        ? ramos
+            .filter((r) => r.deus_id === leg1)
+            .sort((a, b) => (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99))
+        : ramos
+            .filter((r) => r.deus_id === leg1 || r.deus_id === leg2)
+            .sort((a, b) => {
+              if (a.deus_id !== b.deus_id) {
+                if (a.deus_id === leg1) return -1;
+                if (b.deus_id === leg1) return 1;
+                return a.deus_id.localeCompare(b.deus_id);
+              }
+              return (branchOrderMap[a.tipo] ?? 99) - (branchOrderMap[b.tipo] ?? 99);
+            }))
     : ramos.filter((r) => r.deus_id === selectedDeus?.id);
   const godBranchIds = new Set(godRamos.map((r) => r.id));
   const godPoderes = poderes.filter((p) => godBranchIds.has(p.ramo_id));
@@ -65,7 +70,10 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
     godPoderes,
     godRamos,
     activeSheet.item_ponto_poder,
-    isSheetLegado
+    isSheetLegado,
+    legadoTipo,
+    leg1,
+    leg2
   );
 
   const bbcodeText = generateForumBBCode(
@@ -238,7 +246,8 @@ export const BBCodeModal: React.FC<BBCodeModalProps> = ({
                     if (rPowers.length === 0) return null;
 
                     const god = deuses.find((d) => d.id === r.deus_id);
-                    const godName = isSheetLegado && god ? god.nome_grego_romano : '';
+                    const isDoubleLegado = isSheetLegado && legadoTipo !== 'deus_semideus';
+                    const godName = isDoubleLegado && god ? god.nome_grego_romano : '';
                     const rTitle = r.tipo === 'tronco'
                       ? (godName ? `Tronco (${godName})` : 'Tronco')
                       : (godName ? `${r.nome.toUpperCase()} (${godName.toUpperCase()})` : r.nome.toUpperCase());

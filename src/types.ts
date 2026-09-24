@@ -118,12 +118,15 @@ export interface BonusCombateFicha {
   bonusCondicionaisAcerto?: BonusCondicionalAcerto[];
 }
 
+export type LegadoTipo = 'semideus_semideus' | 'deus_semideus';
+
 export interface FichaPersonagem {
   id: string;
   nome: string;
   deus_id: string;
-  legado_deus_id_1?: string; // Primeira divindade caso deus_id === 'legado'
-  legado_deus_id_2?: string; // Segunda divindade caso deus_id === 'legado'
+  legado_tipo?: LegadoTipo; // 'semideus_semideus' | 'deus_semideus'
+  legado_deus_id_1?: string; // Primeira divindade (ou Divindade Principal) caso deus_id === 'legado'
+  legado_deus_id_2?: string; // Segunda divindade (ou Eco) caso deus_id === 'legado'
   nivel: number;
   exp?: number; // Pontos de EXP atuais
   item_ponto_poder?: boolean; // Item especial que concede +1 ponto de poder

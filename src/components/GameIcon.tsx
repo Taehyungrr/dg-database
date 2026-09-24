@@ -204,9 +204,9 @@ export const GameIcon: React.FC<GameIconProps> = ({
   const iconClass = isExplicitRA ? `ra ra-${slug}` : `game-icon game-icon-${slug}`;
 
   return (
-    <span className="relative inline-flex items-center justify-center" style={{ display: 'inline-flex' }}>
+    <span className="relative inline-flex items-center justify-center leading-none" style={{ display: 'inline-flex' }}>
       <i 
-        className={`${iconClass} ${className} inline-block leading-none not-italic select-none`.trim()}
+        className={`${iconClass} ${className} inline-flex items-center justify-center leading-none not-italic select-none text-center`.trim()}
         style={combinedStyle}
         aria-hidden="true"
       />
